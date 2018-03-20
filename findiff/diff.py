@@ -8,7 +8,7 @@ def diff(y, h, dims=[0], acc=2):
     
        Parameters
        ----------
-       y:   numpy ndarray in 1D, 2D or 3D
+       y:   numpy ndarray in any dimension
             The function to differentiate sampled at equidistant points.
        h:   array-like
             The grid spacing.
@@ -92,28 +92,15 @@ def _apply_to_array(yd, y, weights, off_slices, ref_slice, dim):
 
     ndims = len(y.shape)
 
-    if ndims == 1:
-        for w, s in zip(weights, off_slices):
-            yd[ref_slice] += w * y[s]
-    elif ndims == 2:
-        if dim == 0:
-            for w, s in zip(weights, off_slices):
-                yd[ref_slice, :] += w * y[s, :]
-        elif dim == 1:
-            for w, s in zip(weights, off_slices):
-                yd[:, ref_slice] += w * y[:, s]
-    elif ndims == 3:
-        if dim == 0:
-            for w, s in zip(weights, off_slices):
-                yd[ref_slice, :, :] += w * y[s, :, :]
-        elif dim == 1:
-            for w, s in zip(weights, off_slices):
-                yd[:, ref_slice, :] += w * y[:, s, :]
-        elif dim == 2:
-            for w, s in zip(weights, off_slices):
-                yd[:, :, ref_slice] += w * y[:, :, s]
-    else:
-        raise Exception("Only 1D, 2D and 3D implemented")
+    all = slice(None, None, 1)
+
+    ref_multi_slice = [all] * ndims
+    ref_multi_slice[dim] = ref_slice
+
+    for w, s in zip(weights, off_slices):
+        off_multi_slice = [all] * ndims
+        off_multi_slice[dim] = s
+        yd[ref_multi_slice] += w * y[off_multi_slice]
 
 
 def _shift_slice(sl, off, max_index):

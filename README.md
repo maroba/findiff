@@ -1,5 +1,6 @@
 # findiff
-A Python package for finite difference numerical derivatives in 1D, 2D and 3D.
+A Python package for finite difference numerical derivatives in
+any number of dimensions.
 
 ## Usage
 
@@ -88,6 +89,12 @@ d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[1]*30)
 
 
 ```
+
+### Derivatives in N dimensions
+
+The package can work with any number of dimensions, the generalization
+of usage is straight forward. The only limit is memory and CPU speed.
+
 
 ### Accuracy Control
 
