@@ -58,7 +58,7 @@ d2f_dxdy = findiff.diff(f, h=[dx, dy], order=2, dims=[0, 1])
 import numpy as np
 import findiff
 
-# Our 2D grid:
+# Our 3D grid:
 nx = 100
 ny = 100
 nz = 100
