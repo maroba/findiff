@@ -11,21 +11,79 @@ import findiff
 
 # Our 1D grid:
 nx = 100
-x = np.linspace(-1, 1, 100)
+x = np.linspace(-1, 1, nx)
 dx = x[1] - x[0]
 
 # Init the array to differentiate
-y = init_your_1d_array_to_differentiate()
+f = init_your_1d_array_to_differentiate()
 
-# First derivative with accuracy order 2
-dy_dx = findiff.diff(y, dx, order=1, acc=2)
+# First derivative
+df_dx = findiff.diff(f, dx, order=1)
 
-# Second derivative with accuracy order 2
-d2y_dx2 = findiff.diff(y, dx, order=2, acc=2)
+# Second derivative
+d2f_dx2 = findiff.diff(f, dx, order=2)
 
-# Second derivative with accuracy order 4
-d2y_dx2 = findiff.diff(y, dx, order=2, acc=4)
 ```
+
+### Derivatives in 2D
+
+```python
+import numpy as np
+import findiff
+
+# Our 2D grid:
+nx = 100
+ny = 100
+x = np.linspace(-1, 1, nx)
+y = np.linspace(-1, 1, ny)
+dx = x[1] - x[0]
+dy = y[1] - y[0] 
+
+# Init the array to differentiate
+f = init_your_2d_array_to_differentiate()
+
+# First derivative with respect to first coordinate
+df_dx = findiff.diff(f, h=[dx, dy], order=2, dims=[0])
+
+# Second derivative with respect to the first coordinate
+d2f_dx2 = findiff.diff(f, h=[dx, dy], order=2, dims=[0, 0])
+
+# Second derivative with respect to the first, then the second coordinate
+d2f_dxdy = findiff.diff(f, h=[dx, dy], order=2, dims=[0, 1])
+```
+
+### Derivatives in 3D
+
+```python
+import numpy as np
+import findiff
+
+# Our 2D grid:
+nx = 100
+ny = 100
+nz = 100
+x = np.linspace(-1, 1, nx)
+y = np.linspace(-1, 1, ny)
+z = np.linspace(-1, 1, nz)
+dx = x[1] - x[0]
+dy = y[1] - y[0] 
+dz = z[1] - z[0] 
+
+# Init the array to differentiate
+f = init_your_2d_array_to_differentiate()
+
+# First derivatives
+df_dx = findiff.diff(f, h=[dx, dy, dz], order=1, dims=[0])
+df_dy = findiff.diff(f, h=[dx, dy, dz], order=1, dims=[1])
+df_dz = findiff.diff(f, h=[dx, dy, dz], order=1, dims=[2])
+
+# Second derivative with respect to the first coordinate
+d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], order=2, dims=[0, 0])
+
+# Second derivative with respect to the first, then the second coordinate
+d2f_dxdy = findiff.diff(f, h=[dx, dy, dz], order=2, dims=[0, 1])
+```
+
 
 ## Dependencies
 
