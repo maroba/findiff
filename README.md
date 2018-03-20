@@ -70,7 +70,7 @@ dy = y[1] - y[0]
 dz = z[1] - z[0] 
 
 # Init the array to differentiate
-f = init_your_2d_array_to_differentiate()
+f = init_your_3d_array_to_differentiate()
 
 # First derivatives
 df_dx = findiff.diff(f, h=[dx, dy, dz], order=1, dims=[0])
