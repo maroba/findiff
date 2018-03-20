@@ -1,4 +1,5 @@
 import numpy as np
+from findiff.coefs import coefficients
 
 
 def diff(y, h, order=1, acc=2, dims=0):
@@ -39,12 +40,7 @@ def diff(y, h, order=1, acc=2, dims=0):
     dims = np.array(dims)
 
     if ndims == 1:
-        if order == 1:
-            return _diff_1d_ord1(y, h, acc)
-        elif order == 2:
-            return _diff_1d_ord2(y, h, acc)
-        else:
-            raise AttributeError("This order is not yet implemented")
+        return _diff_general(y, h, order, 0, acc)
     elif ndims == 2:
         if order == 1:
             return _diff_2d_ord1(y, h, acc, dims)
@@ -63,78 +59,56 @@ def diff(y, h, order=1, acc=2, dims=0):
         raise AttributeError("Dimensions > 2 not yet implemented")
 
 
-def _diff_1d_ord1(y, h, acc):
+def _diff_general(y, h, deriv, dim, acc):
+
+    coefs = coefficients(deriv, acc)
+
+    # 1D
+    scheme = "center"
+    weights = coefs[scheme]["coefficients"]
+    offsets = coefs[scheme]["offsets"]
+
+    npts = y.shape[dim]
+
+    nbndry = len(weights) // 2
+    ref_slice = slice(nbndry, npts - nbndry, 1)
+    off_slices = [ _shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
 
     yd = np.zeros_like(y)
 
-    if acc == 2:
-        yd[1:-1] = 0.5 * (-y[0:-2] + y[2:])
-        yd[0:1] = -1.5 * y[0:1] + 2. * y[1:2] - 0.5 * y[2:3]
-        yd[-1:] = 1.5 * y[-1:] - 2. * y[-2:-1] + 0.5 * y[-3:-2]
+    for w, s in zip(weights, off_slices):
+        yd[ref_slice] += w * y[s]
 
-    elif acc == 4:
+    scheme = "forward"
+    weights = coefs[scheme]["coefficients"]
+    offsets = coefs[scheme]["offsets"]
 
-        coefs = [1./12, -2./3, 2./3, -1./12]
-        slices = [slice(0, -4, 1), slice(1, -3, 1), slice(3, -1, 1), slice(4, None, 1)]
+    ref_slice = slice(0, nbndry, 1)
+    off_slices = [_shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
 
-        for c, s in zip(coefs, slices):
-            yd[2:-2] += c * y[s]
+    for w, s in zip(weights, off_slices):
+        yd[ref_slice] += w * y[s]
 
-        coefs = [-25./12, 4, -3., 4./3, -1./4]
-        slices = [slice(k, k+2, 1) for k in range(5)]
+    scheme = "backward"
+    weights = coefs[scheme]["coefficients"]
+    offsets = coefs[scheme]["offsets"]
 
-        for c, s in zip(coefs, slices):
-            yd[0:2] += c * y[s]
+    ref_slice = slice(npts - nbndry, npts, 1)
+    off_slices = [_shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
 
-        coefs = reversed([25./12, -4, 3., -4./3, 1./4])
-        slices = reversed([slice(-2, None, 1), slice(-3, -1, 1), slice(-4, -2, 1), slice(-5, -3, 1), slice(-6, -4, 1)])
+    for w, s in zip(weights, off_slices):
+        yd[ref_slice] += w * y[s]
 
-        for c, s in zip(coefs, slices):
-            yd[-2:] += c * y[s]
-
-    else:
-        raise AttributeError("Only accuracy orders 2, 4 implemented for first derivatives")
-
-    h_inv = 1./h
+    h_inv = 1./h**deriv
     return yd * h_inv
 
 
-def _diff_1d_ord2(y, h, acc):
+def _shift_slice(sl, off, max_index):
 
-    yd = np.zeros_like(y)
+    if sl.start + off < 0 or sl.stop + off > max_index:
+        raise IndexError("Shift slice out of bounds")
 
-    if acc == 2:
-
-        yd[1:-1] = y[0:-2] - 2.*y[1:-1] + y[2:]
-        yd[0:1] = 2.*y[0:1] - 5*y[1:2] + 4.*y[2:3] - y[3:4]
-        yd[-1:] = 2.*y[-1:] - 5*y[-2:-1] + 4*y[-3:-2] - y[-4:-3]
-
-    elif acc == 4:
-
-        coefs = [-1./12, 4./3, -2.5, 4./3, -1./12]
-        slices = [slice(0, -4, 1), slice(1, -3, 1), slice(2, -2, 1), slice(3, -1, 1), slice(4, None, 1)]
-
-        for c, s in zip(coefs, slices):
-            yd[2:-2] += c * y[s]
-
-        coefs = ([15./4, -77./6, 107./6, -13., 61./12, -5./6])
-        slices = [slice(k, k+2, 1) for k in range(6)]
-
-        for c, s in zip(coefs, slices):
-            yd[0:2] += c * y[s]
-
-        coefs = reversed([15./4, -77./6, 107./6, -13., 61./12, -5./6])
-        slices = reversed([slice(-2, None, 1), slice(-3, -1, 1), slice(-4, -2, 1),
-                  slice(-5, -3, 1), slice(-6, -4, 1), slice(-7, -5, 1)])
-
-        for c, s in zip(coefs, slices):
-            yd[-2:] += c * y[s]
-
-    else:
-        raise AttributeError("Only accuracy orders 2, 4 implemented for second derivatives")
-
-    h2_inv = 1./h**2
-    return yd * h2_inv
+    return slice(sl.start + off, sl.stop + off, sl.step)
 
 
 def _diff_2d_ord1(y, h, acc, dims):

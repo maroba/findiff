@@ -80,8 +80,6 @@ df_dz = findiff.diff(f, h=[dx, dy, dz], order=1, dims=[2])
 # Second derivative with respect to the first coordinate
 d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], order=2, dims=[0, 0])
 
-# Second derivative with respect to the first, then the second coordinate
-d2f_dxdy = findiff.diff(f, h=[dx, dy, dz], order=2, dims=[0, 1])
 ```
 
 
