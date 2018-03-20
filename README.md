@@ -18,10 +18,13 @@ dx = x[1] - x[0]
 f = init_your_1d_array_to_differentiate()
 
 # First derivative
-df_dx = findiff.diff(f, dx, order=1)
+df_dx = findiff.diff(f, dx, dims=[0])
 
 # Second derivative
-d2f_dx2 = findiff.diff(f, dx, order=2)
+d2f_dx2 = findiff.diff(f, dx, dims=[0, 0])
+
+# 30th derivative
+d30f_dx30 = findiff.diff(f, dx, dims=[0]*30)
 
 ```
 
@@ -43,13 +46,13 @@ dy = y[1] - y[0]
 f = init_your_2d_array_to_differentiate()
 
 # First derivative with respect to first coordinate
-df_dx = findiff.diff(f, h=[dx, dy], order=2, dims=[0])
+df_dx = findiff.diff(f, h=[dx, dy], dims=[0])
 
 # Second derivative with respect to the first coordinate
-d2f_dx2 = findiff.diff(f, h=[dx, dy], order=2, dims=[0, 0])
+d2f_dx2 = findiff.diff(f, h=[dx, dy], dims=[0, 0])
 
 # Second derivative with respect to the first, then the second coordinate
-d2f_dxdy = findiff.diff(f, h=[dx, dy], order=2, dims=[0, 1])
+d2f_dxdy = findiff.diff(f, h=[dx, dy], dims=[0, 1])
 ```
 
 ### Derivatives in 3D
@@ -73,12 +76,16 @@ dz = z[1] - z[0]
 f = init_your_3d_array_to_differentiate()
 
 # First derivatives
-df_dx = findiff.diff(f, h=[dx, dy, dz], order=1, dims=[0])
-df_dy = findiff.diff(f, h=[dx, dy, dz], order=1, dims=[1])
-df_dz = findiff.diff(f, h=[dx, dy, dz], order=1, dims=[2])
+df_dx = findiff.diff(f, h=[dx, dy, dz], dims=[0])
+df_dy = findiff.diff(f, h=[dx, dy, dz], dims=[1])
+df_dz = findiff.diff(f, h=[dx, dy, dz], dims=[2])
 
-# Second derivative with respect to the first coordinate
-d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], order=2, dims=[0, 0])
+# Second derivative with respect to the third coordinate
+d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[2, 2])
+
+# 30th derivative with respect to the second coordinate
+d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[1]*30)
+
 
 ```
 
