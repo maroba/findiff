@@ -89,6 +89,41 @@ d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[1]*30)
 
 ```
 
+### Accuracy Control
+
+In every application of `diff`, you can request the desired accuracy
+order by setting the parameter `acc`. 
+
+```
+d2f_dx2 = findiff.diff(f, h=[dx, dy], dims=[1, 1], acc=4)
+```
+
+If not specified, second order accuracy will be taken by default.
+
+
+### Finite Difference Coefficients
+
+Sometimes you may want to have the raw finite difference coefficients.
+These can be obtained for __any__ derivative and accuracy order
+using `findiff.coefficients(deriv, acc)`. For instance,
+
+```python
+import findiff
+coefs = findiff.coefficients(deriv=2, acc=2)
+```
+
+gives
+
+```
+{ 'backward': {'coefficients': array([-1.,  4., -5.,  2.]),
+               'offsets': array([-3, -2, -1,  0])},
+  'center': {'coefficients': array([ 1., -2.,  1.]),
+             'offsets': array([-1,  0,  1])},
+  'forward': {'coefficients': array([ 2., -5.,  4., -1.]),
+              'offsets': array([0, 1, 2, 3])}
+              }
+```
+
 
 ## Dependencies
 
