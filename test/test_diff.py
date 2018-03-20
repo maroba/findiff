@@ -48,11 +48,11 @@ class TestFinDiff(unittest.TestCase):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = Y**3 * X**3
         fxe = 3 * X**2 * Y**3
-        fx = fd.diff(f, order=1, acc=2, h=[dx, dy], dims=0)
+        fx = fd.diff(f, order=1, acc=2, h=[dx, dy], dims=[0])
         err = np.max(np.abs(fxe - fx))
         self.assertAlmostEqual(0, err, 4)
         fye = 3 * X**3 * Y**2
-        fy = fd.diff(f, order=1, acc=2, h=[dx, dy], dims=1)
+        fy = fd.diff(f, order=1, acc=2, h=[dx, dy], dims=[1])
         err = np.max(np.abs(fye - fy))
         self.assertAlmostEqual(0, err, 4)
 
@@ -79,15 +79,15 @@ class TestFinDiff(unittest.TestCase):
         X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
         f = Y**3 * X**3 * Z**3
         fxe = 3 * X**2 * Y**3 * Z**3
-        fx = fd.diff(f, order=1, acc=2, h=[dx, dy, dz], dims=0)
+        fx = fd.diff(f, order=1, acc=2, h=[dx, dy, dz], dims=[0])
         err = np.max(np.abs(fxe - fx))
         self.assertAlmostEqual(0, err, 4)
         fye = 3 * X**3 * Y**2 * Z**3
-        fy = fd.diff(f, order=1, acc=2, h=[dx, dy, dz], dims=1)
+        fy = fd.diff(f, order=1, acc=2, h=[dx, dy, dz], dims=[1])
         err = np.max(np.abs(fye - fy))
         self.assertAlmostEqual(0, err, 4)
         fze = 3 * X**3 * Y**3 * Z**2
-        fz = fd.diff(f, order=1, acc=2, h=[dx, dy, dz], dims=2)
+        fz = fd.diff(f, order=1, acc=2, h=[dx, dy, dz], dims=[2])
         err = np.max(np.abs(fze - fz))
         self.assertAlmostEqual(0, err, 4)
 
