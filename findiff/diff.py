@@ -2,7 +2,7 @@ import numpy as np
 from findiff.coefs import coefficients
 
 
-def diff(y, h, order=1, acc=2, dims=0):
+def diff(y, h, dims=[0], acc=2):
     """Returns derivative of a sampled function using finite difference schemes 
     
     
@@ -10,14 +10,12 @@ def diff(y, h, order=1, acc=2, dims=0):
        ----------
        y:   numpy ndarray in 1D, 2D or 3D
             The function to differentiate sampled at equidistant points.
-       h:   real number or array-like, depending on whether y is 1D or higher
+       h:   array-like
             The grid spacing.
-       order:   int
-            The order of the derivative.
        acc:     even int
             The accuracy order.
-       dims:  int or array-like depending on whether y is 1D or higher   
-            For 2D or 3D the dimension along which to differentiate
+       dims:  array-like   
+            the dimensions along which to differentiate
             
        Returns
        -------
@@ -37,12 +35,17 @@ def diff(y, h, order=1, acc=2, dims=0):
     if len(h) != ndims:
         raise ValueError("Dimensions of y and h do not match")
     h = np.array(h)
-    dims = np.array(dims)
 
-    if ndims == 1:
-        return _diff_general(y, h, order, 0, acc)
-    else:
-        return _diff_general(y, h, order, dims[0], acc)
+    dims = np.array(dims)
+    derivs = [np.sum(dims == i) for i in range(ndims)]
+
+    yd = np.array(y)
+
+    for i in range(ndims):
+        if derivs[i] > 0:
+            yd = _diff_general(yd, h, derivs[i], i, acc)
+
+    return yd
 
 
 def _diff_general(y, h, deriv, dim, acc):
