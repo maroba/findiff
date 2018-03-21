@@ -2,6 +2,42 @@ import numpy as np
 from findiff.coefs import coefficients
 
 
+class FinDiff(object):
+
+    def __init__(self, h=[1.], dims=[0], acc=2):
+
+        if not hasattr(h, "__len__"):
+            self._h = np.array([h])
+        else:
+            self._h = np.array(h)
+
+        if not hasattr(dims, "__len__"):
+            self._dims = np.array([dims])
+        else:
+            self._dims = np.array(dims)
+
+        self._acc = acc
+        ndims = len(self._h)
+        self._derivs = [np.sum(self._dims == i) for i in range(ndims)]
+        self._coefs = []
+        for i in range(ndims):
+            self._coefs.append(coefficients(self._derivs[i], acc))
+
+    def diff(self, y):
+
+        ndims = len(y.shape)
+        if ndims != len(self._h):
+            raise IndexError("y and h have different dimensions")
+
+        yd = np.array(y)
+
+        for i in range(ndims):
+            if self._derivs[i] > 0:
+                yd = _diff_general(yd, self._h, self._derivs[i], i, self._acc, self._coefs[i])
+
+        return yd
+
+
 def diff(y, h, dims=[0], acc=2):
     """Returns derivative of a sampled function using finite difference schemes 
     

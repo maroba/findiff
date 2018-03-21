@@ -109,6 +109,31 @@ gives
               }
 ```
 
+__Note__ that every call to `findiff.diff` with default arguments
+computes the finite difference coefficients again. To avoid that, use
+the class `FinDiff` instead. It retains the state, so that the coefficients
+do not have to be computed again and again.
+
+### Class FinDiff
+
+When you want to apply the same derivative multiple times, it is more
+economic to use the `FinDiff` class instead of the `diff` function:
+
+```python
+import findiff
+
+f = init_your_ndim_array_to_differentiate()
+g = init_some_other_ndim_array_to_differentiate()
+
+spacing = [h0, h1, h2, ...]
+
+d_dy = findiff.FinDiff(h=spacing, dims=[1])
+
+df_dy = d_dy.diff(f)
+dg_dy = d_dy.diff(g)
+
+```
+
 
 ## Dependencies
 
