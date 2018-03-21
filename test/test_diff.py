@@ -139,9 +139,9 @@ class TestFinDiff(unittest.TestCase):
         h, f, fxe, fxxe = self._prep_1d_func()
         d_dx = fd.FinDiff(h, dims=[0], acc=4)
         d2_dx2 = fd.FinDiff(h, dims=[0, 0], acc=4)
-        fx = d_dx.diff(f)
+        fx = d_dx(f)
         self._assertAlmostEqual(fx, fxe)
-        fxx = d2_dx2.diff(f)
+        fxx = d2_dx2(f)
         self._assertAlmostEqual(fxx, fxxe)
 
     def test_FinDiff_2d(self):
@@ -156,9 +156,9 @@ class TestFinDiff(unittest.TestCase):
         fxe = 3 * X ** 2 * Y ** 3
         fyye = 6 * X ** 3 * Y
         d_dx = fd.FinDiff(dxy, dims=[0], acc=4)
-        fx = d_dx.diff(f)
+        fx = d_dx(f)
         d2_dy2 = fd.FinDiff(dxy, dims=[1, 1], acc=4)
-        fyy = d2_dy2.diff(f)
+        fyy = d2_dy2(f)
         self._assertAlmostEqual(fxe, fx)
         self._assertAlmostEqual(fyye, fyy)
 

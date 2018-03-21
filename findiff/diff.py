@@ -5,7 +5,6 @@ from findiff.coefs import coefficients
 class FinDiff(object):
     """Finite difference representation of a derivative of any order, any accuracy in any dimension"""
 
-
     def __init__(self, h=[1.], dims=[0], acc=2):
         """Constructor for Finite Difference operator
            
@@ -50,7 +49,7 @@ class FinDiff(object):
         for i in range(ndims):
             self._coefs.append(coefficients(self._derivs[i], acc))
 
-    def diff(self, y):
+    def __call__(self, y):
         """Applies the finite difference operator to a function y"""
 
         ndims = len(y.shape)
@@ -88,7 +87,7 @@ class Laplacian(object):
 
         self._parts = [FinDiff(h, dims=[k, k], acc=acc) for k in range(len(h))]
 
-    def apply(self, f):
+    def __call__(self, f):
         """Applies the Laplacian to the array f
         
            Parameters:

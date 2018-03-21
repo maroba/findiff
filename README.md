@@ -129,8 +129,9 @@ spacing = [h0, h1, h2, ...]
 
 d_dy = findiff.FinDiff(h=spacing, dims=[1])
 
-df_dy = d_dy.diff(f)
-dg_dy = d_dy.diff(g)
+# To apply the operator, just call it:
+df_dy = d_dy(f)
+dg_dy = d_dy(g)
 
 ```
 
