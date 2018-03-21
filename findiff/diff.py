@@ -110,52 +110,6 @@ class Laplacian(object):
         return laplace_f
 
 
-def diff(y, h, dims=[0], acc=2):
-    """Returns derivative of a sampled function using finite difference schemes 
-    
-    
-       Parameters
-       ----------
-       y:   numpy ndarray in any dimension
-            The function to differentiate sampled at equidistant points.
-       h:   array-like
-            The grid spacing.
-       acc:     even int
-            The accuracy order.
-       dims:  array-like   
-            the dimensions along which to differentiate
-            
-       Returns
-       -------
-          a numpy array with the derivative
-    """
-
-    ndims = len(y.shape)
-
-    if not isinstance(y, np.ndarray):
-        y = np.array(y)
-
-    if ndims == 1:
-        h = np.array([h])
-    else:
-        h = np.array(h)
-
-    if len(h) != ndims:
-        raise ValueError("Dimensions of y and h do not match")
-    h = np.array(h)
-
-    dims = np.array(dims)
-    derivs = [np.sum(dims == i) for i in range(ndims)]
-
-    yd = np.array(y)
-
-    for i in range(ndims):
-        if derivs[i] > 0:
-            yd = _diff_general(yd, h, derivs[i], i, acc)
-
-    return yd
-
-
 def _diff_general(y, h, deriv, dim, acc, coefs=None):
 
     if coefs is None:

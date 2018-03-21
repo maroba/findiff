@@ -4,8 +4,7 @@ any number of dimensions.
 
 ## Quickstart
 
-
-### findiff.diff
+### Derivatives
 
 #### Derivatives in 1D
 
@@ -14,15 +13,20 @@ import findiff
 
 # Init the array to differentiate
 f = init_your_1d_array_to_differentiate()
+g = init_some_other_1d_array_to_differentiate()
 
 # First derivative, dx is the grid spacing along dimension 0
-df_dx = findiff.diff(f, dx, dims=[0])
+d_dx = findiff.FinDiff(h=dx, dims=[0])
+df_dx = d_dx(f)
+dg_dx = d_dx(g)
 
 # Second derivative
-d2f_dx2 = findiff.diff(f, dx, dims=[0, 0])
+d2_dx2 = findiff.FinDiff(dx, dims=[0, 0])
+d2f_dx2 = d2_dx2(f)
 
 # 6th derivative
-d6f_dx6 = findiff.diff(f, dx, dims=[0]*6)
+d6_dx6 = findiff.FinDiff(dx, dims=[0]*6)
+d6f_dx6 = d6_dx6(f)
 ```
 
 #### Derivatives in 2D
@@ -35,14 +39,22 @@ f = init_your_2d_array_to_differentiate()
 
 # The first derivatives.
 # dx, dy are the grid spacings along dimensions 0 and 1
-df_dx = findiff.diff(f, h=[dx, dy], dims=[0])
-df_dy = findiff.diff(f, h=[dx, dy], dims=[1])
+d_dx = findiff.FinDiff(h=[dx, dy], dims=[0])
+df_dx = d_dx(f)
+
+d_dy = findiff.FinDiff(h=[dx, dy], dims=[1])
+df_dy = d_dy(f)
+
 
 # Second derivatives
-d2f_dx2 = findiff.diff(f, h=[dx, dy], dims=[0, 0])
-d2f_dy2 = findiff.diff(f, h=[dx, dy], dims=[1, 1])
-d2f_dxdy = findiff.diff(f, h=[dx, dy], dims=[0, 1])
+d2_dx2 = findiff.FinDiff(h=[dx, dy], dims=[0, 0])
+d2f_dx2 = d2_dx2(f)
 
+d2_dy2 = findiff.FinDiff(h=[dx, dy], dims=[1, 1])
+d2f_dy2 = d2_dy2(f)
+
+d2_dxdy = findiff.FinDiff(h=[dx, dy], dims=[0, 1])
+d2f_dxdy = d2_dxdy(f)
 ```
 
 #### Derivatives in 3D
@@ -54,17 +66,28 @@ import findiff
 f = init_your_3d_array_to_differentiate()
 
 # First derivatives
-df_dx = findiff.diff(f, h=[dx, dy, dz], dims=[0])
-df_dy = findiff.diff(f, h=[dx, dy, dz], dims=[1])
-df_dz = findiff.diff(f, h=[dx, dy, dz], dims=[2])
+d_dx = findiff.FinDiff(h=[dx, dy, dz], dims=[0])
+df_dx = d_dx(f)
+
+d_dy = findiff.FinDiff(h=[dx, dy, dz], dims=[1])
+df_dy = d_dy(f)
+
+d_dz = findiff.FinDiff(h=[dx, dy, dz], dims=[2])
+df_dz = d_dz(f)
 
 # Second derivatives
-d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[0, 0])
-d2f_dy2 = findiff.diff(f, h=[dx, dy, dz], dims=[1, 1])
-d2f_dz2 = findiff.diff(f, h=[dx, dy, dz], dims=[2, 2])
+d2_dx2 = findiff.FinDiff(h=[dx, dy, dz], dims=[0, 0])
+d2f_dx2 = d2_dx2(f)
+
+d2_dy2 = findiff.FinDiff(h=[dx, dy, dz], dims=[1, 1])
+d2f_dy2 = d2_dy2(f)
+
+d2_dz2 = findiff.FinDiff(h=[dx, dy, dz], dims=[2, 2])
+d2f_dz2 = d2_dz2(f)
 
 # 8th derivative with respect to the second coordinate
-d8f_dy8 = findiff.diff(f, h=[dx, dy, dz], dims=[1]*8)
+d8_dy8 = findiff.FinDiff(h=[dx, dy, dz], dims=[1]*8)
+d8f_dy8 = d8_dy8(f)
 
 ```
 
@@ -76,11 +99,12 @@ of usage is straight forward. The only limit is memory and CPU speed.
 
 ### Accuracy Control
 
-In every application of `diff`, you can request the desired accuracy
+When constructing an instance of `FinDiff`, you can request the desired accuracy
 order by setting the parameter `acc`. 
 
 ```
-d2f_dx2 = findiff.diff(f, h=[dx, dy], dims=[1, 1], acc=4)
+d2_dx2 = findiff.FinDiff(h=[dx, dy], dims=[1, 1], acc=4)
+d2f_dx2 = d2_dx2(f)
 ```
 
 If not specified, second order accuracy will be taken by default.
@@ -109,31 +133,6 @@ gives
               }
 ```
 
-__Note__ that every call to `findiff.diff` with default arguments
-computes the finite difference coefficients again. To avoid that, use
-the class `FinDiff` instead. It retains the state, so that the coefficients
-do not have to be computed again and again.
-
-### Class FinDiff
-
-When you want to apply the same derivative multiple times, it is more
-economic to use the `FinDiff` class instead of the `diff` function:
-
-```python
-import findiff
-
-f = init_your_ndim_array_to_differentiate()
-g = init_some_other_ndim_array_to_differentiate()
-
-spacing = [h0, h1, h2, ...]
-
-d_dy = findiff.FinDiff(h=spacing, dims=[1])
-
-# To apply the operator, just call it:
-df_dy = d_dy(f)
-dg_dy = d_dy(g)
-
-```
 
 
 ## Dependencies
