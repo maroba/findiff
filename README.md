@@ -2,23 +2,20 @@
 A Python package for finite difference numerical derivatives in
 any number of dimensions.
 
-## Usage
+## Quickstart
 
-### Derivatives in 1D
+
+### findiff.diff
+
+#### Derivatives in 1D
 
 ```python
-import numpy as np
 import findiff
-
-# Our 1D grid:
-nx = 100
-x = np.linspace(-1, 1, nx)
-dx = x[1] - x[0]
 
 # Init the array to differentiate
 f = init_your_1d_array_to_differentiate()
 
-# First derivative
+# First derivative, dx is the grid spacing along dimension 0
 df_dx = findiff.diff(f, dx, dims=[0])
 
 # Second derivative
@@ -26,52 +23,32 @@ d2f_dx2 = findiff.diff(f, dx, dims=[0, 0])
 
 # 30th derivative
 d30f_dx30 = findiff.diff(f, dx, dims=[0]*30)
-
 ```
 
-### Derivatives in 2D
+#### Derivatives in 2D
 
 ```python
-import numpy as np
 import findiff
-
-# Our 2D grid:
-nx = 100
-ny = 100
-x = np.linspace(-1, 1, nx)
-y = np.linspace(-1, 1, ny)
-dx = x[1] - x[0]
-dy = y[1] - y[0] 
 
 # Init the array to differentiate
 f = init_your_2d_array_to_differentiate()
 
-# First derivative with respect to first coordinate
+# The first derivatives.
+# dx, dy are the grid spacings along dimensions 0 and 1
 df_dx = findiff.diff(f, h=[dx, dy], dims=[0])
+df_dy = findiff.diff(f, h=[dx, dy], dims=[1])
 
-# Second derivative with respect to the first coordinate
+# Second derivatives
 d2f_dx2 = findiff.diff(f, h=[dx, dy], dims=[0, 0])
-
-# Second derivative with respect to the first, then the second coordinate
+d2f_dy2 = findiff.diff(f, h=[dx, dy], dims=[1, 1])
 d2f_dxdy = findiff.diff(f, h=[dx, dy], dims=[0, 1])
+
 ```
 
-### Derivatives in 3D
+#### Derivatives in 3D
 
 ```python
-import numpy as np
 import findiff
-
-# Our 3D grid:
-nx = 100
-ny = 100
-nz = 100
-x = np.linspace(-1, 1, nx)
-y = np.linspace(-1, 1, ny)
-z = np.linspace(-1, 1, nz)
-dx = x[1] - x[0]
-dy = y[1] - y[0] 
-dz = z[1] - z[0] 
 
 # Init the array to differentiate
 f = init_your_3d_array_to_differentiate()
@@ -81,16 +58,17 @@ df_dx = findiff.diff(f, h=[dx, dy, dz], dims=[0])
 df_dy = findiff.diff(f, h=[dx, dy, dz], dims=[1])
 df_dz = findiff.diff(f, h=[dx, dy, dz], dims=[2])
 
-# Second derivative with respect to the third coordinate
-d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[2, 2])
+# Second derivatives
+d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[0, 0])
+d2f_dy2 = findiff.diff(f, h=[dx, dy, dz], dims=[1, 1])
+d2f_dz2 = findiff.diff(f, h=[dx, dy, dz], dims=[2, 2])
 
 # 30th derivative with respect to the second coordinate
-d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[1]*30)
-
+d2f_dy2 = findiff.diff(f, h=[dx, dy, dz], dims=[1]*30)
 
 ```
 
-### Derivatives in N dimensions
+#### Derivatives in N dimensions
 
 The package can work with any number of dimensions, the generalization
 of usage is straight forward. The only limit is memory and CPU speed.

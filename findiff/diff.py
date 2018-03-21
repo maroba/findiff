@@ -48,9 +48,10 @@ def diff(y, h, dims=[0], acc=2):
     return yd
 
 
-def _diff_general(y, h, deriv, dim, acc):
+def _diff_general(y, h, deriv, dim, acc, coefs=None):
 
-    coefs = coefficients(deriv, acc)
+    if coefs is None:
+        coefs = coefficients(deriv, acc)
 
     scheme = "center"
     weights = coefs[scheme]["coefficients"]
