@@ -21,8 +21,8 @@ df_dx = findiff.diff(f, dx, dims=[0])
 # Second derivative
 d2f_dx2 = findiff.diff(f, dx, dims=[0, 0])
 
-# 30th derivative
-d30f_dx30 = findiff.diff(f, dx, dims=[0]*30)
+# 6th derivative
+d6f_dx6 = findiff.diff(f, dx, dims=[0]*6)
 ```
 
 #### Derivatives in 2D
@@ -63,8 +63,8 @@ d2f_dx2 = findiff.diff(f, h=[dx, dy, dz], dims=[0, 0])
 d2f_dy2 = findiff.diff(f, h=[dx, dy, dz], dims=[1, 1])
 d2f_dz2 = findiff.diff(f, h=[dx, dy, dz], dims=[2, 2])
 
-# 30th derivative with respect to the second coordinate
-d2f_dy2 = findiff.diff(f, h=[dx, dy, dz], dims=[1]*30)
+# 8th derivative with respect to the second coordinate
+d8f_dy8 = findiff.diff(f, h=[dx, dy, dz], dims=[1]*8)
 
 ```
 
