@@ -105,7 +105,7 @@ class Laplacian(object):
         laplace_f = np.zeros_like(f)
 
         for part in self._parts:
-            laplace_f += part.diff(f)
+            laplace_f += part(f)
 
         return laplace_f
 
