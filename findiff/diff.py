@@ -24,7 +24,7 @@ class FinDiff(object):
            
            Suppose f is a four-dimensional array. The second partial derivative with respect to the second axis,
                     
-                    \frac{\partial^2 f}{\partial z^2},
+                    \frac{\partial^2 f}{\partial y^2},
                      
            on a grid with equidistant spacing h=[0.1, 0.1, 0.1, 0.1] is given by
            
@@ -105,7 +105,7 @@ class Laplacian(object):
         laplace_f = np.zeros_like(f)
 
         for part in self._parts:
-            laplace_f += part.diff(f)
+            laplace_f += part(f)
 
         return laplace_f
 

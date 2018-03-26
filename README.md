@@ -1,6 +1,16 @@
 # findiff
+[![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
+
 A Python package for finite difference numerical derivatives in
 any number of dimensions.
+
+## Installation
+
+Simply use pip:
+
+```
+pip install findiff
+```
 
 ## Quickstart
 
@@ -131,15 +141,5 @@ gives
   'forward': {'coefficients': array([ 2., -5.,  4., -1.]),
               'offsets': array([0, 1, 2, 3])}
               }
-```
-
-
-
-## Dependencies
-
-The only dependency used is numpy. You can install numpy using pip:
-
-```
-pip install numpy
 ```
 
