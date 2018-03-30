@@ -1,4 +1,4 @@
-import findiff as fd #.diff as fd
+import findiff as fd
 import unittest
 import numpy as np
 
@@ -162,6 +162,34 @@ class TestFinDiff(unittest.TestCase):
         fyy = d2_dy2(f)
         self._assertAlmostEqual(fxe, fx)
         self._assertAlmostEqual(fyye, fyy)
+
+    def test_Laplace_2d(self):
+        xy0 = [-5, -5]
+        xy1 = [5, 5]
+        nxy = [100, 100]
+        x = np.linspace(xy0[0], xy1[0], nxy[0])
+        y = np.linspace(xy0[1], xy1[1], nxy[1])
+        dxy = [x[1] - x[0], y[1] - y[0]]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = X ** 3 * Y ** 3
+        lap_f_e = 6 * X * Y**3 + 6 * X**3 * Y
+        lap = fd.diff.Laplacian(h=dxy)
+        lap_f = lap(f)
+        self._assertAlmostEqual(lap_f_e, lap_f)
+
+    def test_addition_of_operators(self):
+        xy0 = [-5, -5]
+        xy1 = [5, 5]
+        nxy = [100, 100]
+        x = np.linspace(xy0[0], xy1[0], nxy[0])
+        y = np.linspace(xy0[1], xy1[1], nxy[1])
+        dxy = [x[1] - x[0], y[1] - y[0]]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = X ** 3 * Y ** 3
+        lap_f_e = 6 * X * Y ** 3 + 6 * X ** 3 * Y
+        lap = fd.FinDiff(dxy, dims=[0, 0]) + fd.FinDiff(dxy, dims=[1,1])
+        lap_f = lap(f)
+        self._assertAlmostEqual(lap_f_e, lap_f)
 
     def _assertAlmostEqual(self, f1, f2, tol=7):
         err = np.max(np.abs(f1-f2))

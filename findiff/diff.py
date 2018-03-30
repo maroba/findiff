@@ -2,7 +2,7 @@ import numpy as np
 from findiff.coefs import coefficients
 
 
-class FinDiff(object):
+class BasicFinDiff(object):
     """Finite difference representation of a derivative of any order, any accuracy in any dimension"""
 
     def __init__(self, h=[1.], dims=[0], acc=2):
@@ -63,6 +63,31 @@ class FinDiff(object):
                 yd = _diff_general(yd, self._h, self._derivs[i], i, self._acc, self._coefs[i])
 
         return yd
+
+
+class FinDiff(object):
+
+    def __init__(self, h=[1.], dims=[0], acc=2, **kwargs):
+
+        if "empty" in kwargs and kwargs["empty"]:
+            self._basic_ops = []
+        else:
+            self._basic_ops = [BasicFinDiff(h, dims, acc)]
+
+    def __call__(self, y):
+
+        result = np.zeros_like(y)
+
+        for op in self._basic_ops:
+            result += op(y)
+
+        return result
+
+    def __add__(self, other):
+        new_op = FinDiff(empty=True)
+        new_op._basic_ops.extend(self._basic_ops)
+        new_op._basic_ops.extend(other._basic_ops)
+        return new_op
 
 
 class Laplacian(object):
