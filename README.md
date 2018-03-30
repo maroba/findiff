@@ -40,7 +40,7 @@ d_dz = FinDiff(h=[dx, dy, dz, du], dims=[2])
 df_dz = d_dz(f)
 
 d_du = FinDiff(h=[dx, dy, dz, du], dims=[3])
-df_du = d_dz(f)
+df_du = d_du(f)
 
 # Second derivatives
 d2_dx2 = FinDiff(h=[dx, dy, dz, du], dims=[0, 0])
