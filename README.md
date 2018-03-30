@@ -1,7 +1,5 @@
 # findiff
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
-![PyPI License](https://img.shields.io/pypi/l/Django.svg)
-
 
 A Python package for finite difference numerical derivatives in
 any number of dimensions. 
