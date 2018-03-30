@@ -50,13 +50,16 @@ d8_dy8 = FinDiff(h=[dx, dy, dz, du], dims=[1]*8)
 d8f_dy8 = d8_dy8(f)
 
 # Mixed 3rd derivatives, twice with respect to x, once w.r.t. z
-d3_dx2dz = FinDiff(h=[dx, dy, dz, du], dims=[0, 0, 2]
+d3_dx2dz = FinDiff(h=[dx, dy, dz, du], dims=[0, 0, 2])
 
 # You can also create linear combinations of differential operators
 h = [dx, dy, dz, du]
-diff_op = Coefficient(2) * FinDiff(h=h, dims=[0, 0, 2] + Coefficient(3) * FinDiff(h=h, dims=[1, 1, 0]  
+diff_op = Coefficient(2) * FinDiff(h=h, dims=[0, 0, 2] + Coefficient(3) * FinDiff(h=h, dims=[1, 1, 0])
 
 ```
+
+More examples, including linear combinations with variable coefficients can be found [here](examples).
+
 
 #### Derivatives in N dimensions
 
