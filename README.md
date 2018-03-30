@@ -2,7 +2,9 @@
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
 
 A Python package for finite difference numerical derivatives in
-any number of dimensions. _findiff_ can handle not only arbitrary dimensions,
+any number of dimensions. 
+
+_findiff_ can handle not only arbitrary dimensions,
 but also any desired accuracy order. It also allows for the creation of
 general differential operators with constant and variable coefficients.
 
