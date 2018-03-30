@@ -71,22 +71,42 @@ class FinDiff(object):
 
         if "empty" in kwargs and kwargs["empty"]:
             self._basic_ops = []
+            self._coefs = []
         else:
             self._basic_ops = [BasicFinDiff(h, dims, acc)]
+            self._coefs = [1]
 
     def __call__(self, y):
 
         result = np.zeros_like(y)
 
-        for op in self._basic_ops:
-            result += op(y)
+        for c, op in zip(self._coefs, self._basic_ops):
+            if c == 1:
+                result += op(y)
+            else:
+                result += c * op(y)
 
         return result
 
     def __add__(self, other):
         new_op = FinDiff(empty=True)
         new_op._basic_ops.extend(self._basic_ops)
+        new_op._coefs.extend(self._coefs)
         new_op._basic_ops.extend(other._basic_ops)
+        new_op._coefs.extend(other._coefs)
+        return new_op
+
+    def __mul__(self, other):
+        return other * self
+
+    def __rmul__(self, other):
+        new_op = FinDiff(empty=True)
+        new_op._basic_ops.extend(self._basic_ops)
+        new_op._coefs.extend(self._coefs)
+
+        for i in range(len(new_op._coefs)):
+            new_op._coefs[i] *= other
+
         return new_op
 
 
