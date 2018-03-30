@@ -1,5 +1,6 @@
 # findiff
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
+![Coveralls github](https://img.shields.io/coveralls/github/jekyll/jekyll.svg)
 
 A Python package for finite difference numerical derivatives in
 any number of dimensions. 
