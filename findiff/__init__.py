@@ -1,2 +1,2 @@
 from .coefs import coefficients
-from .diff import FinDiff
+from .diff import FinDiff, Coefficient, Laplacian

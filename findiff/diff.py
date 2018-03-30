@@ -74,17 +74,18 @@ class FinDiff(object):
             self._coefs = []
         else:
             self._basic_ops = [BasicFinDiff(h, dims, acc)]
-            self._coefs = [1]
+            self._coefs = [Coefficient(1)]
 
     def __call__(self, y):
 
         result = np.zeros_like(y)
 
         for c, op in zip(self._coefs, self._basic_ops):
-            if c == 1:
-                result += op(y)
+
+            if isinstance(c.value, np.ndarray) or c.value != 1:
+                result += c.value * op(y)
             else:
-                result += c * op(y)
+                result += op(y)
 
         return result
 
@@ -97,17 +98,31 @@ class FinDiff(object):
         return new_op
 
     def __mul__(self, other):
+
+        if not isinstance(other, Coefficient):
+            other = Coefficient(other)
+
         return other * self
 
     def __rmul__(self, other):
+
+        if not isinstance(other, Coefficient):
+            other = Coefficient(other)
+
         new_op = FinDiff(empty=True)
         new_op._basic_ops.extend(self._basic_ops)
         new_op._coefs.extend(self._coefs)
 
         for i in range(len(new_op._coefs)):
-            new_op._coefs[i] *= other
+            new_op._coefs[i].value *= other.value
 
         return new_op
+
+
+class Coefficient(object):
+
+    def __init__(self, value):
+        self.value = value
 
 
 class Laplacian(object):

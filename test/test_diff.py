@@ -205,6 +205,21 @@ class TestFinDiff(unittest.TestCase):
         f_diffed = diff_op(f)
         self._assertAlmostEqual(f_diffed, f_diffed_e)
 
+    def test_multiplication_with_variables(self):
+        xy0 = [-5, -5]
+        xy1 = [5, 5]
+        nxy = [100, 100]
+        x = np.linspace(xy0[0], xy1[0], nxy[0])
+        y = np.linspace(xy0[1], xy1[1], nxy[1])
+        dxy = [x[1] - x[0], y[1] - y[0]]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = X ** 3 * Y**3
+        f_diffed_e = 6 * X**2 * Y**3
+        diff_op = fd.Coefficient(X) * fd.FinDiff(dxy, [0,0])
+        f_diffed = diff_op(f)
+        self._assertAlmostEqual(f_diffed, f_diffed_e)
+
+
     def _assertAlmostEqual(self, f1, f2, tol=7):
         err = np.max(np.abs(f1-f2))
         self.assertAlmostEqual(0, err, tol)
