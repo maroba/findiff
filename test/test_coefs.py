@@ -79,6 +79,19 @@ class TestCoefs(unittest.TestCase):
         offs = c["backward"]["offsets"]
         np.testing.assert_array_almost_equal(-np.array([0, 1, 2, 3, 4, 5])[::-1], offs)
 
+    def test_non_uniform(self):
+
+        x = np.linspace(0, 10, 100)
+        dx = x[1] - x[0]
+
+        c_uni = coefficients(deriv=2, acc=2)
+        coefs_uni = c_uni["center"]["coefficients"]/dx**2
+
+        c_non_uni = coefficients(deriv=2, acc=2, coords=x, loc=5)
+        coefs_non_uni = c_non_uni["center"]["coefficients"]
+
+        np.testing.assert_array_almost_equal(coefs_non_uni, coefs_uni)
+
 
 if __name__ == '__main__':
     unittest.main()

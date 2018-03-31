@@ -2,8 +2,11 @@ import math
 import numpy as np
 
 
-def coefficients(deriv, acc):
-    """Calculates the finite difference coefficients for given derivative order and accuracy order"""
+def coefficients(deriv, acc, coords=None, loc=None):
+    """Calculates the finite difference coefficients for given derivative order and accuracy order
+    
+        For coords = None, it assumes an equidistant grid, otherwise a non-equidistant one
+    """
 
     if acc % 2 == 1:
         acc += 1
@@ -15,7 +18,12 @@ def coefficients(deriv, acc):
 
     # Determine central coefficients
 
-    matrix = _build_matrix(num_side, num_side, deriv)
+    if coords is None:
+        matrix = _build_matrix(num_side, num_side, deriv)
+    else:
+        matrix = _build_matrix_non_uniform(num_side, num_side, coords, loc)
+
+
     rhs = _build_rhs(num_side, num_side, deriv)
 
     ret["center"] = {
@@ -30,7 +38,11 @@ def coefficients(deriv, acc):
     else:
         num_coef = num_central
 
-    matrix = _build_matrix(0, num_coef - 1, deriv)
+    if coords is None:
+        matrix = _build_matrix(0, num_coef - 1, deriv)
+    else:
+        matrix = _build_matrix_non_uniform(0, num_coef - 1, coords, loc)
+
     rhs = _build_rhs(0, num_coef - 1, deriv)
 
     ret["forward"] = {
@@ -40,7 +52,11 @@ def coefficients(deriv, acc):
 
     # Determine backward coefficients
 
-    matrix = _build_matrix(num_coef - 1, 0, deriv)
+    if coords is None:
+        matrix = _build_matrix(num_coef - 1, 0, deriv)
+    else:
+        matrix = _build_matrix_non_uniform(num_coef - 1, 0, coords, loc)
+
     rhs = _build_rhs(num_coef - 1, 0, deriv)
 
     ret["backward"] = {
@@ -65,3 +81,12 @@ def _build_rhs(p, q, deriv):
     b = [0 for _ in range(p+q+1)]
     b[deriv] = math.factorial(deriv)
     return np.array(b)
+
+
+def _build_matrix_non_uniform(p, q, coords, k):
+    """Constructs the equation matrix for the finite difference coefficients of non-uniform grids at location k"""
+    A = [[1] * (p+q+1)]
+    for i in range(1, p + q + 1):
+        line = [(coords[k+j] - coords[k])**i for j in range(-p, q+1)]
+        A.append(line)
+    return np.array(A)
