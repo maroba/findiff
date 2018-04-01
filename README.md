@@ -4,9 +4,13 @@
 A Python package for finite difference numerical derivatives in
 any number of dimensions. 
 
-_findiff_ can handle not only arbitrary dimensions,
-but also any desired accuracy order. It also allows for the creation of
-general differential operators with constant and variable coefficients.
+## Features ##
+
+* Differentiate numpy arrays of any number of dimensios along any axis
+* Partial derivatives of any desired order
+* Can handle uniform and non-uniform grids
+* Accuracy order can be specified
+* Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
 
 ## Installation
 
