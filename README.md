@@ -6,7 +6,7 @@ any number of dimensions.
 
 ## Features ##
 
-* Differentiate numpy arrays of any number of dimensios along any axis
+* Differentiate arrays of any number of dimensions along any axis
 * Partial derivatives of any desired order
 * Can handle uniform and non-uniform grids
 * Accuracy order can be specified
