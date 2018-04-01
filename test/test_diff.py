@@ -232,10 +232,34 @@ class TestFinDiff(unittest.TestCase):
         x = np.r_[np.arange(0, 4, 0.005), np.arange(4, 10, 1)]
         f = np.exp(-x**2)
 
-        d_dx = fd.diff.BasicFinDiff(x[1]-x[0], [0], acc=2)
+        d_dx = fd.diff.BasicFinDiffNonUniform(coords=[x], dims=[0], acc=2)
         fx = d_dx(f)
-        fxe = - 2* x * np.exp(-x**2)
+        fxe = - 2 * x * np.exp(-x**2)
         self._assertAlmostEqual(fx, fxe, 4)
+
+    def test_BasicFinDiffNonUni_2d(self):
+        x = np.r_[np.arange(0, 4, 0.005), np.arange(4, 10, 1)]
+        y = np.r_[np.arange(0, 4, 0.005), np.arange(4, 10, 1)]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = np.exp(-X**2-Y**2)
+
+        d_dx = fd.diff.BasicFinDiffNonUniform(coords=[x, y], dims=[0], acc=2)
+        fx = d_dx(f)
+        fxe = - 2 * X * np.exp(-X**2-Y**2)
+        self._assertAlmostEqual(fx, fxe, 4)
+
+    def test_BasicFinDiffNonUni_3d(self):
+        x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+        y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+        z = np.r_[np.arange(0, 4.5, 0.05), np.arange(4.5, 10, 1)]
+        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+        f = np.exp(-X**2-Y**2-Z**2)
+
+        d_dy = fd.diff.BasicFinDiffNonUniform(coords=[x, y, z], dims=[1], acc=4)
+        fy = d_dy(f)
+        fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
+        self._assertAlmostEqual(fy, fye, 4)
+
 
     def _assertAlmostEqual(self, f1, f2, tol=7):
         err = np.max(np.abs(f1-f2))

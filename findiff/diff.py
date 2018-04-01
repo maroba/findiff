@@ -210,12 +210,18 @@ def _diff_general_non_uni(y, coords, dim, coefs):
 
     yd = np.zeros_like(y)
 
+    ndims = len(y.shape)
+    multi_slice = [slice(None, None)] * ndims
+    ref_multi_slice = [slice(None, None)] * ndims
+
     for i, x in enumerate(coords[dim]):
         weights = coefs[i]["coefficients"]
         offsets = coefs[i]["offsets"]
+        ref_multi_slice[dim] = i
 
         for off, w in zip(offsets, weights):
-            yd[i] += w * y[i + off]
+            multi_slice[dim] = i + off
+            yd[ref_multi_slice] += w * y[multi_slice]
 
     return yd
 
