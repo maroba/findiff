@@ -2,9 +2,19 @@ from setuptools import setup
 
 setup(
     name='findiff',
-    version='0.2.0',
+    version='0.3.0',
     description='A Python package for finite difference derivatives in any number of dimensions.',
-    long_description='A Python package for finite difference derivatives in any number of dimensions.',
+    long_description="""A Python package for finite difference derivatives in any number of dimensions.
+    
+    Features: 
+
+        * Differentiate arrays of any number of dimensions along any axis
+        * Partial derivatives of any desired order
+        * Can handle uniform and non-uniform grids
+        * Accuracy order can be specified
+        * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
+
+    """,
 
     license='MIT',
     url='https://github.com/maroba/findiff',
