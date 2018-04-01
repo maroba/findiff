@@ -81,6 +81,8 @@ _findiff_ can also handle non-uniform grids. The only difference is that instead
 the grid spacing to the `FinDiff` constructor, you give it the coordinates:
 
 ```python
+import numpy as np
+
 # A non-uniform 3D grid:
 x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
 y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
