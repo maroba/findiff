@@ -22,7 +22,7 @@ pip install findiff
 
 ## Quickstart
 
-### Derivatives
+### Derivatives on uniform grids
 
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
 want to differentiate four-dimensional function given as a 4D array.
@@ -74,6 +74,27 @@ More examples, including linear combinations with variable coefficients can be f
 The package can work with any number of dimensions, the generalization
 of usage is straight forward. The only limit is memory and CPU speed.
 
+### Derivatives on non-uniform grids
+
+_findiff_ can also handle non-uniform grids. The only difference is that instead of giving 
+the grid spacing to the `FinDiff` constructor, you give it the coordinates:
+
+```python
+# A non-uniform 3D grid:
+x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+z = np.r_[np.arange(0, 4.5, 0.05), np.arange(4.5, 10, 1)]
+X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+
+# Some function to differentiate
+f = np.exp(-X**2-Y**2-Z**2)
+
+# Define the partial derivative with respect to y, e.g.
+d_dy = fd.diff.FinDiff(coords=[x, y, z], dims=[1])
+
+# Apply it to f
+fy = d_dy(f)
+```
 
 ### Accuracy Control
 
