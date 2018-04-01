@@ -10,7 +10,7 @@ class TestFinDiff(unittest.TestCase):
         h = x[1] - x[0]
         y = x ** 2
         y1e = 2 * x
-        df = fd.FinDiff(h, dims=[0], acc=2)
+        df = fd.FinDiff(h=h, dims=[0], acc=2)
         y1 = df(y)
         err = np.max(np.abs(y1e - y1))
         self.assertAlmostEqual(0, err)
@@ -138,8 +138,8 @@ class TestFinDiff(unittest.TestCase):
 
     def test_FinDiff_1d(self):
         h, f, fxe, fxxe = self._prep_1d_func()
-        d_dx = fd.FinDiff(h, dims=[0], acc=4)
-        d2_dx2 = fd.FinDiff(h, dims=[0, 0], acc=4)
+        d_dx = fd.FinDiff(h=h, dims=[0], acc=4)
+        d2_dx2 = fd.FinDiff(h=h, dims=[0, 0], acc=4)
         fx = d_dx(f)
         self._assertAlmostEqual(fx, fxe)
         fxx = d2_dx2(f)
@@ -156,9 +156,9 @@ class TestFinDiff(unittest.TestCase):
         f = X ** 3 * Y ** 3
         fxe = 3 * X ** 2 * Y ** 3
         fyye = 6 * X ** 3 * Y
-        d_dx = fd.FinDiff(dxy, dims=[0], acc=4)
+        d_dx = fd.FinDiff(h=dxy, dims=[0], acc=4)
         fx = d_dx(f)
-        d2_dy2 = fd.FinDiff(dxy, dims=[1, 1], acc=4)
+        d2_dy2 = fd.FinDiff(h=dxy, dims=[1, 1], acc=4)
         fyy = d2_dy2(f)
         self._assertAlmostEqual(fxe, fx)
         self._assertAlmostEqual(fyye, fyy)
@@ -187,7 +187,7 @@ class TestFinDiff(unittest.TestCase):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = X ** 3 * Y ** 3
         lap_f_e = 6 * X * Y ** 3 + 6 * X ** 3 * Y
-        lap = fd.FinDiff(dxy, dims=[0, 0]) + fd.FinDiff(dxy, dims=[1,1])
+        lap = fd.FinDiff(h=dxy, dims=[0, 0]) + fd.FinDiff(h=dxy, dims=[1,1])
         lap_f = lap(f)
         self._assertAlmostEqual(lap_f_e, lap_f)
 
@@ -201,7 +201,7 @@ class TestFinDiff(unittest.TestCase):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = X ** 3 * Y**3
         f_diffed_e = 12 * X * Y**3
-        diff_op = 2 * fd.FinDiff(dxy, [0,0])
+        diff_op = 2 * fd.FinDiff(h=dxy, dims=[0,0])
         f_diffed = diff_op(f)
         self._assertAlmostEqual(f_diffed, f_diffed_e)
 
@@ -215,7 +215,7 @@ class TestFinDiff(unittest.TestCase):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = X ** 3 * Y**3
         f_diffed_e = 6 * X**2 * Y**3
-        diff_op = fd.Coefficient(X) * fd.FinDiff(dxy, [0,0])
+        diff_op = fd.Coefficient(X) * fd.FinDiff(h=dxy, dims=[0,0])
         f_diffed = diff_op(f)
         self._assertAlmostEqual(f_diffed, f_diffed_e)
 
@@ -248,6 +248,17 @@ class TestFinDiff(unittest.TestCase):
         fxe = - 2 * X * np.exp(-X**2-Y**2)
         self._assertAlmostEqual(fx, fxe, 4)
 
+    def test_FinDiff_NonUni_2d(self):
+        x = np.r_[np.arange(0, 4, 0.005), np.arange(4, 10, 1)]
+        y = np.r_[np.arange(0, 4, 0.005), np.arange(4, 10, 1)]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = np.exp(-X**2-Y**2)
+
+        d_dx = fd.FinDiff(coords=[x, y], dims=[0], acc=2)
+        fx = d_dx(f)
+        fxe = - 2 * X * np.exp(-X**2-Y**2)
+        self._assertAlmostEqual(fx, fxe, 4)
+
     def test_BasicFinDiffNonUni_3d(self):
         x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
         y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
@@ -259,7 +270,6 @@ class TestFinDiff(unittest.TestCase):
         fy = d_dy(f)
         fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
         self._assertAlmostEqual(fy, fye, 4)
-
 
     def _assertAlmostEqual(self, f1, f2, tol=7):
         err = np.max(np.abs(f1-f2))

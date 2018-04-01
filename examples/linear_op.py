@@ -24,7 +24,7 @@ def example_linear_operator_constant_coefs():
     h, f, _ = initialize_3d()
 
     # Create some linear differential operator with constant coefficients:
-    diff_op = Coefficient(2) * FinDiff(h, dims=[0]) + Coefficient(-3) * FinDiff(h, dims=[1,1])
+    diff_op = Coefficient(2) * FinDiff(h=h, dims=[0]) + Coefficient(-3) * FinDiff(h=h, dims=[1,1])
 
     # Apply it
     result = diff_op(f)
@@ -38,7 +38,7 @@ def example_linear_operator_variable_coefs():
     h, f, [X, Y, Z] = initialize_3d()
 
     # Create some linear differential operator with variable coefficients:
-    diff_op = Coefficient(2*X) * FinDiff(h, dims=[0]) + Coefficient(-3*Y**2) * FinDiff(h, dims=[1,1])
+    diff_op = Coefficient(2*X) * FinDiff(h=h, dims=[0]) + Coefficient(-3*Y**2) * FinDiff(h=h, dims=[1,1])
 
     # Apply it
     result = diff_op(f)

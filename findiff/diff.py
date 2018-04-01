@@ -2,11 +2,127 @@ import numpy as np
 from findiff.coefs import coefficients, coefficients_non_uni
 
 
+class FinDiff(object):
+    """Wrapper class for finite difference linear differential operators in any number of dimensions
+       on uniform and non-uniform grids."""
+
+    def __init__(self, dims=[0], **kwargs):
+        """Constructor for FinDiff class
+        
+            Parameters:
+            -----------
+            
+            dims        list / array-like
+                        A list with the dimensions along which to take derivatives. Repetition means
+                        higher derivative. For instance, dims=[0] means first derivative along 0-th
+                        axis, dims=[0,0,1] means third partial derivative, twice along 0-th axis, once
+                        along 1st axis
+            
+            **kwargs:
+            
+                h       list / array-like
+                        A list of real numbers with the grid spacings along all the axes in case
+                        of uniform grids. The length of the list signifies the dimension, i.e. number
+                        of independent variables. 
+                
+                coords  list / array-like
+                        A list of 1D-arrays of real numbers with the coordinate values along each axis.
+                        This signifies that you are using a non-uniform grid.
+                        
+                acc     even integer
+                        The desired accuracy order. Default is acc=2."""
+
+        if "h" in kwargs:   # we have a uniform grid
+            if "coords" in kwargs:
+                raise Exception("Either specify h or coords, not both.")
+            h = kwargs["h"]
+            uniform = True
+        elif "coords" in kwargs:  # we have a non-uniform grid
+            if "h" in kwargs:
+                raise Exception("Either specify h or coords, not both.")
+            coords = kwargs["coords"]
+            uniform = False
+        else:
+            if "empty" not in kwargs:
+                raise Exception("Neither h nor coords specified.")
+
+        if "acc" in kwargs:
+            acc = kwargs["acc"]
+        else:
+            acc = 2
+
+        if "empty" in kwargs and kwargs["empty"]:
+            self._basic_ops = []
+            self._coefs = []
+        else:
+            if uniform:
+                self._basic_ops = [BasicFinDiff(h, dims, acc)]
+            else:
+                self._basic_ops = [BasicFinDiffNonUniform(coords, dims, acc)]
+
+            self._coefs = [Coefficient(1)]
+
+    def __call__(self, y):
+        """Applies the linear differential operator to y
+        
+            Parameters:
+            -----------
+            
+                y       ndarray
+                        The array to differentiate
+                        
+            Returns:
+            --------
+            
+                An ndarray with the derivative. It has the same shape as y. """
+
+        result = np.zeros_like(y)
+
+        for c, op in zip(self._coefs, self._basic_ops):
+
+            if isinstance(c.value, np.ndarray) or c.value != 1:
+                result += c.value * op(y)
+            else:
+                result += op(y)
+
+        return result
+
+    def __add__(self, other):
+        new_op = FinDiff(empty=True)
+        new_op._basic_ops.extend(self._basic_ops)
+        new_op._coefs.extend(self._coefs)
+        new_op._basic_ops.extend(other._basic_ops)
+        new_op._coefs.extend(other._coefs)
+        return new_op
+
+    def __mul__(self, other):
+
+        if not isinstance(other, Coefficient):
+            other = Coefficient(other)
+
+        return other * self
+
+    def __rmul__(self, other):
+
+        if not isinstance(other, Coefficient):
+            other = Coefficient(other)
+
+        new_op = FinDiff(empty=True)
+        new_op._basic_ops.extend(self._basic_ops)
+        new_op._coefs.extend(self._coefs)
+
+        for i in range(len(new_op._coefs)):
+            new_op._coefs[i].value *= other.value
+
+        return new_op
+
+
 class BasicFinDiff(object):
-    """Finite difference representation of a derivative of any order, any accuracy in any dimension"""
+    """Finite difference derivative of any order, any accuracy in any dimension for uniform grids 
+    """
 
     def __init__(self, h=[1.], dims=[0], acc=2):
-        """Constructor for Finite Difference operator
+        """Constructor for Finite Difference operator on _uniform_ grids
            
            Parameters:
            ----------
@@ -18,6 +134,7 @@ class BasicFinDiff(object):
            acc      int
                     The accuracy order of the finite difference scheme.
                             
+           *Note*: You can use this class, but it is usually better to use the wrapper class FinDiff 
                             
            Example:
            --------
@@ -65,6 +182,8 @@ class BasicFinDiff(object):
 
 
 class BasicFinDiffNonUniform(object):
+    """Finite difference derivative of any order, any accuracy in any dimension for uniform grids 
+    """
 
     def __init__(self, coords, dims=[0], acc=2):
 
@@ -104,60 +223,6 @@ class BasicFinDiffNonUniform(object):
         return yd
 
 
-class FinDiff(object):
-
-    def __init__(self, h=[1.], dims=[0], acc=2, **kwargs):
-
-        if "empty" in kwargs and kwargs["empty"]:
-            self._basic_ops = []
-            self._coefs = []
-        else:
-            self._basic_ops = [BasicFinDiff(h, dims, acc)]
-            self._coefs = [Coefficient(1)]
-
-    def __call__(self, y):
-
-        result = np.zeros_like(y)
-
-        for c, op in zip(self._coefs, self._basic_ops):
-
-            if isinstance(c.value, np.ndarray) or c.value != 1:
-                result += c.value * op(y)
-            else:
-                result += op(y)
-
-        return result
-
-    def __add__(self, other):
-        new_op = FinDiff(empty=True)
-        new_op._basic_ops.extend(self._basic_ops)
-        new_op._coefs.extend(self._coefs)
-        new_op._basic_ops.extend(other._basic_ops)
-        new_op._coefs.extend(other._coefs)
-        return new_op
-
-    def __mul__(self, other):
-
-        if not isinstance(other, Coefficient):
-            other = Coefficient(other)
-
-        return other * self
-
-    def __rmul__(self, other):
-
-        if not isinstance(other, Coefficient):
-            other = Coefficient(other)
-
-        new_op = FinDiff(empty=True)
-        new_op._basic_ops.extend(self._basic_ops)
-        new_op._coefs.extend(self._coefs)
-
-        for i in range(len(new_op._coefs)):
-            new_op._coefs[i].value *= other.value
-
-        return new_op
-
-
 class Coefficient(object):
 
     def __init__(self, value):
@@ -181,7 +246,7 @@ class Laplacian(object):
 
         h = _wrap_in_array(h)
 
-        self._parts = [FinDiff(h, dims=[k, k], acc=acc) for k in range(len(h))]
+        self._parts = [FinDiff(h=h, dims=[k, k], acc=acc) for k in range(len(h))]
 
     def __call__(self, f):
         """Applies the Laplacian to the array f
