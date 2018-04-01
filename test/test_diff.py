@@ -219,6 +219,14 @@ class TestFinDiff(unittest.TestCase):
         f_diffed = diff_op(f)
         self._assertAlmostEqual(f_diffed, f_diffed_e)
 
+    def test_BasicFinDiffNonUni_equi(self):
+        x = np.linspace(-3, 3, 100)
+        f = x**2
+
+        d_dx = fd.diff.BasicFinDiffNonUniform(coords=[x], dims=[0])
+        fx = d_dx(f)
+        fxe = 2*x
+        self._assertAlmostEqual(fx, fxe)
 
     def _assertAlmostEqual(self, f1, f2, tol=7):
         err = np.max(np.abs(f1-f2))

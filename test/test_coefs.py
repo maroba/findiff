@@ -1,5 +1,6 @@
 import unittest
 from findiff import coefficients
+from findiff.coefs import coefficients_non_uni
 import numpy as np
 
 
@@ -87,8 +88,8 @@ class TestCoefs(unittest.TestCase):
         c_uni = coefficients(deriv=2, acc=2)
         coefs_uni = c_uni["center"]["coefficients"]/dx**2
 
-        c_non_uni = coefficients(deriv=2, acc=2, coords=x, loc=5)
-        coefs_non_uni = c_non_uni["center"]["coefficients"]
+        c_non_uni = coefficients_non_uni(deriv=2, acc=2, coords=x, idx=5)
+        coefs_non_uni = c_non_uni["coefficients"]
 
         np.testing.assert_array_almost_equal(coefs_non_uni, coefs_uni)
 

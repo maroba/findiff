@@ -1,5 +1,5 @@
 import numpy as np
-from findiff.coefs import coefficients
+from findiff.coefs import coefficients, coefficients_non_uni
 
 
 class BasicFinDiff(object):
@@ -32,22 +32,21 @@ class BasicFinDiff(object):
                 
         """
 
-        if not hasattr(h, "__len__"):
-            self._h = np.array([h])
-        else:
-            self._h = np.array(h)
-
-        if not hasattr(dims, "__len__"):
-            self._dims = np.array([dims])
-        else:
-            self._dims = np.array(dims)
-
+        self._h = _wrap_in_array(h)
+        self._dims = _wrap_in_array(dims)
         self._acc = acc
+
         ndims = len(self._h)
         self._derivs = [np.sum(self._dims == i) for i in range(ndims)]
-        self._coefs = []
-        for i in range(ndims):
-            self._coefs.append(coefficients(self._derivs[i], acc))
+        self._coefs = self._det_coefs()
+
+    def _det_coefs(self):
+        coefs = []
+
+        for i in range(len(self._h)):
+            coefs.append(coefficients(self._derivs[i], self._acc))
+
+        return coefs
 
     def __call__(self, y):
         """Applies the finite difference operator to a function y"""
@@ -61,6 +60,46 @@ class BasicFinDiff(object):
         for i in range(ndims):
             if self._derivs[i] > 0:
                 yd = _diff_general(yd, self._h, self._derivs[i], i, self._acc, self._coefs[i])
+
+        return yd
+
+
+class BasicFinDiffNonUniform(object):
+
+    def __init__(self, coords, dims=[0], acc=2):
+
+        self._coords = np.array(coords)
+        self._dims = _wrap_in_array(dims)
+        self._acc = acc
+
+        ndims = len(self._coords)
+        self._derivs = [np.sum(self._dims == i) for i in range(ndims)]
+        self._coefs = self._det_coefs()
+
+    def _det_coefs(self):
+        coefs = []
+
+        ndims = len(self._coords)
+
+        for idim in range(ndims):
+            c = []
+            for i in range(len(self._coords[idim])):
+                c.append(coefficients_non_uni(self._derivs[idim], self._acc, self._coords[idim], i))
+            coefs.append(c)
+
+        return coefs
+
+    def __call__(self, y):
+
+        ndims = len(y.shape)
+        if ndims != len(self._coords):
+            raise IndexError("y and h have different dimensions")
+
+        yd = np.array(y)
+
+        for idim in range(ndims):
+            if self._derivs[idim] > 0:
+                yd = _diff_general_non_uni(yd, self._coords, idim, self._coefs[idim])
 
         return yd
 
@@ -140,10 +179,7 @@ class Laplacian(object):
                     The accuracy order of the finite difference scheme        
         """
 
-        if not hasattr(h, "__len__"):
-            h = np.array([h])
-        else:
-            h = np.array(h)
+        h = _wrap_in_array(h)
 
         self._parts = [FinDiff(h, dims=[k, k], acc=acc) for k in range(len(h))]
 
@@ -168,6 +204,20 @@ class Laplacian(object):
             laplace_f += part(f)
 
         return laplace_f
+
+
+def _diff_general_non_uni(y, coords, dim, coefs):
+
+    yd = np.zeros_like(y)
+
+    for i, x in enumerate(coords[dim]):
+        weights = coefs[i]["coefficients"]
+        offsets = coefs[i]["offsets"]
+
+        for off, w in zip(offsets, weights):
+            yd[i] += w * y[i + off]
+
+    return yd
 
 
 def _diff_general(y, h, deriv, dim, acc, coefs=None):
@@ -234,3 +284,10 @@ def _shift_slice(sl, off, max_index):
 
     return slice(sl.start + off, sl.stop + off, sl.step)
 
+
+def _wrap_in_array(val):
+
+    if hasattr(val, "__len__"):
+        return np.array(val)
+
+    return np.array([val])
