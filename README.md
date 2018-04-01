@@ -82,6 +82,7 @@ the grid spacing to the `FinDiff` constructor, you give it the coordinates:
 
 ```python
 import numpy as np
+from findiff import FinDiff
 
 # A non-uniform 3D grid:
 x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
@@ -93,7 +94,7 @@ X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
 f = np.exp(-X**2-Y**2-Z**2)
 
 # Define the partial derivative with respect to y, e.g.
-d_dy = fd.diff.FinDiff(coords=[x, y, z], dims=[1])
+d_dy = FinDiff(coords=[x, y, z], dims=[1])
 
 # Apply it to f
 fy = d_dy(f)
