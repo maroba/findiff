@@ -247,6 +247,9 @@ class TestFinDiffNonUniform(unittest.TestCase, TestUtilities):
         fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
         self._assertAlmostEqual(fy, fye, 4)
 
+    def test_non_uniform_acc_6(self):
+        pass
+
 
 class TestLinearCombinations(unittest.TestCase, TestUtilities):
 
