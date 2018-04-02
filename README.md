@@ -142,3 +142,4 @@ Here is a collection of further examples using the _findiff_ package:
 
 * [Basic usage](examples/basic.py)
 * [Linear operators](examples/linear_op.py)
+* [Non-uniform grids](examples/non-uniform-grids.ipynb)
