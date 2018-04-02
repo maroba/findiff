@@ -3,7 +3,22 @@ import unittest
 import numpy as np
 
 
-class TestFinDiff(unittest.TestCase):
+class TestUtilities(object):
+
+    def _prep_1d_func(self, x0=-5, x1=5, nx=100):
+        x = np.linspace(x0, x1, nx)
+        dx = x[1] - x[0]
+        f = x**3
+        fxe = 3*x**2
+        fxxe = 6*x
+        return dx, f, fxe, fxxe
+
+    def _assertAlmostEqual(self, f1, f2, tol=7):
+        err = np.max(np.abs(f1-f2))
+        self.assertAlmostEqual(0, err, tol)
+
+
+class TestFinDiffUniform(unittest.TestCase, TestUtilities):
 
     def test_diff_1d_ord1_acc2(self):
         x = np.linspace(-3, 3, 50)
@@ -177,47 +192,8 @@ class TestFinDiff(unittest.TestCase):
         lap_f = lap(f)
         self._assertAlmostEqual(lap_f_e, lap_f)
 
-    def test_addition_of_operators(self):
-        xy0 = [-5, -5]
-        xy1 = [5, 5]
-        nxy = [100, 100]
-        x = np.linspace(xy0[0], xy1[0], nxy[0])
-        y = np.linspace(xy0[1], xy1[1], nxy[1])
-        dxy = [x[1] - x[0], y[1] - y[0]]
-        X, Y = np.meshgrid(x, y, indexing='ij')
-        f = X ** 3 * Y ** 3
-        lap_f_e = 6 * X * Y ** 3 + 6 * X ** 3 * Y
-        lap = fd.FinDiff(h=dxy, dims=[0, 0]) + fd.FinDiff(h=dxy, dims=[1,1])
-        lap_f = lap(f)
-        self._assertAlmostEqual(lap_f_e, lap_f)
 
-    def test_multiplication_with_constants(self):
-        xy0 = [-5, -5]
-        xy1 = [5, 5]
-        nxy = [100, 100]
-        x = np.linspace(xy0[0], xy1[0], nxy[0])
-        y = np.linspace(xy0[1], xy1[1], nxy[1])
-        dxy = [x[1] - x[0], y[1] - y[0]]
-        X, Y = np.meshgrid(x, y, indexing='ij')
-        f = X ** 3 * Y**3
-        f_diffed_e = 12 * X * Y**3
-        diff_op = 2 * fd.FinDiff(h=dxy, dims=[0,0])
-        f_diffed = diff_op(f)
-        self._assertAlmostEqual(f_diffed, f_diffed_e)
-
-    def test_multiplication_with_variables(self):
-        xy0 = [-5, -5]
-        xy1 = [5, 5]
-        nxy = [100, 100]
-        x = np.linspace(xy0[0], xy1[0], nxy[0])
-        y = np.linspace(xy0[1], xy1[1], nxy[1])
-        dxy = [x[1] - x[0], y[1] - y[0]]
-        X, Y = np.meshgrid(x, y, indexing='ij')
-        f = X ** 3 * Y**3
-        f_diffed_e = 6 * X**2 * Y**3
-        diff_op = fd.Coefficient(X) * fd.FinDiff(h=dxy, dims=[0,0])
-        f_diffed = diff_op(f)
-        self._assertAlmostEqual(f_diffed, f_diffed_e)
+class TestFinDiffNonUniform(unittest.TestCase, TestUtilities):
 
     def test_BasicFinDiffNonUni_equi(self):
         x = np.linspace(-3, 3, 100)
@@ -271,20 +247,50 @@ class TestFinDiff(unittest.TestCase):
         fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
         self._assertAlmostEqual(fy, fye, 4)
 
-    def _prep_1d_func(self, x0=-5, x1=5, nx=100):
-        x = np.linspace(x0, x1, nx)
-        dx = x[1] - x[0]
-        f = x**3
-        fxe = 3*x**2
-        fxxe = 6*x
-        return dx, f, fxe, fxxe
 
-    def _assertAlmostEqual(self, f1, f2, tol=7):
-        err = np.max(np.abs(f1-f2))
-        self.assertAlmostEqual(0, err, tol)
+class TestLinearCombinations(unittest.TestCase, TestUtilities):
 
+    def test_addition_of_operators(self):
+        xy0 = [-5, -5]
+        xy1 = [5, 5]
+        nxy = [100, 100]
+        x = np.linspace(xy0[0], xy1[0], nxy[0])
+        y = np.linspace(xy0[1], xy1[1], nxy[1])
+        dxy = [x[1] - x[0], y[1] - y[0]]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = X ** 3 * Y ** 3
+        lap_f_e = 6 * X * Y ** 3 + 6 * X ** 3 * Y
+        lap = fd.FinDiff(h=dxy, dims=[0, 0]) + fd.FinDiff(h=dxy, dims=[1,1])
+        lap_f = lap(f)
+        self._assertAlmostEqual(lap_f_e, lap_f)
 
-class TestLinearCombinations(unittest.TestCase):
+    def test_multiplication_with_constants(self):
+        xy0 = [-5, -5]
+        xy1 = [5, 5]
+        nxy = [100, 100]
+        x = np.linspace(xy0[0], xy1[0], nxy[0])
+        y = np.linspace(xy0[1], xy1[1], nxy[1])
+        dxy = [x[1] - x[0], y[1] - y[0]]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = X ** 3 * Y**3
+        f_diffed_e = 12 * X * Y**3
+        diff_op = 2 * fd.FinDiff(h=dxy, dims=[0,0])
+        f_diffed = diff_op(f)
+        self._assertAlmostEqual(f_diffed, f_diffed_e)
+
+    def test_multiplication_with_variables(self):
+        xy0 = [-5, -5]
+        xy1 = [5, 5]
+        nxy = [100, 100]
+        x = np.linspace(xy0[0], xy1[0], nxy[0])
+        y = np.linspace(xy0[1], xy1[1], nxy[1])
+        dxy = [x[1] - x[0], y[1] - y[0]]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = X ** 3 * Y**3
+        f_diffed_e = 6 * X**2 * Y**3
+        diff_op = fd.Coefficient(X) * fd.FinDiff(h=dxy, dims=[0,0])
+        f_diffed = diff_op(f)
+        self._assertAlmostEqual(f_diffed, f_diffed_e)
 
     def test_assert_cannot_add_on_incomp_uni_grids(self):
 
