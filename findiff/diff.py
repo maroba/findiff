@@ -172,6 +172,8 @@ class BasicFinDiff(object):
         self._coefs = self._det_coefs()
 
     def _det_coefs(self):
+        """Calculates the finite difference coefficients for the requested partial derivatives"""
+
         coefs = []
 
         for i in range(len(self._h)):
@@ -210,6 +212,8 @@ class BasicFinDiffNonUniform(object):
         self._coefs = self._det_coefs()
 
     def _det_coefs(self):
+        """Calculates the finite difference coefficients for the requested partial derivatives"""
+
         coefs = []
 
         ndims = len(self._coords)
@@ -238,6 +242,8 @@ class BasicFinDiffNonUniform(object):
 
 
 class Coefficient(object):
+    """Encapsulates a constant (number) or variable (coordinate array) value to multiply with a linear operator
+    """
 
     def __init__(self, value):
         self.value = value
@@ -286,6 +292,7 @@ class Laplacian(object):
 
 
 def _diff_general_non_uni(y, coords, dim, coefs):
+    """The core function to take a partial derivative on a non-uniform grid"""
 
     yd = np.zeros_like(y)
 
@@ -306,6 +313,8 @@ def _diff_general_non_uni(y, coords, dim, coefs):
 
 
 def _diff_general(y, h, deriv, dim, acc, coefs=None):
+    """The core function to take a partial derivative on a uniform grid.
+    """
 
     if coefs is None:
         coefs = coefficients(deriv, acc)
