@@ -36,15 +36,16 @@ class FinDiff(object):
             if "coords" in kwargs:
                 raise Exception("Either specify h or coords, not both.")
             h = kwargs["h"]
-            uniform = True
+            self.uniform = True
         elif "coords" in kwargs:  # we have a non-uniform grid
             if "h" in kwargs:
                 raise Exception("Either specify h or coords, not both.")
             coords = kwargs["coords"]
-            uniform = False
+            self.uniform = False
         else:
             if "empty" not in kwargs:
                 raise Exception("Neither h nor coords specified.")
+
 
         if "acc" in kwargs:
             acc = kwargs["acc"]
@@ -55,7 +56,7 @@ class FinDiff(object):
             self._basic_ops = []
             self._coefs = []
         else:
-            if uniform:
+            if self.uniform:
                 self._basic_ops = [BasicFinDiff(h, dims, acc)]
             else:
                 self._basic_ops = [BasicFinDiffNonUniform(coords, dims, acc)]
@@ -88,6 +89,10 @@ class FinDiff(object):
         return result
 
     def __add__(self, other):
+
+        if self._grids_are_incompatible(other):
+            raise ValueError("Operators on incompatible grids cannot be added.")
+
         new_op = FinDiff(empty=True)
         new_op._basic_ops.extend(self._basic_ops)
         new_op._coefs.extend(self._coefs)
@@ -115,6 +120,15 @@ class FinDiff(object):
             new_op._coefs[i].value *= other.value
 
         return new_op
+
+    def _grids_are_incompatible(self, other):
+        if self.uniform and other.uniform:
+            return (self._basic_ops[0]._h != other._basic_ops[0]._h).any()
+        if not self.uniform and not other.uniform:
+            coords1 = self._basic_ops[0]._coords
+            coords2 = other._basic_ops[0]._coords
+            return (coords1 != coords2).any()
+        return True
 
 
 class BasicFinDiff(object):

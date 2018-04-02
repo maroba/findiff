@@ -271,10 +271,6 @@ class TestFinDiff(unittest.TestCase):
         fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
         self._assertAlmostEqual(fy, fye, 4)
 
-    def _assertAlmostEqual(self, f1, f2, tol=7):
-        err = np.max(np.abs(f1-f2))
-        self.assertAlmostEqual(0, err, tol)
-
     def _prep_1d_func(self, x0=-5, x1=5, nx=100):
         x = np.linspace(x0, x1, nx)
         dx = x[1] - x[0]
@@ -282,6 +278,39 @@ class TestFinDiff(unittest.TestCase):
         fxe = 3*x**2
         fxxe = 6*x
         return dx, f, fxe, fxxe
+
+    def _assertAlmostEqual(self, f1, f2, tol=7):
+        err = np.max(np.abs(f1-f2))
+        self.assertAlmostEqual(0, err, tol)
+
+
+class TestLinearCombinations(unittest.TestCase):
+
+    def test_assert_cannot_add_on_incomp_uni_grids(self):
+
+        def do_test():
+            xy0 = [-5, -5]
+            xy1 = [5, 5]
+            nxy = [100, 100]
+            x = np.linspace(xy0[0], xy1[0], nxy[0])
+            y = np.linspace(xy0[1], xy1[1], nxy[1])
+            dxy = [x[1] - x[0], y[1] - y[0]]
+            fd.FinDiff(h=dxy, dims=[0, 0]) + fd.FinDiff(h=[1,1], dims=[1, 1])
+
+        self.assertRaises(ValueError, do_test)
+
+    def test_assert_cannot_add_on_uni_and_nonuni_grids(self):
+
+        def do_test():
+            xy0 = [-5, -5]
+            xy1 = [5, 5]
+            nxy = [100, 100]
+            x = np.linspace(xy0[0], xy1[0], nxy[0])
+            y = np.linspace(xy0[1], xy1[1], nxy[1])
+            dxy = [x[1] - x[0], y[1] - y[0]]
+            fd.FinDiff(h=dxy, dims=[0, 0]) + fd.FinDiff(coords=[x,y], dims=[1, 1])
+
+        self.assertRaises(ValueError, do_test)
 
 
 if __name__ == '__main__':
