@@ -3,7 +3,7 @@ from findiff.diff import FinDiff
 from findiff.util import wrap_in_ndarray
 
 
-class Gradient(object):
+class VectorOperator(object):
 
     def __init__(self, **kwargs):
 
@@ -24,8 +24,14 @@ class Gradient(object):
             else:
                 ndims = len(coords)
 
-        self.components = [FinDiff(dims=[k], **kwargs) for k in range(ndims)]
-        self.ndims = len(self.components)
+        self.ndims = ndims
+
+
+class Gradient(VectorOperator):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.components = [FinDiff(dims=[k], **kwargs) for k in range(self.ndims)]
 
     def __call__(self, f):
 
@@ -41,3 +47,25 @@ class Gradient(object):
             result.append(d_dxk(f))
 
         return np.array(result)
+
+
+class Divergence(VectorOperator):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.components = [FinDiff(dims=[k], **kwargs) for k in range(self.ndims)]
+
+    def __call__(self, f):
+
+        if not isinstance(f, np.ndarray) and not isinstance(f, list):
+            raise TypeError("Function to differentiate must be numpy.ndarray or list of numpy.ndarrays")
+
+        if len(f.shape) != self.ndims + 1 and f.shape[0] != self.ndims:
+            raise ValueError("Divergence can only be applied to vector functions of the same dimension")
+
+        result = np.zeros(f.shape[1:])
+
+        for k in range(self.ndims):
+            result += self.components[k](f[k])
+
+        return result
