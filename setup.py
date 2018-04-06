@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='findiff',
-    version='0.3.1',
+    version='0.4.0',
     description='A Python package for finite difference derivatives in any number of dimensions.',
     long_description="""A Python package for finite difference derivatives in any number of dimensions.
     
@@ -10,7 +10,9 @@ setup(
 
         * Differentiate arrays of any number of dimensions along any axis
         * Partial derivatives of any desired order
+        * Standard operators from vector calculus like gradient, divergence and curl
         * Can handle uniform and non-uniform grids
+        * Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
         * Accuracy order can be specified
         * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
 
