@@ -2,7 +2,6 @@ import unittest
 from numpy.testing import assert_array_almost_equal
 import numpy as np
 from findiff.vector import Gradient
-from test_utils import init_mesh
 
 
 class TestGradient(unittest.TestCase):
@@ -26,6 +25,13 @@ class TestGradient(unittest.TestCase):
                      ])
         grad = Gradient(h=h, acc=4)
         self.assertRaises(ValueError, grad, f)
+
+
+def init_mesh(ndims, npoints):
+    axes = [np.linspace(-1, 1, npoints[k]) for k in range(ndims)]
+    h = [x[1] - x[0] for x in axes]
+    mesh = np.meshgrid(*axes, indexing="ij")
+    return axes, h, mesh
 
 
 if __name__ == '__main__':
