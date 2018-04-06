@@ -1,5 +1,5 @@
 import numpy as np
-from findiff.diff import FinDiff
+from findiff.diff import FinDiff, Coefficient
 from findiff.util import wrap_in_ndarray
 
 
@@ -67,5 +67,32 @@ class Divergence(VectorOperator):
 
         for k in range(self.ndims):
             result += self.components[k](f[k])
+
+        return result
+
+
+class Curl(VectorOperator):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        if self.ndims != 3:
+            raise ValueError("Curl operation is only defined in 3 dimensions. {} were given.".format(self.ndims))
+
+        self.components = [FinDiff(dims=[k], **kwargs) for k in range(self.ndims)]
+
+    def __call__(self, f):
+
+        if not isinstance(f, np.ndarray) and not isinstance(f, list):
+            raise TypeError("Function to differentiate must be numpy.ndarray or list of numpy.ndarrays")
+
+        if len(f.shape) != self.ndims + 1 and f.shape[0] != self.ndims:
+            raise ValueError("Curl can only be applied to vector functions of the three dimensions")
+
+        result = np.zeros(f.shape)
+
+        result[0] += self.components[1](f[2]) - self.components[2](f[1])
+        result[1] += self.components[2](f[0]) - self.components[0](f[2])
+        result[2] += self.components[0](f[1]) - self.components[1](f[0])
 
         return result

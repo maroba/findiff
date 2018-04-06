@@ -1,7 +1,7 @@
 import unittest
 from numpy.testing import assert_array_almost_equal
 import numpy as np
-from findiff.vector import Gradient, Divergence
+from findiff.vector import Gradient, Divergence, Curl
 
 
 class TestGradient(unittest.TestCase):
@@ -49,6 +49,33 @@ class TestDivergence(unittest.TestCase):
         div = Divergence(h=[1, 1], acc=4)
         self.assertRaises(ValueError, div, f)
 
+
+class TestCurl(unittest.TestCase):
+
+    def test_curl_on_3d_vector_func(self):
+        axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
+        f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z)] * 3)
+        assert f.shape == (3, 50, 50, 50)
+        curl_f_ex = np.array([
+          np.sin(X) * np.cos(Y) * np.sin(Z) - np.sin(X) * np.sin(Y) * np.cos(Z),
+          np.sin(X) * np.sin(Y) * np.cos(Z) - np.cos(X) * np.sin(Y) * np.sin(Z),
+          np.cos(X) * np.sin(Y) * np.sin(Z) - np.sin(X) * np.cos(Y) * np.sin(Z),
+            ])
+        curl = Curl(h=h, acc=4)
+        curl_f = curl(f)
+        assert_array_almost_equal(curl_f, curl_f_ex)
+
+    def test_curl_for_2d(self):
+        axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
+        f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z)] * 3)
+        assert f.shape == (3, 50, 50, 50)
+        self.assertRaises(ValueError, Curl, h=[1, 1], acc=4)
+
+    def test_curl_for_2d_function(self):
+        axes, h, [X, Y] = init_mesh(2, (50, 50))
+        f = np.array([np.sin(X) * np.sin(Y)] * 2)
+        curl = Curl(h=[1, 1, 1], acc=4)
+        self.assertRaises(ValueError, curl, f)
 
 
 def init_mesh(ndims, npoints):

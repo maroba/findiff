@@ -94,6 +94,7 @@ class FinDiff(object):
             raise ValueError("Operators on incompatible grids cannot be added.")
 
         new_op = FinDiff(empty=True)
+        new_op.uniform = self.uniform
         new_op._basic_ops.extend(self._basic_ops)
         new_op._coefs.extend(self._coefs)
         new_op._basic_ops.extend(other._basic_ops)
@@ -113,6 +114,7 @@ class FinDiff(object):
             other = Coefficient(other)
 
         new_op = FinDiff(empty=True)
+        new_op.uniform = self.uniform
         new_op._basic_ops.extend(self._basic_ops)
         new_op._coefs.extend(self._coefs)
 
