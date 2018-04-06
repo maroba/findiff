@@ -8,6 +8,7 @@ any number of dimensions.
 
 * Differentiate arrays of any number of dimensions along any axis
 * Partial derivatives of any desired order
+* Standard operators from vector calculus like gradient, divergence and curl
 * Can handle uniform and non-uniform grids
 * Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 * Accuracy order can be specified
@@ -143,3 +144,4 @@ Here is a collection of further examples using the _findiff_ package:
 * [Basic usage](examples/basic.py)
 * [Linear operators](examples/linear_op.py)
 * [Non-uniform grids](examples/non-uniform-grids.ipynb)
+
