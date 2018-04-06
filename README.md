@@ -11,6 +11,7 @@ any number of dimensions.
 * Can handle uniform and non-uniform grids
 * Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 * Accuracy order can be specified
+* Fully vectorized for speed
 * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
 
 ## Installation
