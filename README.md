@@ -82,7 +82,7 @@ diff_op = Coefficient(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coefficient(3*Y*Z
 
 # Standard operators like gradient, divergence and curl from vector calculus are also available, for example:
 
-grad = Gradient(h=[dx, dy, dz, du]
+grad = vector.Gradient(h=[dx, dy, dz, du]
 grad_f = grad(f)
 
 ```
