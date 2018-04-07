@@ -37,35 +37,30 @@ from findiff import *
 f = init_your_4d_array_to_differentiate()
 
 # First derivatives
-d_dx = FinDiff(h=[dx, dy, dz, du], dims=[0])
+d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
 
-d_dy = FinDiff(h=[dx, dy, dz, du], dims=[1])
-df_dy = d_dy(f)
-
-d_dz = FinDiff(h=[dx, dy, dz, du], dims=[2])
+d_dz = FinDiff(2, dz)
 df_dz = d_dz(f)
 
-d_du = FinDiff(h=[dx, dy, dz, du], dims=[3])
-df_du = d_du(f)
-
 # Second derivatives
-d2_dx2 = FinDiff(h=[dx, dy, dz, du], dims=[0, 0])
+d2_dx2 = FinDiff(0, dx, 2)
 d2f_dx2 = d2_dx2(f)
 
-d2_dz2 = FinDiff(h=[dx, dy, dz, du], dims=[2, 2])
-d2f_dz2 = d2_dz2(f)
+d2_dy2 = FinDiff(1, dy, 2)
+d2f_dy2 = d2_dy2(f)
+
+d2_dxdz = FinDiff((0, dx), (2, dz))
 
 # 8th derivative with respect to the second coordinate
-d8_dy8 = FinDiff(h=[dx, dy, dz, du], dims=[1]*8)
+d8_dy8 = FinDiff(1, dy, 8)
 d8f_dy8 = d8_dy8(f)
 
 # Mixed 3rd derivatives, twice with respect to x, once w.r.t. z
-d3_dx2dz = FinDiff(h=[dx, dy, dz, du], dims=[0, 0, 2])
+d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
 
 # You can also create linear combinations of differential operators
-h = [dx, dy, dz, du]
-diff_op = Coefficient(2) * FinDiff(h=h, dims=[0, 0, 2] + Coefficient(3) * FinDiff(h=h, dims=[1, 1, 0])
+diff_op = Coefficient(2) * FinDiff((0, dz, 2), (2, dz, 1)) + Coefficient(3) * FinDiff((0, dx, 1), (1, dy, 2))
 
 ```
 
@@ -96,7 +91,7 @@ X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
 f = np.exp(-X**2-Y**2-Z**2)
 
 # Define the partial derivative with respect to y, e.g.
-d_dy = FinDiff(coords=[x, y, z], dims=[1])
+d_dy = FinDiff(1, coords=[x, y, z])
 
 # Apply it to f
 fy = d_dy(f)
@@ -105,10 +100,10 @@ fy = d_dy(f)
 ### Accuracy Control
 
 When constructing an instance of `FinDiff`, you can request the desired accuracy
-order by setting the parameter `acc`. 
+order by setting the keyword argument `acc`. 
 
 ```
-d2_dx2 = findiff.FinDiff(h=[dx, dy], dims=[1, 1], acc=4)
+d2_dx2 = findiff.FinDiff(0, dy, 2, acc=4)
 d2f_dx2 = d2_dx2(f)
 ```
 
