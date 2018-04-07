@@ -253,6 +253,17 @@ class TestFinDiffNonUniform(unittest.TestCase, TestUtilities):
         fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
         self._assertAlmostEqual(fy, fye, 4)
 
+    def test_FinDiff_non_uni_no_coords_given(self):
+        self.assertRaises(ValueError, fd.FinDiff, (0,))
+
+    def test_FinDiff_non_uni_coords_given_not_compatible(self):
+        x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+        y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = X * Y
+        d_dx = fd.FinDiff((0,), coords=[x[:-1], y])
+        self.assertRaises(IndexError, d_dx, f)
+
 
 class TestLinearCombinations(unittest.TestCase, TestUtilities):
 
@@ -284,6 +295,11 @@ class TestLinearCombinations(unittest.TestCase, TestUtilities):
         f_diffed = diff_op(f)
         self._assertAlmostEqual(f_diffed, f_diffed_e)
 
+        diff_op = fd.FinDiff((0, dxy[0], 2)) * 2
+        f_diffed = diff_op(f)
+        self._assertAlmostEqual(f_diffed, f_diffed_e)
+
+
     def test_multiplication_with_variables(self):
         xy0 = [-5, -5]
         xy1 = [5, 5]
@@ -297,6 +313,11 @@ class TestLinearCombinations(unittest.TestCase, TestUtilities):
         diff_op = fd.Coefficient(X) * fd.FinDiff((0, dxy[0], 2))
         f_diffed = diff_op(f)
         self._assertAlmostEqual(f_diffed, f_diffed_e)
+
+        diff_op = fd.FinDiff((0, dxy[0], 2)) * fd.Coefficient(X)
+        f_diffed = diff_op(f)
+        self._assertAlmostEqual(f_diffed, f_diffed_e)
+
 
     def test_assert_cannot_add_on_uni_and_nonuni_grids(self):
 

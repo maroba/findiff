@@ -276,7 +276,7 @@ class BasicFinDiffNonUniform(object):
                         The desired accuracy order. Default is acc=2."""
 
         self.coords = np.array(coords)
-
+        self.shape = [len(self.coords[k]) for k in range(len(self.coords))]
         self.derivs = self._parse_args(args)
 
         kws = set(kwargs.keys())
@@ -362,6 +362,9 @@ class BasicFinDiffNonUniform(object):
         if max_axis >= ndims:
             raise IndexError(\
                 "Requested derivative along axis {}, but max. axis of array is {}".format(max_axis, ndims-1))
+
+        if (y.shape != tuple(self.shape)):
+            raise IndexError("Grid is incompatible with array to differentiate.")
 
         yd = np.array(y)
 
