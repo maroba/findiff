@@ -8,15 +8,15 @@ def example_1d():
     dx, f = initialize_1d()
 
     # First derivative operator with respect to 0-th axis
-    d_dx = FinDiff(h=dx, dims=[0])
+    d_dx = FinDiff(0, dx)
     df_dx = d_dx(f)
 
     # Second derivative operator with respect to 0-th axis
-    d2_dx2 = FinDiff(h=dx, dims=[0,0])
+    d2_dx2 = FinDiff(0, dx, 2)
     d2f_dx2 = d2_dx2(f)
 
     # Sixth derivative operator with respect to 0-th axis
-    d6_dx6 = FinDiff(h=dx, dims=[0]*6)
+    d6_dx6 = FinDiff((0, dx, 6))
     d6f_dx6 = d6_dx6(f)
 
 
@@ -26,23 +26,23 @@ def example_2d():
     [dx, dy], f = initialize_2d()
 
     # Partial derivative with respect to 0-th axis
-    d_dx = FinDiff(h=[dx, dy], dims=[0])
+    d_dx = FinDiff(0, dx)
     df_dx = d_dx(f)
 
     # Partial derivative with respect to 1st axis
-    d_dy = FinDiff(h=[dx, dy], dims=[1])
+    d_dy = FinDiff(1, dy)
     df_dy = d_dy(f)
 
     # Second partial derivative operator with respect to 0-th axis
-    d2_dx2 = FinDiff(h=[dx, dy], dims=[0,0])
+    d2_dx2 = FinDiff(0, dx, 2)
     d2f_dx2 = d2_dx2(f)
 
     # Second partial derivative operator with respect to 1-th axis
-    d2_dy2 = FinDiff(h=[dx, dy], dims=[1,1])
+    d2_dy2 = FinDiff(1, dy, 2)
     d2f_dy2 = d2_dy2(f)
 
     # Second mixed partial derivative operator
-    d2_dxdy = FinDiff(h=[dx, dy], dims=[0,1])
+    d2_dxdy = FinDiff((0, dx), (1, dy))
     d2f_dxdy = d2_dxdy(f)
 
 
@@ -52,19 +52,19 @@ def example_3d():
     [dx, dy, dz], f = initialize_3d()
 
     # Partial derivative with respect to 0-th axis
-    d_dx = FinDiff(h=[dx, dy, dz], dims=[0])
+    d_dx = FinDiff(0, dx)
     df_dx = d_dx(f)
 
     # Partial derivative with respect to 1st axis
-    d_dy = FinDiff(h=[dx, dy, dz], dims=[1])
+    d_dy = FinDiff(1, dy)
     df_dy = d_dy(f)
 
     # Second partial derivative operator with respect to 0-th axis
-    d2_dx2 = FinDiff(h=[dx, dy, dz], dims=[0,0])
+    d2_dx2 = FinDiff(0, dx, 2)
     d2f_dx2 = d2_dx2(f)
 
     # Second partial derivative operator with respect to 2nd axis
-    d2_dz2 = FinDiff(h=[dx, dy, dz], dims=[2,2])
+    d2_dz2 = FinDiff(2, dz, 2)
     d2f_dz2 = d2_dz2(f)
 
 
