@@ -36,23 +36,33 @@ from findiff import *
 # Init the array to differentiate
 f = init_your_4d_array_to_differentiate()
 
+#
 # First derivatives
+#
+# along axis 0:
 d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
 
+# along axis 2:
 d_dz = FinDiff(2, dz)
 df_dz = d_dz(f)
 
+#
 # Second derivatives
+#
+# along axis 0:
 d2_dx2 = FinDiff(0, dx, 2)
 d2f_dx2 = d2_dx2(f)
 
+# along axis 1:
 d2_dy2 = FinDiff(1, dy, 2)
 d2f_dy2 = d2_dy2(f)
 
+# mixed derivative:
 d2_dxdz = FinDiff((0, dx), (2, dz))
+d2_dxdz(f)
 
-# 8th derivative with respect to the second coordinate
+# 8th derivative with respect to axis 1
 d8_dy8 = FinDiff(1, dy, 8)
 d8f_dy8 = d8_dy8(f)
 
@@ -61,6 +71,15 @@ d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
 
 # You can also create linear combinations of differential operators
 diff_op = Coefficient(2) * FinDiff((0, dz, 2), (2, dz, 1)) + Coefficient(3) * FinDiff((0, dx, 1), (1, dy, 2))
+
+# and even use variable coefficients:
+X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
+diff_op = Coefficient(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coefficient(3*Y*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
+
+# Standard operators like gradient, divergence and curl from vector calculus are also available, for example:
+
+grad = Gradient(h=[dx, dy, dz, du]
+grad_f = grad(f)
 
 ```
 
