@@ -23,6 +23,10 @@ Simply use pip:
 pip install findiff
 ```
 
+## Dependencies
+
+_findiff_ uses _numpy_ for fast array processing.
+
 ## Quickstart
 
 ### Derivatives on uniform grids
