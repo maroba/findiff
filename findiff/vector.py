@@ -1,7 +1,7 @@
 """A module for the common differential operators of vector calculus"""
 
 import numpy as np
-from findiff.diff import FinDiff, Coefficient
+from findiff.diff import FinDiff
 from findiff.util import wrap_in_ndarray
 
 
@@ -177,6 +177,7 @@ class Curl(VectorOperator):
         
            Returns the curl, a vector function, i.e. an array of dimension 4.
         """
+
         if not isinstance(f, np.ndarray) and not isinstance(f, list):
             raise TypeError("Function to differentiate must be numpy.ndarray or list of numpy.ndarrays")
 

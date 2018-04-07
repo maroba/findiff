@@ -4,7 +4,10 @@ from findiff.coefs import coefficients, coefficients_non_uni
 
 class FinDiff(object):
     """Wrapper class for finite difference linear differential operators in any number of dimensions
-       on uniform and non-uniform grids."""
+       on uniform and non-uniform grids. 
+       
+       FinDiff objects can be added with other FinDiff objects. They can be multiplied by
+       objects of type Coefficient."""
 
     def __init__(self, *args, **kwargs):
         """Constructor for FinDiff class
@@ -12,22 +15,21 @@ class FinDiff(object):
             Parameters:
             -----------
             
-            dims        list / array-like
-                        A list with the dimensions along which to take derivatives. Repetition means
-                        higher derivative. For instance, dims=[0] means first derivative along 0-th
-                        axis, dims=[0,0,1] means third partial derivative, twice along 0-th axis, once
-                        along 1st axis
+            args        list of tuples of the form 
+            
+                               (axis, spacing, count)     for uniform grids
+                               (axis, count)              for non-uniform grids.
+                               
+                        "axis" is the dimension along which to take derivative. 
+                        "spacing" is the grid spacing of the uniform grid along that axis.                        
+                        "count" is the order of the derivative, which is optional an defaults to 1. 
+                        
+                        If only one tuple is given, you can leave away the tuple parentheses.
             
             **kwargs:
-            
-                h       list / array-like
-                        A list of real numbers with the grid spacings along all the axes in case
-                        of uniform grids. The length of the list signifies the dimension, i.e. number
-                        of independent variables. 
-                
-                coords  list / array-like
-                        A list of 1D-arrays of real numbers with the coordinate values along each axis.
-                        This signifies that you are using a non-uniform grid.
+                            
+                coords  A list of 1D-arrays of real numbers with the coordinate values along each axis.
+                        This must be given to use a non-uniform grid.
                         
                 acc     even integer
                         The desired accuracy order. Default is acc=2."""
@@ -74,7 +76,10 @@ class FinDiff(object):
         return result
 
     def __add__(self, other):
-
+        """Add FinDiff object with other FinDiff object to linear combination.
+        
+           Both FinDiff objects must use the same grid.
+        """
         if self._grids_are_incompatible(other):
             raise ValueError("Operators on incompatible grids cannot be added.")
 
@@ -87,6 +92,7 @@ class FinDiff(object):
         return new_op
 
     def __mul__(self, other):
+        """Multiply FinDiff object with object of type Coefficient."""
 
         if not isinstance(other, Coefficient):
             other = Coefficient(other)
@@ -94,6 +100,7 @@ class FinDiff(object):
         return other * self
 
     def __rmul__(self, other):
+        """Multiply FinDiff object with object of type Coefficient."""
 
         if not isinstance(other, Coefficient):
             other = Coefficient(other)
@@ -119,8 +126,30 @@ class FinDiff(object):
 
 
 class BasicFinDiff(object):
+    """A basic partial derivative of any order and accuracy on a uniform grid. 
+       Should not be instantiated directly, use the FinDiff class instead.
+    """
 
     def __init__(self, *args, **kwargs):
+        """Constructor for BasicFinDiff class
+
+                    Parameters:
+                    -----------
+
+                    args        list of tuples of the form 
+
+                                       (axis, spacing, count)     for uniform grids
+
+                                "axis" is the dimension along which to take derivative. 
+                                "spacing" is the grid spacing of the uniform grid along that axis.                        
+                                "count" is the order of the derivative, which is optional an defaults to 1. 
+
+                                If only one tuple is given, you can leave away the tuple parentheses.
+
+                    **kwargs:
+
+                        acc     even integer
+                                The desired accuracy order. Default is acc=2."""
 
         self.derivs = self._parse_args(args)
 
@@ -219,8 +248,32 @@ class BasicFinDiff(object):
 
 
 class BasicFinDiffNonUniform(object):
+    """A basic partial derivative of any order and accuracy on a non-uniform grid. 
+       Should not be instantiated directly, use the FinDiff class instead.
+    """
 
     def __init__(self, coords, *args, **kwargs):
+        """Constructor for BasicFinDiffNonUniform class
+
+            Parameters:
+            -----------
+
+            args        list of tuples of the form 
+
+                               (axis, count)              for non-uniform grids.
+
+                        "axis" is the dimension along which to take derivative. 
+                        "count" is the order of the derivative, which is optional an defaults to 1. 
+
+                        If only one tuple is given, you can leave away the tuple parentheses.
+
+            **kwargs:
+
+                coords  A list of 1D-arrays of real numbers with the coordinate values along each axis.
+                        This must be given to use a non-uniform grid. NOT OPTIONAL!!
+
+                acc     even integer
+                        The desired accuracy order. Default is acc=2."""
 
         self.coords = np.array(coords)
 
