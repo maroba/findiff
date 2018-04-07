@@ -6,7 +6,7 @@ class FinDiff(object):
     """Wrapper class for finite difference linear differential operators in any number of dimensions
        on uniform and non-uniform grids."""
 
-    def __init__(self, dims=[0], **kwargs):
+    def __init__(self, *args, **kwargs):
         """Constructor for FinDiff class
         
             Parameters:
@@ -32,34 +32,19 @@ class FinDiff(object):
                 acc     even integer
                         The desired accuracy order. Default is acc=2."""
 
-        if "h" in kwargs:   # we have a uniform grid
-            if "coords" in kwargs:
-                raise Exception("Either specify h or coords, not both.")
-            h = kwargs["h"]
-            self.uniform = True
-        elif "coords" in kwargs:  # we have a non-uniform grid
-            if "h" in kwargs:
-                raise Exception("Either specify h or coords, not both.")
-            coords = kwargs["coords"]
+        self.uniform = True
+        if "coords" in kwargs:
+            coords = kwargs.pop("coords")
             self.uniform = False
-        else:
-            if "empty" not in kwargs:
-                raise Exception("Neither h nor coords specified.")
-
-
-        if "acc" in kwargs:
-            acc = kwargs["acc"]
-        else:
-            acc = 2
 
         if "empty" in kwargs and kwargs["empty"]:
             self._basic_ops = []
             self._coefs = []
         else:
             if self.uniform:
-                self._basic_ops = [BasicFinDiff(h, dims, acc)]
+                self._basic_ops = [BasicFinDiff(*args, **kwargs)]
             else:
-                self._basic_ops = [BasicFinDiffNonUniform(coords, dims, acc)]
+                self._basic_ops = [BasicFinDiffNonUniform(coords, *args, **kwargs)]
 
             self._coefs = [Coefficient(1)]
 
@@ -124,121 +109,171 @@ class FinDiff(object):
         return new_op
 
     def _grids_are_incompatible(self, other):
-        if self.uniform and other.uniform:
-            return (self._basic_ops[0]._h != other._basic_ops[0]._h).any()
+        if self.uniform != other.uniform:
+            return True
         if not self.uniform and not other.uniform:
             coords1 = self._basic_ops[0]._coords
             coords2 = other._basic_ops[0]._coords
             return (coords1 != coords2).any()
-        return True
+        return False
 
 
 class BasicFinDiff(object):
-    """Finite difference derivative of any order, any accuracy in any dimension for uniform grids 
-    """
 
-    def __init__(self, h=[1.], dims=[0], acc=2):
-        """Constructor for Finite Difference operator on _uniform_ grids
-           
-           Parameters:
-           ----------
-           
-           h        array-like
-                    The grid spacing along each axis.
-           dims     array-like
-                    The axes along which to take the derivatives. Multiple values mean higher derivative.
-           acc      int
-                    The accuracy order of the finite difference scheme.
-                            
-           *Note*: You can use this class, but it is usually better to use the wrapper class FinDiff 
-                            
-           Example:
-           --------
-           
-           Suppose f is a four-dimensional array. The second partial derivative with respect to the second axis,
-                    
-                    \frac{\partial^2 f}{\partial y^2},
-                     
-           on a grid with equidistant spacing h=[0.1, 0.1, 0.1, 0.1] is given by
-           
-                FinDiff(h=[0.1, 0.1, 0.1, 0.1], dims=[1, 1])
-                
-        """
+    def __init__(self, *args, **kwargs):
 
-        self._h = _wrap_in_array(h)
-        self._dims = _wrap_in_array(dims)
-        self._acc = acc
+        self.derivs = self._parse_args(args)
 
-        ndims = len(self._h)
-        self._derivs = [np.sum(self._dims == i) for i in range(ndims)]
-        self._coefs = self._det_coefs()
+        kws = set(kwargs.keys())
 
-    def _det_coefs(self):
+        self.acc = 2
+
+        for kw in kws:
+            arg = kwargs.pop(kw)
+            if kw == "acc":
+                if not isinstance(arg, int) or arg < 2:
+                    raise ValueError("acc must be integer >= 2")
+                self.acc = arg
+
+        if kwargs:
+            raise ValueError("Invalid kwargs: {}".format(kwargs))
+
+        self._determine_coefs()
+
+    def _parse_args(self, args):
+
+        result = {}
+        for arg in args:
+
+            if not hasattr(arg, "__len__"):
+                raise TypeError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
+            if not 1 < len(arg) < 4:
+                raise ValueError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
+            if len(arg) == 3:
+                axis, h, order = arg
+            else:
+                axis, h = arg
+                order = 1
+            if not isinstance(axis, int):
+                raise TypeError("axis arg must be integer")
+            if axis < 0:
+                raise ValueError("axis arg must be >= 0")
+            if hasattr(h, "__len__"):
+                raise TypeError("spacing must be scalar")
+            if h <= 0:
+                raise ValueError("spacing arg must be > 0")
+            if not isinstance(order, int):
+                raise TypeError("deriv order arg must be integer")
+            if order <= 0:
+                raise ValueError("deriv order arg must be > 0")
+            if axis in result:
+                raise ValueError("axis can only be specified once")
+
+            result[axis] = {"h": h, "order": order}
+
+        return result
+
+    def _determine_coefs(self):
         """Calculates the finite difference coefficients for the requested partial derivatives"""
 
-        coefs = []
-
-        for i in range(len(self._h)):
-            coefs.append(coefficients(self._derivs[i], self._acc))
-
-        return coefs
+        for axis, partial in self.derivs.items():
+            coefs = coefficients(partial["order"], self.acc)
+            self.derivs[axis]["coefs"] = coefs
 
     def __call__(self, y):
         """Applies the finite difference operator to a function y"""
 
         ndims = len(y.shape)
-        if ndims != len(self._h):
-            raise IndexError("y and h have different dimensions")
+
+        max_axis = max(self.derivs.keys())
+        if max_axis >= ndims:
+            raise IndexError(\
+                "Requested derivative along axis {}, but max. axis of array is {}".format(max_axis, ndims-1))
 
         yd = np.array(y)
 
-        for i in range(ndims):
-            if self._derivs[i] > 0:
-                yd = _diff_general(yd, self._h, self._derivs[i], i, self._acc, self._coefs[i])
+        for axis, partial in self.derivs.items():
+            yd = _diff_general(yd, partial["h"], partial["order"], axis, self.acc, partial["coefs"])
 
         return yd
 
 
 class BasicFinDiffNonUniform(object):
-    """Finite difference derivative of any order, any accuracy in any dimension for uniform grids 
-    """
 
-    def __init__(self, coords, dims=[0], acc=2):
+    def __init__(self, coords, *args, **kwargs):
 
-        self._coords = np.array(coords)
-        self._dims = _wrap_in_array(dims)
-        self._acc = acc
+        self.coords = np.array(coords)
 
-        ndims = len(self._coords)
-        self._derivs = [np.sum(self._dims == i) for i in range(ndims)]
-        self._coefs = self._det_coefs()
+        self.derivs = self._parse_args(args)
 
-    def _det_coefs(self):
+        kws = set(kwargs.keys())
+
+        self.acc = 2
+
+        for kw in kws:
+            arg = kwargs.pop(kw)
+            if kw == "acc":
+                if not isinstance(arg, int) or arg < 2:
+                    raise ValueError("acc must be integer >= 2")
+                self.acc = arg
+
+        if kwargs:
+            raise ValueError("Invalid kwargs: {}".format(kwargs))
+
+        self._determine_coefs()
+
+    def _determine_coefs(self):
         """Calculates the finite difference coefficients for the requested partial derivatives"""
 
-        coefs = []
+        for axis, partial in self.derivs.items():
+            coefs = []
+            for i in range(len(self.coords[axis])):
+                coefs.append(coefficients_non_uni(partial["order"], self.acc, self.coords[axis], i))
 
-        ndims = len(self._coords)
+            self.derivs[axis]["coefs"] = coefs
 
-        for idim in range(ndims):
-            c = []
-            for i in range(len(self._coords[idim])):
-                c.append(coefficients_non_uni(self._derivs[idim], self._acc, self._coords[idim], i))
-            coefs.append(c)
+    def _parse_args(self, args):
 
-        return coefs
+        result = {}
+        for arg in args:
+
+            if not hasattr(arg, "__len__"):
+                raise TypeError("Arguments must be tuple-like: (axis, [deriv_order])")
+            if not 1 <= len(arg) <= 2:
+                raise ValueError("Arguments must be tuple-like: (axis, [deriv_order])")
+            if len(arg) == 2:
+                axis, order = arg
+            else:
+                axis, = arg
+                order = 1
+            if not isinstance(axis, int):
+                raise TypeError("axis arg must be integer")
+            if axis < 0:
+                raise ValueError("axis arg must be >= 0")
+            if not isinstance(order, int):
+                raise TypeError("deriv order arg must be integer")
+            if order <= 0:
+                raise ValueError("deriv order arg must be > 0")
+            if axis in result:
+                raise ValueError("axis can only be specified once")
+
+            result[axis] = {"order": order}
+
+        return result
 
     def __call__(self, y):
 
         ndims = len(y.shape)
-        if ndims != len(self._coords):
-            raise IndexError("y and h have different dimensions")
+
+        max_axis = max(self.derivs.keys())
+        if max_axis >= ndims:
+            raise IndexError(\
+                "Requested derivative along axis {}, but max. axis of array is {}".format(max_axis, ndims-1))
 
         yd = np.array(y)
 
-        for idim in range(ndims):
-            if self._derivs[idim] > 0:
-                yd = _diff_general_non_uni(yd, self._coords, idim, self._coefs[idim])
+        for axis, partial in self.derivs.items():
+            yd = _diff_general_non_uni(yd, self.coords, axis, partial["coefs"])
 
         return yd
 
@@ -268,7 +303,7 @@ class Laplacian(object):
 
         h = _wrap_in_array(h)
 
-        self._parts = [FinDiff(h=h, dims=[k, k], acc=acc) for k in range(len(h))]
+        self._parts = [FinDiff((k, h[k], 2), acc=acc) for k in range(len(h))]
 
     def __call__(self, f):
         """Applies the Laplacian to the array f
@@ -354,7 +389,7 @@ def _diff_general(y, h, deriv, dim, acc, coefs=None):
     _apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
 
     h_inv = 1./h**deriv
-    return yd * h_inv[dim]
+    return yd * h_inv
 
 
 def _apply_to_array(yd, y, weights, off_slices, ref_slice, dim):

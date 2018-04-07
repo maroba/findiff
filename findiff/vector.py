@@ -7,14 +7,12 @@ class VectorOperator(object):
 
     def __init__(self, **kwargs):
 
-        if "dims" in kwargs:
-            raise ValueError("dims cannot be specified for Gradient")
-
         if "h" in kwargs:
-            h = wrap_in_ndarray(kwargs["h"])
-            ndims = len(h)
+            self.h = wrap_in_ndarray(kwargs.pop("h"))
+            self.ndims = len(self.h)
+            self.components = [FinDiff((k, self.h[k]), **kwargs) for k in range(self.ndims)]
         if "coords" in kwargs:
-            coords = kwargs["coords"]
+            coords = kwargs.pop("coords")
             if isinstance(coords, np.ndarray):
                 shape = coords.shape
                 if len(shape) > 1:
@@ -23,15 +21,15 @@ class VectorOperator(object):
                     ndims = 1
             else:
                 ndims = len(coords)
+            self.ndims = ndims
 
-        self.ndims = ndims
+            self.components = [FinDiff((k,), coords=self.coords, **kwargs) for k in range(self.ndims)]
 
 
 class Gradient(VectorOperator):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.components = [FinDiff(dims=[k], **kwargs) for k in range(self.ndims)]
 
     def __call__(self, f):
 
@@ -53,7 +51,6 @@ class Divergence(VectorOperator):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.components = [FinDiff(dims=[k], **kwargs) for k in range(self.ndims)]
 
     def __call__(self, f):
 
@@ -78,8 +75,6 @@ class Curl(VectorOperator):
 
         if self.ndims != 3:
             raise ValueError("Curl operation is only defined in 3 dimensions. {} were given.".format(self.ndims))
-
-        self.components = [FinDiff(dims=[k], **kwargs) for k in range(self.ndims)]
 
     def __call__(self, f):
 

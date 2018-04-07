@@ -20,7 +20,7 @@ def non_uniform():
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
     f = np.exp(-X ** 2 - Y ** 2 - Z ** 2)
 
-    d_dx = FinDiff(coords=[x, y, z], dims=[0], acc=2)
+    d_dx = FinDiff((0,), coords=[x, y, z])
     d_dx(f)
 
 
@@ -33,7 +33,7 @@ def uniform():
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
     f = np.exp(-X ** 2 - Y ** 2 - Z ** 2)
 
-    d_dx = FinDiff(h=[x[1]-x[0], y[1]-y[0], z[1]-z[0]], dims=[0], acc=2)
+    d_dx = FinDiff((0, x[1]-x[0]), acc=2)
     d_dx(f)
 
 

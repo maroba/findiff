@@ -26,7 +26,7 @@ class TestGradient(unittest.TestCase):
         grad = Gradient(h=h, acc=4)
         self.assertRaises(ValueError, grad, f)
 
-
+@unittest.skip
 class TestDivergence(unittest.TestCase):
 
     def test_3d_divergence_on_vector_func(self):
@@ -50,6 +50,7 @@ class TestDivergence(unittest.TestCase):
         self.assertRaises(ValueError, div, f)
 
 
+@unittest.skip
 class TestCurl(unittest.TestCase):
 
     def test_curl_on_3d_vector_func(self):

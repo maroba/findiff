@@ -17,7 +17,7 @@ class TestScaling(unittest.TestCase):
             x = np.linspace(0, Lx, nx)
             dx = x[1] - x[0]
             f = np.sin(x)
-            d_dx = FinDiff(h=dx, dims=[0], acc=acc)
+            d_dx = FinDiff((0, dx), acc=acc)
             fx = d_dx(f)
             fxe = np.cos(x)
             err = np.max(np.abs(fxe - fx))
@@ -41,7 +41,7 @@ class TestScaling(unittest.TestCase):
             dx, dy = x[1] - x[0], y[1] - y[0]
             X, Y = np.meshgrid(x, y, indexing='ij')
             f = np.sin(X) * np.sin(Y)
-            d_dx = FinDiff(h=[dx, dy], dims=[0], acc=acc)
+            d_dx = FinDiff((0, dx), acc=acc)
             fx = d_dx(f)
             fxe = np.cos(X) * np.sin(Y)
             err = np.max(np.abs(fxe - fx))
