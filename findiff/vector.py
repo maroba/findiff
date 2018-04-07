@@ -1,12 +1,29 @@
+"""A module for the common differential operators of vector calculus"""
+
 import numpy as np
 from findiff.diff import FinDiff, Coefficient
 from findiff.util import wrap_in_ndarray
 
 
 class VectorOperator(object):
+    """Base class for all vector differential operators.
+       Shall not be instantiated directly, but through the child classes.
+    """
 
     def __init__(self, **kwargs):
-
+        """Constructor for the VectorOperator base class.
+        
+            kwargs:
+            -------
+            
+            h       list with the grid spacings of an N-dimensional uniform grid
+            
+            coords  list of 1D arrays with the coordinate values along the N axes.
+                    This is used for non-uniform grids. 
+            
+            Either specify "h" or "coords", not both.
+        
+        """
         if "h" in kwargs:
             self.h = wrap_in_ndarray(kwargs.pop("h"))
             self.ndims = len(self.h)
@@ -27,11 +44,46 @@ class VectorOperator(object):
 
 
 class Gradient(VectorOperator):
+    """The N-dimensional gradient
+    
+        (\frac{\partial}{\partial x_0}, \frac{\partial}{\partial x_1}, ... , \frac{\partial}{\partial x_{N-1}})
+    
+    """
 
     def __init__(self, **kwargs):
+        """Constructor for the N-dimensional gradient
+
+                kwargs:
+                -------
+
+                h       list with the grid spacings of an N-dimensional uniform grid
+
+                coords  list of 1D arrays with the coordinate values along the N axes.
+                        This is used for non-uniform grids. 
+
+                      !! Either specify "h" or "coords", not both. !!
+
+                acc     accuracy order, must be even, positive integer
+
+        """
+
         super().__init__(**kwargs)
 
     def __call__(self, f):
+        """Applies the N-dimensional gradient to the array f.
+        
+           Parameters:
+           -----------
+           
+           f    array to apply the gradient to. It represents a scalar function,
+                so its dimension must be N for the N independent variables.        
+           
+           Returns:
+            
+           The gradient of f, which has dimension N+1, i.e. it is 
+           an array of N arrays of N dimensions each.
+           
+        """
 
         if not isinstance(f, np.ndarray):
             raise TypeError("Function to differentiate must be numpy.ndarray")
@@ -48,12 +100,39 @@ class Gradient(VectorOperator):
 
 
 class Divergence(VectorOperator):
+    """The N-dimensional divergence
+    
+       \sum_{k=1}^N \frac{\partial }{\partial x_k}
+    
+    """
 
     def __init__(self, **kwargs):
+        """Constructor for the N-dimensional divergence
+
+                kwargs:
+                -------
+
+                h       list with the grid spacings of an N-dimensional uniform grid
+
+                coords  list of 1D arrays with the coordinate values along the N axes.
+                        This is used for non-uniform grids. 
+
+                      !! Either specify "h" or "coords", not both. !!
+
+                acc     accuracy order, must be even, positive integer
+
+        """
+
         super().__init__(**kwargs)
 
     def __call__(self, f):
-
+        """Applies the divergence to the array f.
+        
+            f is a vector function of N variables, so its array dimension is N+1.
+            
+            Returns the divergence, which is a scalar function of N variables, so it's array dimension is N
+                
+        """
         if not isinstance(f, np.ndarray) and not isinstance(f, list):
             raise TypeError("Function to differentiate must be numpy.ndarray or list of numpy.ndarrays")
 
@@ -69,15 +148,35 @@ class Divergence(VectorOperator):
 
 
 class Curl(VectorOperator):
+    """The curl operator. Is only defined for 3D."""
 
     def __init__(self, **kwargs):
+        """Constructor for the 3-dimensional curl
+
+                kwargs:
+                -------
+
+                h       list with the grid spacings of an 3-dimensional uniform grid
+
+                coords  list of 1D arrays with the coordinate values along the 3 axes.
+                        This is used for non-uniform grids. 
+
+                      !! Either specify "h" or "coords", not both. !!
+
+                acc     accuracy order, must be even, positive integer
+
+        """
+
         super().__init__(**kwargs)
 
         if self.ndims != 3:
             raise ValueError("Curl operation is only defined in 3 dimensions. {} were given.".format(self.ndims))
 
     def __call__(self, f):
-
+        """Applies the curl operator to the vector function f, represented by array of dimension 4.
+        
+           Returns the curl, a vector function, i.e. an array of dimension 4.
+        """
         if not isinstance(f, np.ndarray) and not isinstance(f, list):
             raise TypeError("Function to differentiate must be numpy.ndarray or list of numpy.ndarrays")
 
