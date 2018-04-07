@@ -195,3 +195,46 @@ class Curl(VectorOperator):
         result[2] += self.components[0](f[1]) - self.components[1](f[0])
 
         return result
+
+
+class Laplacian(object):
+    """A representation of the Laplace operator in arbitrary dimensions using finite difference schemes"""
+
+    def __init__(self, h=[1.], acc=2):
+        """Constructor for the Laplacian
+
+           Parameters:
+           -----------
+
+           h        array-like
+                    The grid spacing along each axis
+           acc      int
+                    The accuracy order of the finite difference scheme        
+        """
+
+        h = wrap_in_ndarray(h)
+
+        self._parts = [FinDiff((k, h[k], 2), acc=acc) for k in range(len(h))]
+
+    def __call__(self, f):
+        """Applies the Laplacian to the array f
+
+           Parameters:
+           -----------
+
+           f        ndarray
+                    The function to differentiate given as an array.
+
+           Returns:
+           --------    
+
+           an ndarray with Laplace(f)
+
+        """
+        laplace_f = np.zeros_like(f)
+
+        for part in self._parts:
+            laplace_f += part(f)
+
+        return laplace_f
+

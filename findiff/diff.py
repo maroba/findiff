@@ -125,7 +125,39 @@ class FinDiff(object):
         return False
 
 
-class BasicFinDiff(object):
+class FinDiffMixIn(object):
+
+    def _apply_to_array(self, yd, y, weights, off_slices, ref_slice, dim):
+        """Applies the finite differences only to slices along a given axis"""
+
+        ndims = len(y.shape)
+
+        all = slice(None, None, 1)
+
+        ref_multi_slice = [all] * ndims
+        ref_multi_slice[dim] = ref_slice
+
+        for w, s in zip(weights, off_slices):
+            off_multi_slice = [all] * ndims
+            off_multi_slice[dim] = s
+            yd[ref_multi_slice] += w * y[off_multi_slice]
+
+    def _shift_slice(self, sl, off, max_index):
+
+        if sl.start + off < 0 or sl.stop + off > max_index:
+            raise IndexError("Shift slice out of bounds")
+
+        return slice(sl.start + off, sl.stop + off, sl.step)
+
+    def _wrap_in_array(self, val):
+
+        if hasattr(val, "__len__"):
+            return np.array(val)
+
+        return np.array([val])
+
+
+class BasicFinDiff(FinDiffMixIn):
     """A basic partial derivative of any order and accuracy on a uniform grid. 
        Should not be instantiated directly, use the FinDiff class instead.
     """
@@ -242,12 +274,54 @@ class BasicFinDiff(object):
         yd = np.array(y)
 
         for axis, partial in self.derivs.items():
-            yd = _diff_general(yd, partial["h"], partial["order"], axis, self.acc, partial["coefs"])
+            yd = self._diff(yd, partial["h"], partial["order"], axis, self.acc, partial["coefs"])
 
         return yd
 
+    def _diff(self, y, h, deriv, dim, acc, coefs=None):
+        """The core function to take a partial derivative on a uniform grid.
+        """
 
-class BasicFinDiffNonUniform(object):
+        if coefs is None:
+            coefs = coefficients(deriv, acc)
+
+        npts = y.shape[dim]
+
+        scheme = "center"
+        weights = coefs[scheme]["coefficients"]
+        offsets = coefs[scheme]["offsets"]
+
+        nbndry = len(weights) // 2
+        ref_slice = slice(nbndry, npts - nbndry, 1)
+        off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
+
+        yd = np.zeros_like(y)
+
+        self._apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
+
+        scheme = "forward"
+        weights = coefs[scheme]["coefficients"]
+        offsets = coefs[scheme]["offsets"]
+
+        ref_slice = slice(0, nbndry, 1)
+        off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
+
+        self._apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
+
+        scheme = "backward"
+        weights = coefs[scheme]["coefficients"]
+        offsets = coefs[scheme]["offsets"]
+
+        ref_slice = slice(npts - nbndry, npts, 1)
+        off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
+
+        self._apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
+
+        h_inv = 1./h**deriv
+        return yd * h_inv
+
+
+class BasicFinDiffNonUniform(FinDiffMixIn):
     """A basic partial derivative of any order and accuracy on a non-uniform grid. 
        Should not be instantiated directly, use the FinDiff class instead.
     """
@@ -369,7 +443,27 @@ class BasicFinDiffNonUniform(object):
         yd = np.array(y)
 
         for axis, partial in self.derivs.items():
-            yd = _diff_general_non_uni(yd, self.coords, axis, partial["coefs"])
+            yd = self._diff(yd, self.coords, axis, partial["coefs"])
+
+        return yd
+
+    def _diff(self, y, coords, dim, coefs):
+        """The core function to take a partial derivative on a non-uniform grid"""
+
+        yd = np.zeros_like(y)
+
+        ndims = len(y.shape)
+        multi_slice = [slice(None, None)] * ndims
+        ref_multi_slice = [slice(None, None)] * ndims
+
+        for i, x in enumerate(coords[dim]):
+            weights = coefs[i]["coefficients"]
+            offsets = coefs[i]["offsets"]
+            ref_multi_slice[dim] = i
+
+            for off, w in zip(offsets, weights):
+                multi_slice[dim] = i + off
+                yd[ref_multi_slice] += w * y[multi_slice]
 
         return yd
 
@@ -382,139 +476,3 @@ class Coefficient(object):
         self.value = value
 
 
-class Laplacian(object):
-    """A representation of the Laplace operator in arbitrary dimensions using finite difference schemes"""
-
-    def __init__(self, h=[1.], acc=2):
-        """Constructor for the Laplacian
-        
-           Parameters:
-           -----------
-           
-           h        array-like
-                    The grid spacing along each axis
-           acc      int
-                    The accuracy order of the finite difference scheme        
-        """
-
-        h = _wrap_in_array(h)
-
-        self._parts = [FinDiff((k, h[k], 2), acc=acc) for k in range(len(h))]
-
-    def __call__(self, f):
-        """Applies the Laplacian to the array f
-        
-           Parameters:
-           -----------
-           
-           f        ndarray
-                    The function to differentiate given as an array.
-        
-           Returns:
-           --------    
-           
-           an ndarray with Laplace(f)
-        
-        """
-        laplace_f = np.zeros_like(f)
-
-        for part in self._parts:
-            laplace_f += part(f)
-
-        return laplace_f
-
-
-def _diff_general_non_uni(y, coords, dim, coefs):
-    """The core function to take a partial derivative on a non-uniform grid"""
-
-    yd = np.zeros_like(y)
-
-    ndims = len(y.shape)
-    multi_slice = [slice(None, None)] * ndims
-    ref_multi_slice = [slice(None, None)] * ndims
-
-    for i, x in enumerate(coords[dim]):
-        weights = coefs[i]["coefficients"]
-        offsets = coefs[i]["offsets"]
-        ref_multi_slice[dim] = i
-
-        for off, w in zip(offsets, weights):
-            multi_slice[dim] = i + off
-            yd[ref_multi_slice] += w * y[multi_slice]
-
-    return yd
-
-
-def _diff_general(y, h, deriv, dim, acc, coefs=None):
-    """The core function to take a partial derivative on a uniform grid.
-    """
-
-    if coefs is None:
-        coefs = coefficients(deriv, acc)
-
-    npts = y.shape[dim]
-
-    scheme = "center"
-    weights = coefs[scheme]["coefficients"]
-    offsets = coefs[scheme]["offsets"]
-
-    nbndry = len(weights) // 2
-    ref_slice = slice(nbndry, npts - nbndry, 1)
-    off_slices = [_shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
-
-    yd = np.zeros_like(y)
-
-    _apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
-
-    scheme = "forward"
-    weights = coefs[scheme]["coefficients"]
-    offsets = coefs[scheme]["offsets"]
-
-    ref_slice = slice(0, nbndry, 1)
-    off_slices = [_shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
-
-    _apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
-
-    scheme = "backward"
-    weights = coefs[scheme]["coefficients"]
-    offsets = coefs[scheme]["offsets"]
-
-    ref_slice = slice(npts - nbndry, npts, 1)
-    off_slices = [_shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
-
-    _apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
-
-    h_inv = 1./h**deriv
-    return yd * h_inv
-
-
-def _apply_to_array(yd, y, weights, off_slices, ref_slice, dim):
-    """Applies the finite differences only to slices along a given axis"""
-
-    ndims = len(y.shape)
-
-    all = slice(None, None, 1)
-
-    ref_multi_slice = [all] * ndims
-    ref_multi_slice[dim] = ref_slice
-
-    for w, s in zip(weights, off_slices):
-        off_multi_slice = [all] * ndims
-        off_multi_slice[dim] = s
-        yd[ref_multi_slice] += w * y[off_multi_slice]
-
-
-def _shift_slice(sl, off, max_index):
-
-    if sl.start + off < 0 or sl.stop + off > max_index:
-        raise IndexError("Shift slice out of bounds")
-
-    return slice(sl.start + off, sl.stop + off, sl.step)
-
-
-def _wrap_in_array(val):
-
-    if hasattr(val, "__len__"):
-        return np.array(val)
-
-    return np.array([val])

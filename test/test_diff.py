@@ -223,7 +223,7 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = X ** 3 * Y ** 3
         lap_f_e = 6 * X * Y**3 + 6 * X**3 * Y
-        lap = fd.diff.Laplacian(h=dxy)
+        lap = fd.Laplacian(h=dxy)
         lap_f = lap(f)
         self._assertAlmostEqual(lap_f_e, lap_f)
 
