@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='findiff',
-    version='0.4.1',
+    version='0.5.0',
     description='A Python package for finite difference derivatives in any number of dimensions.',
     long_description="""A Python package for finite difference derivatives in any number of dimensions.
     
