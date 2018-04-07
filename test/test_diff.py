@@ -72,6 +72,22 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         err = np.max(np.abs(fye - fy))
         self.assertAlmostEqual(0, err, 4)
 
+    def test_diff_2d_ord1_acc2_no_tuples(self):
+        x = np.linspace(-1, 1, 500)
+        y = np.linspace(-1, 1, 500)
+        dx = dy = x[1] - x[0]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = Y**3 * X**3
+        fxe = 3 * X**2 * Y**3
+        fx = fd.FinDiff(0, dx)(f)
+        err = np.max(np.abs(fxe - fx))
+        self.assertAlmostEqual(0, err, 4)
+        fye = 3 * X**3 * Y**2
+        fy = fd.FinDiff(1, dy)(f)
+        err = np.max(np.abs(fye - fy))
+        self.assertAlmostEqual(0, err, 4)
+
+
     def test_diff_2d_ord2_acc2(self):
         x = np.linspace(-1, 1, 500)
         y = np.linspace(-1, 1, 500)
@@ -177,6 +193,25 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         fyy = d2_dy2(f)
         self._assertAlmostEqual(fxe, fx)
         self._assertAlmostEqual(fyye, fyy)
+
+    def test_FinDiff_2d_no_tuples(self):
+        xy0 = [-5, -5]
+        xy1 = [5, 5]
+        nxy = [100, 100]
+        x = np.linspace(xy0[0], xy1[0], nxy[0])
+        y = np.linspace(xy0[1], xy1[1], nxy[1])
+        dxy = [x[1] - x[0], y[1] - y[0]]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = X ** 3 * Y ** 3
+        fxe = 3 * X ** 2 * Y ** 3
+        fyye = 6 * X ** 3 * Y
+        d_dx = fd.FinDiff(0, dxy[0], acc=4)
+        fx = d_dx(f)
+        d2_dy2 = fd.FinDiff(1, dxy[1], 2, acc=4)
+        fyy = d2_dy2(f)
+        self._assertAlmostEqual(fxe, fx)
+        self._assertAlmostEqual(fyye, fyy)
+
 
     def test_Laplace_2d(self):
         xy0 = [-5, -5]

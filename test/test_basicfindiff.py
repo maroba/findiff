@@ -72,6 +72,21 @@ class TestBasicFinDiffNew(unittest.TestCase):
         err = np.max(np.abs(fye - fy))
         self.assertAlmostEqual(0, err, 4)
 
+    def test_diff_2d_ord1_acc2_plain(self):
+        x = np.linspace(-1, 1, 500)
+        y = np.linspace(-1, 1, 500)
+        dx = dy = x[1] - x[0]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        f = Y**3 * X**3
+        fxe = 3 * X**2 * Y**3
+        fx = fd.diff.BasicFinDiff(0, dx, acc=2)(f)
+        err = np.max(np.abs(fxe - fx))
+        self.assertAlmostEqual(0, err, 4)
+        fye = 3 * X**3 * Y**2
+        fy = fd.diff.BasicFinDiff(1, dy, acc=2)(f)
+        err = np.max(np.abs(fye - fy))
+        self.assertAlmostEqual(0, err, 4)
+
     def test_diff_2d_ord2_acc2(self):
         x = np.linspace(-1, 1, 500)
         y = np.linspace(-1, 1, 500)

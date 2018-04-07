@@ -143,33 +143,53 @@ class BasicFinDiff(object):
     def _parse_args(self, args):
 
         result = {}
-        for arg in args:
 
-            if not hasattr(arg, "__len__"):
-                raise TypeError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
-            if not 1 < len(arg) < 4:
-                raise ValueError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
-            if len(arg) == 3:
-                axis, h, order = arg
-            else:
-                axis, h = arg
+        no_args_are_tuple = True
+        for arg in args:
+            if hasattr(arg, "__len__"):
+                no_args_are_tuple = False
+                break
+
+        if no_args_are_tuple:
+            if len(args) == 2:
+                axis, h = args
                 order = 1
-            if not isinstance(axis, int):
-                raise TypeError("axis arg must be integer")
-            if axis < 0:
-                raise ValueError("axis arg must be >= 0")
-            if hasattr(h, "__len__"):
-                raise TypeError("spacing must be scalar")
-            if h <= 0:
-                raise ValueError("spacing arg must be > 0")
-            if not isinstance(order, int):
-                raise TypeError("deriv order arg must be integer")
-            if order <= 0:
-                raise ValueError("deriv order arg must be > 0")
-            if axis in result:
-                raise ValueError("axis can only be specified once")
+            elif len(args) == 3:
+                axis, h, order = args
+            else:
+                raise TypeError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
 
             result[axis] = {"h": h, "order": order}
+
+        else:
+
+            for arg in args:
+
+                if not hasattr(arg, "__len__"): # we expect a non-mixed derivative
+                    raise TypeError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
+                if not 1 < len(arg) < 4:
+                    raise ValueError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
+                if len(arg) == 3:
+                    axis, h, order = arg
+                else:
+                    axis, h = arg
+                    order = 1
+                if not isinstance(axis, int):
+                    raise TypeError("axis arg must be integer")
+                if axis < 0:
+                    raise ValueError("axis arg must be >= 0")
+                if hasattr(h, "__len__"):
+                    raise TypeError("spacing must be scalar")
+                if h <= 0:
+                    raise ValueError("spacing arg must be > 0")
+                if not isinstance(order, int):
+                    raise TypeError("deriv order arg must be integer")
+                if order <= 0:
+                    raise ValueError("deriv order arg must be > 0")
+                if axis in result:
+                    raise ValueError("axis can only be specified once")
+
+                result[axis] = {"h": h, "order": order}
 
         return result
 
@@ -235,29 +255,49 @@ class BasicFinDiffNonUniform(object):
     def _parse_args(self, args):
 
         result = {}
-        for arg in args:
 
-            if not hasattr(arg, "__len__"):
-                raise TypeError("Arguments must be tuple-like: (axis, [deriv_order])")
-            if not 1 <= len(arg) <= 2:
-                raise ValueError("Arguments must be tuple-like: (axis, [deriv_order])")
-            if len(arg) == 2:
-                axis, order = arg
-            else:
-                axis, = arg
+        no_args_are_tuple = True
+        for arg in args:
+            if hasattr(arg, "__len__"):
+                no_args_are_tuple = False
+                break
+
+        if no_args_are_tuple:
+            if len(args) == 1:
+                axis, = args
                 order = 1
-            if not isinstance(axis, int):
-                raise TypeError("axis arg must be integer")
-            if axis < 0:
-                raise ValueError("axis arg must be >= 0")
-            if not isinstance(order, int):
-                raise TypeError("deriv order arg must be integer")
-            if order <= 0:
-                raise ValueError("deriv order arg must be > 0")
-            if axis in result:
-                raise ValueError("axis can only be specified once")
+            elif len(args) == 2:
+                axis, order = args
+            else:
+                raise TypeError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
 
             result[axis] = {"order": order}
+
+        else:
+
+            for arg in args:
+
+                if not hasattr(arg, "__len__"):
+                    raise TypeError("Arguments must be tuple-like: (axis, [deriv_order])")
+                if not 1 <= len(arg) <= 2:
+                    raise ValueError("Arguments must be tuple-like: (axis, [deriv_order])")
+                if len(arg) == 2:
+                    axis, order = arg
+                else:
+                    axis, = arg
+                    order = 1
+                if not isinstance(axis, int):
+                    raise TypeError("axis arg must be integer")
+                if axis < 0:
+                    raise ValueError("axis arg must be >= 0")
+                if not isinstance(order, int):
+                    raise TypeError("deriv order arg must be integer")
+                if order <= 0:
+                    raise ValueError("deriv order arg must be > 0")
+                if axis in result:
+                    raise ValueError("axis can only be specified once")
+
+                result[axis] = {"order": order}
 
         return result
 
