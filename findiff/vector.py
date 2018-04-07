@@ -24,23 +24,27 @@ class VectorOperator(object):
             Either specify "h" or "coords", not both.
         
         """
+
         if "h" in kwargs:
             self.h = wrap_in_ndarray(kwargs.pop("h"))
             self.ndims = len(self.h)
             self.components = [FinDiff((k, self.h[k]), **kwargs) for k in range(self.ndims)]
+
         if "coords" in kwargs:
             coords = kwargs.pop("coords")
-            if isinstance(coords, np.ndarray):
-                shape = coords.shape
-                if len(shape) > 1:
-                    ndims = shape[0]
-                else:
-                    ndims = 1
-            else:
-                ndims = len(coords)
-            self.ndims = ndims
+            self.ndims = self.__get_dimension(coords)
+            self.components = [FinDiff((k,), coords=coords, **kwargs) for k in range(self.ndims)]
 
-            self.components = [FinDiff((k,), coords=self.coords, **kwargs) for k in range(self.ndims)]
+    def __get_dimension(self, coords):
+        if isinstance(coords, np.ndarray):
+            shape = coords.shape
+            if len(shape) > 1:
+                ndims = shape[0]
+            else:
+                ndims = 1
+        else:
+            ndims = len(coords)
+        return ndims
 
 
 class Gradient(VectorOperator):
@@ -93,7 +97,7 @@ class Gradient(VectorOperator):
 
         result = []
         for k in range(self.ndims):
-            d_dxk =  self.components[k]
+            d_dxk = self.components[k]
             result.append(d_dxk(f))
 
         return np.array(result)
