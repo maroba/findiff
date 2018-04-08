@@ -3,53 +3,46 @@ from findiff.coefs import coefficients, coefficients_non_uni
 
 
 class FinDiff(object):
-    r"""Primary class for finite difference linear differential operators in any number of dimensions
-       on uniform and non-uniform grids. 
+    r"""
+    Primary class for finite difference linear differential operators in any number of dimensions
+    on uniform and non-uniform grids. 
        
-       FinDiff objects can be added with other FinDiff objects. They can be multiplied by
-       objects of type Coefficient.
+    FinDiff objects can be added with other FinDiff objects. They can be multiplied by
+    objects of type Coefficient.
                         
-       FinDiff is callable, i.e. to apply the derivative, just call the object on the array to
-       differentiate.
+    FinDiff is callable, i.e. to apply the derivative, just call the object on the array to
+    differentiate.       
        
-       
-       Parameters
-       ----------
-        
-        args :   variable number of tuples. If only one tuple is given, you can leave away the tuple parentheses.                 
-            
-            Defines what derivative to take.
-            
-            Each tuple has the form
+    :param args: variable number of tuples. Defines what derivative to take.         
+         If only one tuple is given, you can leave away the tuple parentheses.
+         
+         Each tuple has the form
             
                    `(axis, spacing, count)`     for uniform grids
                    
                    `(axis, count)`              for non-uniform grids.
                    
-            `axis` is the dimension along which to take derivative.
+                 `axis` is the dimension along which to take derivative.
              
-            `spacing` is the grid spacing of the uniform grid along that axis.
+                 `spacing` is the grid spacing of the uniform grid along that axis.
                                     
-            `count` is the order of the derivative, which is optional an defaults to 1. 
+                 `count` is the order of the derivative, which is optional an defaults to 1. 
                     
-                    
         
+    :param kwargs:  variable number of keyword arguments
         
-        kwargs :  variable number of keyword arguments
-        
-            Used for further configuration.
-            
             Allowed keywords:
-                        
-            `coords`  A list of 1D-arrays of real numbers with the coordinate values along each axis.
-                      This must be given to use a non-uniform grid.
-                    
-            `acc`     even integer
+            
+            `acc`:    even integer
                       The desired accuracy order. Default is acc=2.
-                    
-                    
-        Examples:
-        =========
+                        
+            `coords`:  a list of 1D-arrays of real numbers with the coordinate values along each axis.  
+                 
+                      This MUST be given to use a non-uniform grid.
+    
+    ============                                    
+    **Example**:
+    
         
            For this example, we want to operate on some 3D array f:
            
@@ -59,30 +52,29 @@ class FinDiff(object):
            >>> f = X**2 + Y**2 + Z**2
         
            To create :math:`\frac{\partial f}{\partial x}` on a uniform grid with spacing dx, dy
-           along the 0th axis or 1st axis, respectively, instantiate:
+           along the 0th axis or 1st axis, respectively, instantiate a FinDiff object and call it:
            
            >>> d_dx = FinDiff(0, dx)
            >>> d_dy = FinDiff(1, dx)
-           
-           and apply it to an numpy.ndarray _f_:
-           
-           >>> d_dx(f)
+           >>> result = d_dx(f)
            
            For :math:`\frac{\partial^2 f}{\partial x^2}` or :math:`\frac{\partial^2 f}{\partial y^2}`:
            
            >>> d2_dx2 = FinDiff(0, dx, 2)
            >>> d2_dy2 = FinDiff(1, dy, 2)
-           >>> d2f_dx2 = d2_dx2(f)
-           >>> d2f_dy2 = d2_dy2(f)
+           >>> result_2 = d2_dx2(f)
+           >>> result_3 = d2_dy2(f)
            
-           For :math:`\frac{\partial^2 f}{\partial x \partial y}`, do:
+           For :math:`\frac{\partial^4 f}{\partial x \partial^2 y \partial z}`, do:
            
-           >>> d = FinDiff((0, dx), (1, dy))
-           >>> d(f)
+           >>> op = FinDiff((0, dx), (1, dy, 2), (2, dz))
+           >>> result_4 = op(f)
        
     """
 
     def __init__(self, *args, **kwargs):
+        """ 
+        """
 
         self.uniform = True
         if "coords" in kwargs:
@@ -208,9 +200,16 @@ class FinDiffMixIn(object):
 
 
 class BasicFinDiff(FinDiffMixIn):
-    """A basic partial derivative of any order and accuracy on a uniform grid. 
-       Should not be instantiated directly, use the FinDiff class instead.
-    """
+
+
+
+
+
+
+
+#    """A basic partial derivative of any order and accuracy on a uniform grid.
+#       Should not be instantiated directly, use the FinDiff class instead.
+#    """
 
     def __init__(self, *args, **kwargs):
         """Constructor for BasicFinDiff class
@@ -519,15 +518,27 @@ class BasicFinDiffNonUniform(FinDiffMixIn):
 
 
 class Coefficient(object):
-    """
+    r"""
     Encapsulates a constant (number) or variable (N-dimensional coordinate array) value to multiply with a linear operator
+    
+    :param value: a number or an numpy.ndarray with meshed coordinates
+    
+    ============
+    **Example**:
+
+       The following example defines the differential operator
+       
+       .. math::
+       
+          2x \frac{\partial^3}{\partial x^2 \partial z}
+    
+       >>> X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
+       >>> diff_op = Coefficient(2*X) * FinDiff((0, dx, 2), (2, dz, 1))
+    
+    
     """
 
     def __init__(self, value):
         self.value = value
-
-    def some_func(self):
-        """Some docu"""
-        return 1
 
 

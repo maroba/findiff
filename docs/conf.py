@@ -165,6 +165,8 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-#mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js'
+imgmath_image_format = 'svg'
+imgmath_dvipng_args = ['-gamma', '2.5', '-D', '350', '-bg', 'Transparent']
+imgmath_font_size = 14
 
-
+autoclass_content = 'both'

@@ -12,6 +12,7 @@ Welcome to findiff's documentation!
 
 
    code/diff.rst
+   code/coefs.rst
 
 Indices and tables
 ==================

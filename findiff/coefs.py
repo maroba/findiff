@@ -1,9 +1,23 @@
+"""
+This module determines finite difference coefficients for uniform and 
+non-uniform grids for any desired accuracy order.
+"""
+
 import math
 import numpy as np
 
 
 def coefficients(deriv, acc):
-    """Calculates the finite difference coefficients for given derivative order and accuracy order
+    """
+    Calculates the finite difference coefficients for given derivative order and accuracy order.
+    Assumes that the underlying grid is uniform. This function is available at the `findiff`
+    package level.
+    
+    :param deriv: int > 0: The derivative order.
+          
+    :param acc:  even int > 0: The accuracy order. 
+          
+    :return: dict with the finite difference coefficients and corresponding offsets 
     """
 
     if acc % 2 == 1:
@@ -56,6 +70,20 @@ def coefficients(deriv, acc):
 
 
 def coefficients_non_uni(deriv, acc, coords, idx):
+    """
+    Calculates the finite difference coefficients for given derivative order and accuracy order.
+    Assumes that the underlying grid is non-uniform.
+
+    :param deriv: int > 0: The derivative order.
+
+    :param acc:  even int > 0: The accuracy order.
+     
+    :param coords:  1D numpy.ndarray: the coordinates of the axis for the partial derivative
+    
+    :param idx:  int: index of the grid position where to calculate the coefficients
+
+    :return: dict with the finite difference coefficients and corresponding offsets 
+    """
 
     if acc % 2 == 1:
         acc += 1
