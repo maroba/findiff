@@ -200,16 +200,9 @@ class FinDiffMixIn(object):
 
 
 class BasicFinDiff(FinDiffMixIn):
-
-
-
-
-
-
-
-#    """A basic partial derivative of any order and accuracy on a uniform grid.
-#       Should not be instantiated directly, use the FinDiff class instead.
-#    """
+    """A basic partial derivative of any order and accuracy on a uniform grid.
+       Should not be instantiated directly, use the FinDiff class instead.
+    """
 
     def __init__(self, *args, **kwargs):
         """Constructor for BasicFinDiff class
