@@ -3,36 +3,86 @@ from findiff.coefs import coefficients, coefficients_non_uni
 
 
 class FinDiff(object):
-    """Wrapper class for finite difference linear differential operators in any number of dimensions
+    r"""Primary class for finite difference linear differential operators in any number of dimensions
        on uniform and non-uniform grids. 
        
        FinDiff objects can be added with other FinDiff objects. They can be multiplied by
-       objects of type Coefficient."""
+       objects of type Coefficient.
+                        
+       FinDiff is callable, i.e. to apply the derivative, just call the object on the array to
+       differentiate.
+       
+       
+       Parameters
+       ----------
+        
+        args :   variable number of tuples. If only one tuple is given, you can leave away the tuple parentheses.                 
+            
+            Defines what derivative to take.
+            
+            Each tuple has the form
+            
+                   `(axis, spacing, count)`     for uniform grids
+                   
+                   `(axis, count)`              for non-uniform grids.
+                   
+            `axis` is the dimension along which to take derivative.
+             
+            `spacing` is the grid spacing of the uniform grid along that axis.
+                                    
+            `count` is the order of the derivative, which is optional an defaults to 1. 
+                    
+                    
+        
+        
+        kwargs :  variable number of keyword arguments
+        
+            Used for further configuration.
+            
+            Allowed keywords:
+                        
+            `coords`  A list of 1D-arrays of real numbers with the coordinate values along each axis.
+                      This must be given to use a non-uniform grid.
+                    
+            `acc`     even integer
+                      The desired accuracy order. Default is acc=2.
+                    
+                    
+        Examples:
+        =========
+        
+           For this example, we want to operate on some 3D array f:
+           
+           >>> import numpy as np
+           >>> x, y, z = [np.linspace(-1, 1, 100) for _ in range(3)]
+           >>> X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+           >>> f = X**2 + Y**2 + Z**2
+        
+           To create :math:`\frac{\partial f}{\partial x}` on a uniform grid with spacing dx, dy
+           along the 0th axis or 1st axis, respectively, instantiate:
+           
+           >>> d_dx = FinDiff(0, dx)
+           >>> d_dy = FinDiff(1, dx)
+           
+           and apply it to an numpy.ndarray _f_:
+           
+           >>> d_dx(f)
+           
+           For :math:`\frac{\partial^2 f}{\partial x^2}` or :math:`\frac{\partial^2 f}{\partial y^2}`:
+           
+           >>> d2_dx2 = FinDiff(0, dx, 2)
+           >>> d2_dy2 = FinDiff(1, dy, 2)
+           >>> d2f_dx2 = d2_dx2(f)
+           >>> d2f_dy2 = d2_dy2(f)
+           
+           For :math:`\frac{\partial^2 f}{\partial x \partial y}`, do:
+           
+           >>> d = FinDiff((0, dx), (1, dy))
+           >>> d(f)
+       
+    """
 
     def __init__(self, *args, **kwargs):
-        """Constructor for FinDiff class
-        
-            Parameters:
-            -----------
-            
-            args        list of tuples of the form 
-            
-                               (axis, spacing, count)     for uniform grids
-                               (axis, count)              for non-uniform grids.
-                               
-                        "axis" is the dimension along which to take derivative. 
-                        "spacing" is the grid spacing of the uniform grid along that axis.                        
-                        "count" is the order of the derivative, which is optional an defaults to 1. 
-                        
-                        If only one tuple is given, you can leave away the tuple parentheses.
-            
-            **kwargs:
-                            
-                coords  A list of 1D-arrays of real numbers with the coordinate values along each axis.
-                        This must be given to use a non-uniform grid.
-                        
-                acc     even integer
-                        The desired accuracy order. Default is acc=2."""
 
         self.uniform = True
         if "coords" in kwargs:
@@ -469,10 +519,15 @@ class BasicFinDiffNonUniform(FinDiffMixIn):
 
 
 class Coefficient(object):
-    """Encapsulates a constant (number) or variable (coordinate array) value to multiply with a linear operator
+    """
+    Encapsulates a constant (number) or variable (N-dimensional coordinate array) value to multiply with a linear operator
     """
 
     def __init__(self, value):
         self.value = value
+
+    def some_func(self):
+        """Some docu"""
+        return 1
 
 
