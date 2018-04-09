@@ -73,8 +73,6 @@ class FinDiff(object):
     """
 
     def __init__(self, *args, **kwargs):
-        """ 
-        """
 
         self.uniform = True
         if "coords" in kwargs:
@@ -534,4 +532,7 @@ class Coefficient(object):
     def __init__(self, value):
         self.value = value
 
-
+    def __mul__(self, other):
+        if isinstance(other, Coefficient):
+            return Coefficient(self.value * other.value)
+        return other.__rmul__(self)

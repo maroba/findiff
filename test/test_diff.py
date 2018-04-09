@@ -321,6 +321,15 @@ class TestLinearCombinations(unittest.TestCase, TestUtilities):
         f_diffed = diff_op(f)
         self._assertAlmostEqual(f_diffed, f_diffed_e)
 
+    def test_multiplication_with_variables_two_coefficients(self):
+        x = np.linspace(-1, 1, 200)
+        dx = x[1] - x[0]
+        f = x**3
+        f_diffed_e = 6 * x
+        diff_op = fd.Coefficient(x) * fd.Coefficient(x) * fd.FinDiff((0, dx, 2))
+        f_diffed = diff_op(f)
+        self._assertAlmostEqual(f_diffed, x**2 * f_diffed_e)
+
     def test_assert_cannot_add_on_uni_and_nonuni_grids(self):
 
         def do_test():
