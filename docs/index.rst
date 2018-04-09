@@ -3,16 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to findiff's documentation!
-===================================
+===========
+**findiff**
+===========
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
 
-   code/diff.rst
-   code/coefs.rst
+   code/diff
+   code/coefs
+   code/vector
 
 Indices and tables
 ==================

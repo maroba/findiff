@@ -48,44 +48,40 @@ class VectorOperator(object):
 
 
 class Gradient(VectorOperator):
-    """The N-dimensional gradient
+    r"""
+    The N-dimensional gradient.
     
-        (\frac{\partial}{\partial x_0}, \frac{\partial}{\partial x_1}, ... , \frac{\partial}{\partial x_{N-1}})
+    .. math::
+        \nabla = \left(\frac{\partial}{\partial x_0}, \frac{\partial}{\partial x_1}, ... , \frac{\partial}{\partial x_{N-1}}\right)
+
+    :param kwargs:  exactly one of *h* and *coords* must be specified
     
+             *h* 
+                     list with the grid spacings of an N-dimensional uniform grid     
+             *coords*
+                     list of 1D arrays with the coordinate values along the N axes.
+                     This is used for non-uniform grids.
+                     
+             *acc*
+                     accuracy order, must be positive integer, default is 2
     """
 
     def __init__(self, **kwargs):
-        """Constructor for the N-dimensional gradient
-
-                kwargs:
-                -------
-
-                h       list with the grid spacings of an N-dimensional uniform grid
-
-                coords  list of 1D arrays with the coordinate values along the N axes.
-                        This is used for non-uniform grids. 
-
-                      !! Either specify "h" or "coords", not both. !!
-
-                acc     accuracy order, must be even, positive integer
-
-        """
-
         super().__init__(**kwargs)
 
     def __call__(self, f):
-        """Applies the N-dimensional gradient to the array f.
+        """
+        Applies the N-dimensional gradient to the array f.
         
-           Parameters:
-           -----------
+        :param f:  ``numpy.ndarray``
+        
+                Array to apply the gradient to. It represents a scalar function,
+                so it must have N axes for the N independent variables.        
            
-           f    array to apply the gradient to. It represents a scalar function,
-                so its dimension must be N for the N independent variables.        
-           
-           Returns:
-            
-           The gradient of f, which has dimension N+1, i.e. it is 
-           an array of N arrays of N dimensions each.
+        :returns: ``numpy.ndarray``
+         
+                The gradient of f, which has N+1 axes, i.e. it is 
+                an array of N arrays of N axes each.
            
         """
 
@@ -104,37 +100,40 @@ class Gradient(VectorOperator):
 
 
 class Divergence(VectorOperator):
-    """The N-dimensional divergence
+    r"""
+    The N-dimensional divergence.
     
-       \sum_{k=1}^N \frac{\partial }{\partial x_k}
+    .. math::
+    
+       {\rm \bf div} = \nabla^2 = \sum_{k=0}^{N-1} \frac{\partial }{\partial x_k}
+    
+    :param kwargs:  exactly one of *h* and *coords* must be specified
+
+         *h* 
+                 list with the grid spacings of an N-dimensional uniform grid     
+         *coords*
+                 list of 1D arrays with the coordinate values along the N axes.
+                 This is used for non-uniform grids.
+                 
+         *acc*
+                 accuracy order, must be positive integer, default is 2
     
     """
 
     def __init__(self, **kwargs):
-        """Constructor for the N-dimensional divergence
-
-                kwargs:
-                -------
-
-                h       list with the grid spacings of an N-dimensional uniform grid
-
-                coords  list of 1D arrays with the coordinate values along the N axes.
-                        This is used for non-uniform grids. 
-
-                      !! Either specify "h" or "coords", not both. !!
-
-                acc     accuracy order, must be even, positive integer
-
-        """
-
         super().__init__(**kwargs)
 
     def __call__(self, f):
-        """Applies the divergence to the array f.
+        """
+        Applies the divergence to the array f.
+
+        :param f: ``numpy.ndarray``
+                
+               a vector function of N variables, so its array has N+1 axes.
         
-            f is a vector function of N variables, so its array dimension is N+1.
+        :returns: ``numpy.ndarray``
             
-            Returns the divergence, which is a scalar function of N variables, so it's array dimension is N
+               the divergence, which is a scalar function of N variables, so it's array dimension has N axes
                 
         """
         if not isinstance(f, np.ndarray) and not isinstance(f, list):
@@ -152,34 +151,47 @@ class Divergence(VectorOperator):
 
 
 class Curl(VectorOperator):
-    """The curl operator. Is only defined for 3D."""
+    r"""
+    The curl operator. 
+    
+    .. math::
+    
+        {\rm \bf rot} = \nabla \times
+    
+    Is only defined for 3D.
+    
+    :param kwargs:  exactly one of *h* and *coords* must be specified
+
+     *h* 
+             list with the grid spacings of a 3-dimensional uniform grid     
+     *coords*
+             list of 1D arrays with the coordinate values along the 3 axes.
+             This is used for non-uniform grids.
+             
+     *acc*
+             accuracy order, must be positive integer, default is 2
+
+    
+    """
 
     def __init__(self, **kwargs):
-        """Constructor for the 3-dimensional curl
-
-                kwargs:
-                -------
-
-                h       list with the grid spacings of an 3-dimensional uniform grid
-
-                coords  list of 1D arrays with the coordinate values along the 3 axes.
-                        This is used for non-uniform grids. 
-
-                      !! Either specify "h" or "coords", not both. !!
-
-                acc     accuracy order, must be even, positive integer
-
-        """
-
         super().__init__(**kwargs)
 
         if self.ndims != 3:
             raise ValueError("Curl operation is only defined in 3 dimensions. {} were given.".format(self.ndims))
 
     def __call__(self, f):
-        """Applies the curl operator to the vector function f, represented by array of dimension 4.
-        
-           Returns the curl, a vector function, i.e. an array of dimension 4.
+        """
+        Applies the divergence to the array f.
+
+        :param f: ``numpy.ndarray``
+
+               a vector function of N variables, so its array has N+1 axes.
+
+        :returns: ``numpy.ndarray``
+
+               the curl, which is a vector function of N variables, so it's array dimension has N+1 axes
+
         """
 
         if not isinstance(f, np.ndarray) and not isinstance(f, list):
