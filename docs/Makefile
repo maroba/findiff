@@ -6,7 +6,9 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = findiff
 SOURCEDIR     = .
-BUILDDIR      = _build
+BUILDDIR      = ../../findiff-docs
+PDFBUILDDIR   = /tmp
+PDF           = ../manual.pdf
 
 # Put it first so that "make" without argument is like "make help".
 help:

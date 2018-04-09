@@ -11,10 +11,10 @@
    :maxdepth: 2
    :caption: Contents:
 
-
-   code/diff
-   code/coefs
-   code/vector
+   source/includeme
+   source/diff
+   source/coefs
+   source/vector
 
 Indices and tables
 ==================
