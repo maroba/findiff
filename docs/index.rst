@@ -11,9 +11,7 @@
     :maxdepth: 2
     :caption: Contents
 
-    source/diff
-    source/coefs
-    source/vector
+    source/modules
 
 
 Indices and tables
