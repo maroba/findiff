@@ -24,6 +24,10 @@ Simply use pip:
 pip install findiff
 ```
 
+## Documentation
+
+You can find the modules documentation on [this web site](https://maroba.github.io/findiff-docs/index.html).
+
 ## Dependencies
 
 _findiff_ uses _numpy_ for fast array processing.
