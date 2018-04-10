@@ -6,6 +6,8 @@ DOCDIR=`pwd`
 cd $FINDOCDIR || exit
 git checkout gh-pages || exit
 
+rm -rf $(find . -not -name . -not -name .. | grep -v .git)
+
 cp -r ${DOCDIR}/_build/html/* .
 
 git add .

@@ -9,4 +9,3 @@ Module *diff*
 
 .. autoclass:: Coefficient
     :members:
-
