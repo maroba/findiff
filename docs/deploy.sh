@@ -12,6 +12,11 @@ cp -r ${DOCDIR}/_build/html/* .
 
 git add .
 git commit -m "Update documentation"
+
+touch .nojekyll
+git add .
+git commit -m "Add .nojekyll file"
+
 git push origin gh-pages
 
 cd $DOCDIR
