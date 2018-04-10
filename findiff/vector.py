@@ -105,7 +105,7 @@ class Divergence(VectorOperator):
     
     .. math::
     
-       {\rm \bf div} = \nabla^2 = \sum_{k=0}^{N-1} \frac{\partial }{\partial x_k}
+       {\rm \bf div} = \nabla \cdot
     
     :param kwargs:  exactly one of *h* and *coords* must be specified
 
@@ -182,7 +182,7 @@ class Curl(VectorOperator):
 
     def __call__(self, f):
         """
-        Applies the divergence to the array f.
+        Applies the curl to the array f.
 
         :param f: ``numpy.ndarray``
 
@@ -210,37 +210,44 @@ class Curl(VectorOperator):
 
 
 class Laplacian(object):
+    r"""
+        The N-dimensional Laplace operator.
+
+        .. math::
+
+           {\rm \bf \nabla^2} = \sum_{k=0}^{N-1} \frac{\partial^2}{\partial x_k^2}
+
+        :param kwargs:  exactly one of *h* and *coords* must be specified
+
+             *h* 
+                     list with the grid spacings of an N-dimensional uniform grid     
+             *coords*
+                     list of 1D arrays with the coordinate values along the N axes.
+                     This is used for non-uniform grids.
+
+             *acc*
+                     accuracy order, must be positive integer, default is 2
+
+        """
+
     """A representation of the Laplace operator in arbitrary dimensions using finite difference schemes"""
 
     def __init__(self, h=[1.], acc=2):
-        """Constructor for the Laplacian
-
-           Parameters:
-           -----------
-
-           h        array-like
-                    The grid spacing along each axis
-           acc      int
-                    The accuracy order of the finite difference scheme        
-        """
-
         h = wrap_in_ndarray(h)
 
         self._parts = [FinDiff((k, h[k], 2), acc=acc) for k in range(len(h))]
 
     def __call__(self, f):
-        """Applies the Laplacian to the array f
+        """
+        Applies the Laplacian to the array f.
 
-           Parameters:
-           -----------
+        :param f: ``numpy.ndarray``
 
-           f        ndarray
-                    The function to differentiate given as an array.
+               a scalar function of N variables, so its array has N axes.
 
-           Returns:
-           --------    
+        :returns: ``numpy.ndarray``
 
-           an ndarray with Laplace(f)
+               the Laplacian of f, which is a scalar function of N variables, so it's array dimension has N axes
 
         """
         laplace_f = np.zeros_like(f)

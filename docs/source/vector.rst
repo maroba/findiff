@@ -18,3 +18,8 @@ Module *vector*
     :members:
 
     .. automethod:: __call__
+
+.. autoclass:: Laplacian
+    :members:
+
+    .. automethod:: __call__
