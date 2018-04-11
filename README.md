@@ -163,5 +163,5 @@ gives
 
 ## Further examples
 
-A collection of further examples using the _findiff_ package can be found in [here](https://maroba.github.io/findiff-docs/source/examples.html)
+A collection of further examples using the _findiff_ package can be found in [here](https://maroba.github.io/findiff-docs/source/examples.html).
 
