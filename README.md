@@ -24,6 +24,10 @@ Simply use pip:
 pip install findiff
 ```
 
+## Documentation
+
+You can find the documentation of the code including examples of application at https://maroba.github.io/findiff-docs/index.html.
+
 ## Dependencies
 
 _findiff_ uses _numpy_ for fast array processing.
@@ -159,10 +163,5 @@ gives
 
 ## Further examples
 
-Here is a collection of further examples using the _findiff_ package:
-
-* [Basic usage](examples/basic.py)
-* [Linear operators](examples/linear_op.py)
-* [Non-uniform grids](examples/examples-non-uniform-grids.ipynb)
-* [Vector calculus](examples/vector_calculus.py)
+A collection of further examples using the _findiff_ package can be found in [here](https://maroba.github.io/findiff-docs/source/examples.html)
 
