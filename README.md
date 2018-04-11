@@ -163,6 +163,6 @@ Here is a collection of further examples using the _findiff_ package:
 
 * [Basic usage](examples/basic.py)
 * [Linear operators](examples/linear_op.py)
-* [Non-uniform grids](examples/non-uniform-grids.ipynb)
+* [Non-uniform grids](examples/examples-non-uniform-grids.ipynb)
 * [Vector calculus](examples/vector_calculus.py)
 

@@ -11,6 +11,7 @@
     :maxdepth: 2
     :caption: Contents
 
+    source/examples
     source/modules
 
 
