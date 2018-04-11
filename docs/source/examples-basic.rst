@@ -15,7 +15,7 @@ Our imports:
 .. code:: ipython3
 
     import numpy as np
-    from findiff import FinDiff, coefficients, Coefficient, Gradient, Divergence, Curl, Laplacian
+    from findiff import FinDiff, coefficients, Coefficient
 
 Simple 1D Cases
 ---------------
