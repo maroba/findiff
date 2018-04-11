@@ -7,5 +7,6 @@ Examples
 
     examples-basic
     examples-vector-calculus
+    examples-polar
     examples-non-uniform-grids
 
