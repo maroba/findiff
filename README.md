@@ -88,7 +88,7 @@ grad_f = grad(f)
 
 ```
 
-More examples, including linear combinations with variable coefficients can be found [here](examples).
+More examples, including linear combinations with variable coefficients can be found [here](https://maroba.github.io/findiff-docs/source/examples.html).
 
 
 #### Derivatives in N dimensions
