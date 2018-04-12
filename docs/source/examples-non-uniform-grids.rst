@@ -67,7 +67,7 @@ Let's make a coarse and a finer grid.
 
 .. parsed-literal::
 
-    [<matplotlib.lines.Line2D at 0x1084cfd30>]
+    [<matplotlib.lines.Line2D at 0x106513e48>]
 
 
 
@@ -105,7 +105,7 @@ calculate the first derivative for both grids.
 
 .. parsed-literal::
 
-    [<matplotlib.lines.Line2D at 0x1086ddc18>]
+    [<matplotlib.lines.Line2D at 0x106727748>]
 
 
 
@@ -135,7 +135,7 @@ increase the accuracy order, or, we can use a ***non-uniform*** grid.
 
 .. parsed-literal::
 
-    [<matplotlib.lines.Line2D at 0x1084a41d0>]
+    [<matplotlib.lines.Line2D at 0x106373e48>]
 
 
 
@@ -149,7 +149,7 @@ the derivative with the non-uniform grid.
 
 .. code:: ipython3
 
-    d_dx = FinDiff(0, coords=[x_nu], acc=2)
+    d_dx = FinDiff(0, x_nu, acc=2)
     df_dx_nu = d_dx(f_nu)
     
     plt.plot(x_fine, df_dx_exact)
@@ -160,7 +160,7 @@ the derivative with the non-uniform grid.
 
 .. parsed-literal::
 
-    [<matplotlib.lines.Line2D at 0x10833b128>]
+    [<matplotlib.lines.Line2D at 0x1063a9978>]
 
 
 
