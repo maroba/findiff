@@ -33,22 +33,20 @@ You can find the documentation of the code including examples of application at 
 ### Derivatives on uniform grids
 
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
-want to differentiate four-dimensional function given as a 4D array.
+want to differentiate four-dimensional function given as a 4D array `f` with coordiantes `x, y, z, t`.
+
+![d_dx](docs/frontpage/d_dx.svg)
 
 ```python
-from findiff import *
-
-# Init the array to differentiate
-f = init_your_4d_array_to_differentiate()
-
-#
-# First derivatives
-#
-# along axis 0:
+# along axis 0 = x
 d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
+```
 
-# along axis 2:
+![d_dz](docs/frontpage/d_dz.svg)
+
+```python
+# along axis 2 = z
 d_dz = FinDiff(2, dz)
 df_dz = d_dz(f)
 
