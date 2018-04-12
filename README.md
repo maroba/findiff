@@ -8,7 +8,7 @@ any number of dimensions.
 
 * Differentiate arrays of any number of dimensions along any axis
 * Partial derivatives of any desired order
-* Accuracy order can be specified
+* Any accuracy order can be specified
 * Accurate treatment of grid boundary
 * Includes standard operators from vector calculus like gradient, divergence and curl
 * Can handle uniform and non-uniform grids
