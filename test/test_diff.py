@@ -236,14 +236,10 @@ class TestFinDiffNonUniform(unittest.TestCase, TestUtilities):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = np.exp(-X**2-Y**2)
 
-        d_dx = fd.FinDiff((0,), coords=[x, y])
+        d_dx = fd.FinDiff((0, x))
         fx = d_dx(f)
         fxe = - 2 * X * np.exp(-X**2-Y**2)
         self._assertAlmostEqual(fx, fxe, 4)
-
-    def test_FinDiff_NonUni_2d_coords_not_list(self):
-        x = np.r_[np.arange(0, 4, 0.005), np.arange(4, 10, 1)]
-        self.assertRaises(TypeError, fd.FinDiff, (0,), coords=x)
 
     def test_BasicFinDiffNonUni_3d(self):
         x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
@@ -252,21 +248,13 @@ class TestFinDiffNonUniform(unittest.TestCase, TestUtilities):
         X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
         f = np.exp(-X**2-Y**2-Z**2)
 
-        d_dy = fd.FinDiff((1,), coords=[x, y, z], acc=4)
+        d_dy = fd.FinDiff((1, y), acc=4)
         fy = d_dy(f)
         fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
         self._assertAlmostEqual(fy, fye, 4)
 
     def test_FinDiff_non_uni_no_coords_given(self):
         self.assertRaises(ValueError, fd.FinDiff, (0,))
-
-    def test_FinDiff_non_uni_coords_given_not_compatible(self):
-        x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
-        y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
-        X, Y = np.meshgrid(x, y, indexing='ij')
-        f = X * Y
-        d_dx = fd.FinDiff((0,), coords=[x[:-1], y])
-        self.assertRaises(IndexError, d_dx, f)
 
 
 class TestLinearCombinations(unittest.TestCase, TestUtilities):
@@ -339,7 +327,7 @@ class TestLinearCombinations(unittest.TestCase, TestUtilities):
             x = np.linspace(xy0[0], xy1[0], nxy[0])
             y = np.linspace(xy0[1], xy1[1], nxy[1])
             dxy = [x[1] - x[0], y[1] - y[0]]
-            fd.FinDiff((0, dxy[0], 2)) + fd.FinDiff((1, 2), coords=[x,y])
+            fd.FinDiff((0, dxy[0], 2)) + fd.FinDiff((1, y, 2))
 
         self.assertRaises(ValueError, do_test)
 

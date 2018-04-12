@@ -33,7 +33,7 @@ class VectorOperator(object):
         if "coords" in kwargs:
             coords = kwargs.pop("coords")
             self.ndims = self.__get_dimension(coords)
-            self.components = [FinDiff((k,), coords=coords, **kwargs) for k in range(self.ndims)]
+            self.components = [FinDiff((k, coords[k]), **kwargs) for k in range(self.ndims)]
 
     def __get_dimension(self, coords):
         if isinstance(coords, np.ndarray):

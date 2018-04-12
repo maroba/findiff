@@ -74,21 +74,40 @@ class FinDiff(object):
 
     def __init__(self, *args, **kwargs):
 
-        self.uniform = True
-        if "coords" in kwargs:
-            coords = kwargs.pop("coords")
-            self.uniform = False
+        self._basic_ops = []
+        self._coefs = []
 
-        if "empty" in kwargs and kwargs["empty"]:
-            self._basic_ops = []
-            self._coefs = []
-        else:
+        if len(args) > 0:
+
+            self.uniform = self.__is_grid_uniform(args)
+
             if self.uniform:
-                self._basic_ops = [BasicFinDiff(*args, **kwargs)]
+                self._basic_ops.append(BasicFinDiff(*args, **kwargs))
             else:
-                self._basic_ops = [BasicFinDiffNonUniform(coords, *args, **kwargs)]
+                self._basic_ops.append(BasicFinDiffNonUniform(*args, **kwargs))
 
-            self._coefs = [Coefficient(1)]
+            self._coefs.append(Coefficient(1))
+
+    def __is_grid_uniform(self, args):
+
+        num_tuples = sum([1 for arg in args if hasattr(arg, "__len__")])
+
+        uniform = True
+
+        if num_tuples == len(args):
+            first_tuple = args[0]
+            if len(first_tuple) < 2:
+                raise ValueError("Expected tuple of length 2 or 3")
+            item_to_inspect = first_tuple[1]
+        elif num_tuples <= 1:
+            item_to_inspect = args[1]
+        else:
+            raise ValueError("Arguments must all be tuples or all numbers.")
+
+        if hasattr(item_to_inspect, "__len__"):
+            uniform = False
+
+        return uniform
 
     def __call__(self, y):
         """Applies the linear differential operator to y
@@ -123,7 +142,7 @@ class FinDiff(object):
         if self._grids_are_incompatible(other):
             raise ValueError("Operators on incompatible grids cannot be added.")
 
-        new_op = FinDiff(empty=True)
+        new_op = FinDiff()
         new_op.uniform = self.uniform
         new_op._basic_ops.extend(self._basic_ops)
         new_op._coefs.extend(self._coefs)
@@ -145,7 +164,7 @@ class FinDiff(object):
         if not isinstance(other, Coefficient):
             other = Coefficient(other)
 
-        new_op = FinDiff(empty=True)
+        new_op = FinDiff()
         new_op.uniform = self.uniform
         new_op._basic_ops.extend(self._basic_ops)
         new_op._coefs.extend(self._coefs)
@@ -366,7 +385,7 @@ class BasicFinDiffNonUniform(FinDiffMixIn):
        Should not be instantiated directly, use the FinDiff class instead.
     """
 
-    def __init__(self, coords, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Constructor for BasicFinDiffNonUniform class
 
             Parameters:
@@ -389,8 +408,6 @@ class BasicFinDiffNonUniform(FinDiffMixIn):
                 acc     even integer
                         The desired accuracy order. Default is acc=2."""
 
-        self.coords = np.array(coords)
-        self.shape = [len(self.coords[k]) for k in range(len(self.coords))]
         self.derivs = self._parse_args(args)
 
         kws = set(kwargs.keys())
@@ -412,61 +429,40 @@ class BasicFinDiffNonUniform(FinDiffMixIn):
     def _determine_coefs(self):
         """Calculates the finite difference coefficients for the requested partial derivatives"""
 
-        for axis, partial in self.derivs.items():
+        for axis, deriv in self.derivs.items():
             coefs = []
-            for i in range(len(self.coords[axis])):
-                coefs.append(coefficients_non_uni(partial["order"], self.acc, self.coords[axis], i))
+            for i in range(len(deriv["coords"])):
+                coefs.append(coefficients_non_uni(deriv["order"], self.acc, deriv["coords"], i))
 
             self.derivs[axis]["coefs"] = coefs
 
     def _parse_args(self, args):
 
-        result = {}
-
-        no_args_are_tuple = True
-        for arg in args:
-            if hasattr(arg, "__len__"):
-                no_args_are_tuple = False
-                break
-
-        if no_args_are_tuple:
-            if len(args) == 1:
-                axis, = args
+        def axis_coords_order(a):
+            if len(a) == 3:
+                axis, coords, order = a
+            elif len(a) == 2:
+                axis, coords = a
                 order = 1
-            elif len(args) == 2:
-                axis, order = args
             else:
-                raise TypeError("Arguments must be tuple-like: (axis, spacing, [deriv_order])")
+                raise ValueError("Tuple must be (axis, coords, deriv) or (axis, coords")
+            return axis, coords, order
 
-            result[axis] = {"order": order}
+        num_tuples = sum([1 for arg in args if hasattr(arg, "__len__")])
 
+        derivs = {}
+
+        if num_tuples != len(args):
+            axis, coords, order = axis_coords_order(args)
+            derivs[axis] = {"coords": coords, "order": order}
         else:
-
             for arg in args:
+                axis, coords, order = axis_coords_order(arg)
+                if axis in derivs.keys():
+                    raise ValueError("Can specify axis only once.")
+                derivs[axis] = {"coords": coords, "order": order}
 
-                if not hasattr(arg, "__len__"):
-                    raise TypeError("Arguments must be tuple-like: (axis, [deriv_order])")
-                if not 1 <= len(arg) <= 2:
-                    raise ValueError("Arguments must be tuple-like: (axis, [deriv_order])")
-                if len(arg) == 2:
-                    axis, order = arg
-                else:
-                    axis, = arg
-                    order = 1
-                if not isinstance(axis, int):
-                    raise TypeError("axis arg must be integer")
-                if axis < 0:
-                    raise ValueError("axis arg must be >= 0")
-                if not isinstance(order, int):
-                    raise TypeError("deriv order arg must be integer")
-                if order <= 0:
-                    raise ValueError("deriv order arg must be > 0")
-                if axis in result:
-                    raise ValueError("axis can only be specified once")
-
-                result[axis] = {"order": order}
-
-        return result
+        return derivs
 
     def __call__(self, y):
 
@@ -477,13 +473,10 @@ class BasicFinDiffNonUniform(FinDiffMixIn):
             raise IndexError(\
                 "Requested derivative along axis {}, but max. axis of array is {}".format(max_axis, ndims-1))
 
-        if (y.shape != tuple(self.shape)):
-            raise IndexError("Grid is incompatible with array to differentiate.")
-
         yd = np.array(y)
 
         for axis, partial in self.derivs.items():
-            yd = self._diff(yd, self.coords, axis, partial["coefs"])
+            yd = self._diff(yd, partial["coords"], axis, partial["coefs"])
 
         return yd
 
@@ -496,7 +489,7 @@ class BasicFinDiffNonUniform(FinDiffMixIn):
         multi_slice = [slice(None, None)] * ndims
         ref_multi_slice = [slice(None, None)] * ndims
 
-        for i, x in enumerate(coords[dim]):
+        for i, x in enumerate(coords):
             weights = coefs[i]["coefficients"]
             offsets = coefs[i]["offsets"]
             ref_multi_slice[dim] = i
