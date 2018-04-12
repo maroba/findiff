@@ -40,10 +40,8 @@ want to differentiate four-dimensional function given as a 4D array `f` with coo
 # axis 0 = x
 d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
-```
 
-```python
-# First derivative with respect to x
+# First derivative with respect to z
 # axis 2 = z
 d_dz = FinDiff(2, dz)
 df_dz = d_dz(f)
