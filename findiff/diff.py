@@ -199,7 +199,10 @@ class FinDiffMixIn(object):
         for w, s in zip(weights, off_slices):
             off_multi_slice = [all] * ndims
             off_multi_slice[dim] = s
-            yd[ref_multi_slice] += w * y[off_multi_slice]
+            if abs(1 - w) < 1.E-14:
+                yd[ref_multi_slice] += y[off_multi_slice]
+            else:
+                yd[ref_multi_slice] += w * y[off_multi_slice]
 
     def _shift_slice(self, sl, off, max_index):
 
