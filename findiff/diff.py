@@ -336,16 +336,13 @@ class BasicFinDiff(FinDiffMixIn):
         yd = np.array(y)
 
         for axis, partial in self.derivs.items():
-            yd = self._diff(yd, partial["h"], partial["order"], axis, self.acc, partial["coefs"])
+            yd = self._diff(yd, partial["h"], partial["order"], axis, partial["coefs"])
 
         return yd
 
-    def _diff(self, y, h, deriv, dim, acc, coefs=None):
+    def _diff(self, y, h, deriv, dim, coefs):
         """The core function to take a partial derivative on a uniform grid.
         """
-
-        if coefs is None:
-            coefs = coefficients(deriv, acc)
 
         npts = y.shape[dim]
 
@@ -532,3 +529,4 @@ class Coefficient(object):
         if isinstance(other, Coefficient):
             return Coefficient(self.value * other.value)
         return other.__rmul__(self)
+
