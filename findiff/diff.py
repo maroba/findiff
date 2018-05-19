@@ -175,6 +175,8 @@ class FinDiff(object):
         return new_op
 
     def _grids_are_incompatible(self, other):
+        if self.uniform is None or other.uniform is None:
+            return False
         if self.uniform != other.uniform:
             return True
         if not self.uniform and not other.uniform:
@@ -530,3 +532,13 @@ class Coefficient(object):
             return Coefficient(self.value * other.value)
         return other.__rmul__(self)
 
+
+class Identity(FinDiff):
+
+    def __init__(self):
+        self._basic_ops = [lambda u: np.array(u)]
+        self._coefs = [Coefficient(1)]
+        self.uniform = None
+
+    def __call__(self, u):
+        return self._basic_ops[0](u)
