@@ -14,7 +14,7 @@ class TestGradient(unittest.TestCase):
           np.sin(X) * np.cos(Y) * np.sin(Z),
           np.sin(X) * np.sin(Y) * np.cos(Z),
         ])
-        grad = Gradient(h=h, acc=4)
+        grad = Gradient(spac=h, acc=4)
         grad_f = grad(f)
         assert_array_almost_equal(grad_f, grad_f_ex)
 
@@ -30,13 +30,12 @@ class TestGradient(unittest.TestCase):
         grad_f = grad(f)
         assert_array_almost_equal(grad_f, grad_f_ex)
 
-
     def test_3d_gradient_on_vector_func_should_fail(self):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z),
                       np.sin(X) * np.sin(Y) * np.sin(Z)
                      ])
-        grad = Gradient(h=h, acc=4)
+        grad = Gradient(spac=h, acc=4)
         self.assertRaises(ValueError, grad, f)
 
 class TestDivergence(unittest.TestCase):
@@ -50,7 +49,7 @@ class TestDivergence(unittest.TestCase):
           np.sin(X) * np.cos(Y) * np.sin(Z) +\
           np.sin(X) * np.sin(Y) * np.cos(Z)
 
-        div = Divergence(h=h, acc=4)
+        div = Divergence(spac=h, acc=4)
         div_f = div(f)
         assert_array_almost_equal(div_f, div_f_ex)
 
@@ -58,7 +57,7 @@ class TestDivergence(unittest.TestCase):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z)] * 3)
         assert f.shape == (3, 50, 50, 50)
-        div = Divergence(h=[1, 1], acc=4)
+        div = Divergence(spac=[1, 1], acc=4)
         self.assertRaises(ValueError, div, f)
 
 
@@ -73,7 +72,7 @@ class TestCurl(unittest.TestCase):
           np.sin(X) * np.sin(Y) * np.cos(Z) - np.cos(X) * np.sin(Y) * np.sin(Z),
           np.cos(X) * np.sin(Y) * np.sin(Z) - np.sin(X) * np.cos(Y) * np.sin(Z),
             ])
-        curl = Curl(h=h, acc=4)
+        curl = Curl(spac=h, acc=4)
         curl_f = curl(f)
         assert_array_almost_equal(curl_f, curl_f_ex)
 
@@ -81,12 +80,12 @@ class TestCurl(unittest.TestCase):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z)] * 3)
         assert f.shape == (3, 50, 50, 50)
-        self.assertRaises(ValueError, Curl, h=[1, 1], acc=4)
+        self.assertRaises(ValueError, Curl, spac=[1, 1], acc=4)
 
     def test_curl_for_2d_function(self):
         axes, h, [X, Y] = init_mesh(2, (50, 50))
         f = np.array([np.sin(X) * np.sin(Y)] * 2)
-        curl = Curl(h=[1, 1, 1], acc=4)
+        curl = Curl(spac=[1, 1, 1], acc=4)
         self.assertRaises(ValueError, curl, f)
 
 

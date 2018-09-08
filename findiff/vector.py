@@ -1,7 +1,7 @@
 """A module for the common differential operators of vector calculus"""
 
 import numpy as np
-from findiff.diff import FinDiff
+from findiff.findiff import FinDiff
 from findiff.util import wrap_in_ndarray
 
 
@@ -25,15 +25,15 @@ class VectorOperator(object):
         
         """
 
-        if "h" in kwargs:
-            self.h = wrap_in_ndarray(kwargs.pop("h"))
+        if "spac" in kwargs:
+            self.h = kwargs["spac"]
             self.ndims = len(self.h)
-            self.components = [FinDiff((k, self.h[k]), **kwargs) for k in range(self.ndims)]
+            self.components = [FinDiff((k, 1), **kwargs) for k in range(self.ndims)]
 
         if "coords" in kwargs:
             coords = kwargs.pop("coords")
             self.ndims = self.__get_dimension(coords)
-            self.components = [FinDiff((k, coords[k]), **kwargs) for k in range(self.ndims)]
+            self.components = [FinDiff((k, 1), coords=coords, **kwargs) for k in range(self.ndims)]
 
     def __get_dimension(self, coords):
         if isinstance(coords, np.ndarray):

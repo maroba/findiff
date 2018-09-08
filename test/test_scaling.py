@@ -1,7 +1,7 @@
 from math import log
 import unittest
 import numpy as np
-from findiff import FinDiff
+from findiff.findiff import FinDiff
 
 
 class TestScaling(unittest.TestCase):
@@ -17,8 +17,8 @@ class TestScaling(unittest.TestCase):
             x = np.linspace(0, Lx, nx)
             dx = x[1] - x[0]
             f = np.sin(x)
-            d_dx = FinDiff((0, dx), acc=acc)
-            fx = d_dx(f)
+            d_dx = FinDiff(0, 1)
+            fx = d_dx(f, spac=[dx], acc=acc)
             fxe = np.cos(x)
             err = np.max(np.abs(fxe - fx))
             log_dx_list.append(log(dx))
@@ -41,8 +41,8 @@ class TestScaling(unittest.TestCase):
             dx, dy = x[1] - x[0], y[1] - y[0]
             X, Y = np.meshgrid(x, y, indexing='ij')
             f = np.sin(X) * np.sin(Y)
-            d_dx = FinDiff((0, dx), acc=acc)
-            fx = d_dx(f)
+            d_dx = FinDiff(0, 1)
+            fx = d_dx(f, acc=acc, spac=[dx])
             fxe = np.cos(X) * np.sin(Y)
             err = np.max(np.abs(fxe - fx))
             log_dx_list.append(log(dx))

@@ -1,4 +1,4 @@
-import findiff as fd
+import findiff.findiff as fd
 import unittest
 import numpy as np
 
@@ -25,8 +25,8 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         h = x[1] - x[0]
         y = x ** 2
         y1e = 2 * x
-        df = fd.FinDiff((0, h))
-        y1 = df(y)
+        df = fd.FinDiff((0, 1))
+        y1 = df(y, spac=[h])
         err = np.max(np.abs(y1e - y1))
         self.assertAlmostEqual(0, err)
 
@@ -35,7 +35,7 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         h = x[1] - x[0]
         y = x ** 2
         y1e = 2 * x
-        y1 = fd.FinDiff((0, h, 1), acc=4)(y)
+        y1 = fd.FinDiff((0, 1), acc=4, spac=[h])(y)
         err = np.max(np.abs(y1e - y1))
         self.assertAlmostEqual(0, err)
 
@@ -44,7 +44,7 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         h = x[1] - x[0]
         y = x ** 3
         y2e = 6 * x
-        y2 = fd.FinDiff((0, h, 2))(y)
+        y2 = fd.FinDiff((0, 2))(y, spac=[h])
         err = np.max(np.abs(y2e - y2))
         self.assertAlmostEqual(0, err)
 
@@ -53,7 +53,7 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         h = x[1] - x[0]
         y = x ** 3
         y2e = 6 * x
-        y2 = fd.FinDiff((0, h, 2), acc=4)(y)
+        y2 = fd.FinDiff((0, 2), acc=4, spac=[h])(y)
         err = np.max(np.abs(y2e - y2))
         self.assertAlmostEqual(0, err)
 
@@ -64,11 +64,11 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = Y**3 * X**3
         fxe = 3 * X**2 * Y**3
-        fx = fd.FinDiff((0, dx))(f)
+        fx = fd.FinDiff((0, 1))(f, spac=[dx])
         err = np.max(np.abs(fxe - fx))
         self.assertAlmostEqual(0, err, 4)
         fye = 3 * X**3 * Y**2
-        fy = fd.FinDiff((1, dy))(f)
+        fy = fd.FinDiff((1, 1))(f, spac=[dy])
         err = np.max(np.abs(fye - fy))
         self.assertAlmostEqual(0, err, 4)
 
@@ -79,11 +79,11 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = Y**3 * X**3
         fxe = 3 * X**2 * Y**3
-        fx = fd.FinDiff(0, dx)(f)
+        fx = fd.FinDiff(0, 1)(f, spac=[dx])
         err = np.max(np.abs(fxe - fx))
         self.assertAlmostEqual(0, err, 4)
         fye = 3 * X**3 * Y**2
-        fy = fd.FinDiff(1, dy)(f)
+        fy = fd.FinDiff(1, 1)(f, spac=[dy])
         err = np.max(np.abs(fye - fy))
         self.assertAlmostEqual(0, err, 4)
 
@@ -95,11 +95,11 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = Y**3 * X**3
         fxxe = 6 * X * Y**3
-        fxx = fd.FinDiff((0, dx, 2), acc=2)(f)
+        fxx = fd.FinDiff((0, 2), acc=2)(f, spac=[dx])
         err = np.max(np.abs(fxxe - fxx))
         self.assertAlmostEqual(0, err, 4)
         fyye = 6 * X**3 * Y
-        fyy = fd.FinDiff((1, dy, 2))(f)
+        fyy = fd.FinDiff((1, 2))(f, spac=[dy])
         err = np.max(np.abs(fyye - fyy))
         self.assertAlmostEqual(0, err, 6)
 
@@ -111,15 +111,15 @@ class TestFinDiffUniform(unittest.TestCase, TestUtilities):
         X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
         f = Y**3 * X**3 * Z**3
         fxe = 3 * X**2 * Y**3 * Z**3
-        fx = fd.FinDiff((0, dx))(f)
+        fx = fd.FinDiff((0, 1))(f, spac=[dx])
         err = np.max(np.abs(fxe - fx))
         self.assertAlmostEqual(0, err, 4)
         fye = 3 * X**3 * Y**2 * Z**3
-        fy = fd.FinDiff((1, dy))(f)
+        fy = fd.FinDiff((1, 1))(f, spac=[dy])
         err = np.max(np.abs(fye - fy))
         self.assertAlmostEqual(0, err, 4)
         fze = 3 * X**3 * Y**3 * Z**2
-        fz = fd.FinDiff((2, dz))(f)
+        fz = fd.FinDiff((2, 1))(f, spac=[dz])
         err = np.max(np.abs(fze - fz))
         self.assertAlmostEqual(0, err, 4)
 
