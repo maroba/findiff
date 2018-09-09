@@ -25,19 +25,12 @@ def coefficients(deriv, acc):
 
     ret = {}
 
+    # Determine central coefficients
+
     num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
     num_side = num_central // 2
 
-    # Determine central coefficients
-
-    matrix = _build_matrix(num_side, num_side, deriv)
-
-    rhs = _build_rhs(num_side, num_side, deriv)
-
-    ret["center"] = {
-        "coefficients": np.linalg.solve(matrix, rhs),
-        "offsets": np.array([p for p in range(-num_side, num_side+1)])
-    }
+    ret["center"] = _calc_coef(num_side, num_side, deriv)
 
     # Determine forward coefficients
 
@@ -46,27 +39,25 @@ def coefficients(deriv, acc):
     else:
         num_coef = num_central
 
-    matrix = _build_matrix(0, num_coef - 1, deriv)
-
-    rhs = _build_rhs(0, num_coef - 1, deriv)
-
-    ret["forward"] = {
-        "coefficients": np.linalg.solve(matrix, rhs),
-        "offsets": np.array([p for p in range(num_coef)])
-    }
+    ret["forward"] = _calc_coef(0, num_coef - 1, deriv)
 
     # Determine backward coefficients
 
-    matrix = _build_matrix(num_coef - 1, 0, deriv)
-
-    rhs = _build_rhs(num_coef - 1, 0, deriv)
-
-    ret["backward"] = {
-        "coefficients": np.linalg.solve(matrix, rhs),
-        "offsets": np.array([p for p in range(-num_coef+1, 1)])
-    }
+    ret["backward"] = _calc_coef(num_coef - 1, 0, deriv)
 
     return ret
+
+
+def _calc_coef(left, right, deriv):
+
+    matrix = _build_matrix(left, right, deriv)
+
+    rhs = _build_rhs(left, right, deriv)
+
+    return {
+        "coefficients": np.linalg.solve(matrix, rhs),
+        "offsets": np.array([p for p in range(-left, right+1)])
+    }
 
 
 def coefficients_non_uni(deriv, acc, coords, idx):
