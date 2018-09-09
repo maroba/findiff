@@ -6,6 +6,6 @@ Modules Description
     :maxdepth: 2
     :caption: Modules
 
-    diff
+    findiff
     coefs
     vector

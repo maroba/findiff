@@ -1,11 +1,14 @@
 =============
-Module *diff*
+Module *findiff*
 =============
 
-.. automodule:: diff
+.. automodule:: findiff
 
 .. autoclass:: FinDiff
     :members:
 
 .. autoclass:: Coefficient
+    :members:
+
+.. autoclass:: PartialDerivative
     :members:
