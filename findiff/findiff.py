@@ -257,7 +257,25 @@ class FinDiff(UnaryOperator):
 
 
 class Coef(object):
+    """
+        Encapsulates a constant (number) or variable (N-dimensional coordinate array) value to multiply with a linear operator
 
+        :param value: a number or an numpy.ndarray with meshed coordinates
+
+        ============
+        **Example**:
+
+           The following example defines the differential operator
+
+           .. math::
+
+              2x \frac{\partial^3}{\partial x^2 \partial z}
+
+           >>> X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
+           >>> diff_op = Coef(2*X) * FinDiff((0, dx, 2), (2, dz, 1))
+
+
+        """
     def __init__(self, value):
         self.value = value
 
