@@ -1,5 +1,5 @@
 from .coefs import coefficients
-from .diff import FinDiff, Coefficient, Identity
+from .findiff import FinDiff, Coef, Identity
 from .vector import Gradient, Divergence, Curl, Laplacian
 
-__version__ = "0.5.3"
+__version__ = "0.6.0"
