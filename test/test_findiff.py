@@ -6,7 +6,7 @@ from findiff.findiff import FinDiff, Coef, Identity
 
 class FinDiffTest(unittest.TestCase):
 
-    def test_partial_diff_1d(self):
+    def test_partial_diff(self):
         nx = 100
         x = np.linspace(0, np.pi, nx)
         u = np.sin(x)

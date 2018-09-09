@@ -178,6 +178,8 @@ class Coef(object):
     def __init__(self, value):
         self.value = value
 
+# Alias for backward compatibility
+Coefficient = Coef
 
 class Identity(FinDiff):
 
