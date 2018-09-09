@@ -8,7 +8,71 @@ class FinDiff(UnaryOperator):
 
     def __init__(self, *args, **kwargs):
         """
-            Same args as PartialDerivative class. Describes a general linear differential operator.
+            A representation of a general linear differential operator expressed in finite differences.
+            
+            FinDiff objects can be added with other FinDiff objects. They can be multiplied by
+            objects of type Coefficient.
+                        
+            FinDiff is callable, i.e. to apply the derivative, just call the object on the array to
+            differentiate.       
+       
+            :param args: variable number of tuples. Defines what derivative to take.         
+                If only one tuple is given, you can leave away the tuple parentheses.
+         
+            Each tuple has the form
+            
+                   `(axis, spacing, count)`     for uniform grids
+                   
+                   `(axis, count)`              for non-uniform grids.
+                   
+                 `axis` is the dimension along which to take derivative.
+             
+                 `spacing` is the grid spacing of the uniform grid along that axis.
+                                    
+                 `count` is the order of the derivative, which is optional an defaults to 1. 
+                    
+        
+            :param kwargs:  variable number of keyword arguments
+        
+                Allowed keywords:
+            
+                `acc`:    even integer
+                      The desired accuracy order. Default is acc=2.
+                        
+                `coords`:  a list of 1D-arrays of real numbers with the coordinate values along each axis.  
+                 
+                      This MUST be given to use a non-uniform grid.
+
+        ============                                    
+        **Example**:
+    
+        
+           For this example, we want to operate on some 3D array f:
+           
+           >>> import numpy as np
+           >>> x, y, z = [np.linspace(-1, 1, 100) for _ in range(3)]
+           >>> X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+           >>> f = X**2 + Y**2 + Z**2
+        
+           To create :math:`\frac{\partial f}{\partial x}` on a uniform grid with spacing dx, dy
+           along the 0th axis or 1st axis, respectively, instantiate a FinDiff object and call it:
+           
+           >>> d_dx = FinDiff(0, dx)
+           >>> d_dy = FinDiff(1, dx)
+           >>> result = d_dx(f)
+           
+           For :math:`\frac{\partial^2 f}{\partial x^2}` or :math:`\frac{\partial^2 f}{\partial y^2}`:
+           
+           >>> d2_dx2 = FinDiff(0, dx, 2)
+           >>> d2_dy2 = FinDiff(1, dy, 2)
+           >>> result_2 = d2_dx2(f)
+           >>> result_3 = d2_dy2(f)
+           
+           For :math:`\frac{\partial^4 f}{\partial x \partial^2 y \partial z}`, do:
+           
+           >>> op = FinDiff((0, dx), (1, dy, 2), (2, dz))
+           >>> result_4 = op(f)
+       
         
         """
 
@@ -27,6 +91,18 @@ class FinDiff(UnaryOperator):
         self.child = None
 
     def __call__(self, u, **kwargs):
+        """Applies the linear differential operator to y
+
+            Parameters:
+            -----------
+
+                y       ndarray
+                        The array to differentiate
+
+            Returns:
+            --------
+
+                An ndarray with the derivative. It has the same shape as y. """
 
         for kwarg in kwargs:
             if kwarg == "spac":
@@ -49,6 +125,10 @@ class FinDiff(UnaryOperator):
         return self.root.apply(self, u)
 
     def set_accuracy(self, acc):
+        """ Sets the accuracy order of the finite difference scheme.
+            If the FinDiff object is not a raw partial derivative but a composition of derivatives
+            the accuracy order will be propagated to the child operators.
+        """
         self.acc = acc
         if self.child:
             self.child.set_accuracy(acc)
@@ -59,14 +139,17 @@ class FinDiff(UnaryOperator):
         return True
 
     def __add__(self, other):
+        """Add FinDiff object with other FinDiff object to linear combination.
+
+           Both FinDiff objects must use the same grid.
+        """
+
         fd = deepcopy(self)
         fd.root = Plus(fd.root, deepcopy(other))
         return fd
 
     def __rmul__(self, other):
-        """
-            'other' is the thing on the left side of '*'.        
-        """
+        """Multiply FinDiff object with object of type Coef or chain FinDiff objects."""
 
         if isinstance(other, Coef):
             mult = Multiply(other.value, deepcopy(self))
@@ -78,7 +161,7 @@ class FinDiff(UnaryOperator):
         return fd
 
     def __mul__(self, other):
-        """Entered if self is FinDiff object in expression is self * other """
+        """Multiply FinDiff object with object of type Coef or chain FinDiff objects."""
 
         if isinstance(other, Operator):
             self.child = other
