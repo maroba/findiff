@@ -28,7 +28,7 @@ class VectorOperator(object):
         if "spac" in kwargs:
             self.h = kwargs["spac"]
             self.ndims = len(self.h)
-            self.components = [FinDiff((k, 1), **kwargs) for k in range(self.ndims)]
+            self.components = [FinDiff((k, self.h[k]), **kwargs) for k in range(self.ndims)]
 
         if "coords" in kwargs:
             coords = kwargs.pop("coords")

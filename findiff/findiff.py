@@ -18,15 +18,12 @@ class FinDiff(UnaryOperator):
             if self.acc % 2 == 1:
                 self.acc += 1
 
-        self.spac = None
-        if "spac" in kwargs:
-            self.spac = kwargs["spac"]
+        self.root = PartialDerivative(*args)
 
         self.coords = None
         if "coords" in kwargs:
             self.coords = kwargs["coords"]
 
-        self.root = PartialDerivative(*args)
         self.child = None
 
     def __call__(self, u, **kwargs):
@@ -36,16 +33,12 @@ class FinDiff(UnaryOperator):
                 spac = kwargs[kwarg]
                 if not hasattr(spac, "__getitem__"):
                     raise Exception("spac must be list or dict.")
-                self.spac = spac
             elif kwarg == "acc":
-                self.acc = kwargs[kwarg]
+                self.set_accuracy(kwargs[kwarg])
             elif kwarg == "coords":
                 self.coords = kwargs[kwarg]
             else:
                 raise Exception("Unknown kwarg.")
-
-        if self.spac is None and self.coords is None:
-            raise Exception("Neither grid spacing nor coordinates are set.")
 
         if self.acc is None:
             self.acc = 2
@@ -55,12 +48,15 @@ class FinDiff(UnaryOperator):
 
         return self.root.apply(self, u)
 
+    def set_accuracy(self, acc):
+        self.acc = acc
+        if self.child:
+            self.child.set_accuracy(acc)
+
     def is_uniform(self):
-        if self.spac is not None and self.coords is not None:
-            raise Exception("Both spac and coords set.")
-        if self.spac:
-            return True
-        return False
+        if self.coords:
+            return False
+        return True
 
     def __add__(self, other):
         fd = deepcopy(self)
@@ -198,8 +194,6 @@ class PartialDerivative(UnaryOperator):
                 \frac{\partial^(n_i + n_j + ... + n_k) / \partial}
                      {\partial x_i^n_i \partial x_j^n_j ... \partial x_k^_k}
 
-            This class does not know anything about discrete grids.
-
             args:
             -----
                    A list of tuples of the form
@@ -213,10 +207,13 @@ class PartialDerivative(UnaryOperator):
 
         tuples = self._convert_to_valid_tuple_list(args)
         self.derivs = {}
+        self.spac = {}
         for t in tuples:
-            if t[0] in self.derivs:
-                raise ValueError("Derivative along axis %d specified more than once." % (t[0]))
-            self.derivs[t[0]] = t[1]
+            axis, spac, order = t
+            if axis in self.derivs:
+                raise ValueError("Derivative along axis %d specified more than once." % axis)
+            self.derivs[axis] = order
+            self.spac[axis] = spac
 
     def axes(self):
         return sorted(list(self.derivs.keys()))
@@ -230,7 +227,7 @@ class PartialDerivative(UnaryOperator):
 
         for axis, order in self.derivs.items():
             if fd.is_uniform():
-                u = fd.diff(u, fd.spac[axis], order, axis, coefficients(order, fd.acc))
+                u = fd.diff(u, self.spac[axis], order, axis, coefficients(order, fd.acc))
             else:
                 coefs = []
                 for i in range(len(fd.coords[axis])):
@@ -248,11 +245,16 @@ class PartialDerivative(UnaryOperator):
                 break
 
         if all_are_tuples:
-            all_tuples = args
+            all_tuples = list(args)
+            for i, t in enumerate(all_tuples):
+                if len(t) == 2:
+                    all_tuples[i] = (t[0], t[1], 1)
         else:
-            if len(args) > 2:
-                raise ValueError("Too many arguments. Did you mean tuples?")
-            all_tuples = [(args[0], args[1])]
+
+            if len(args) == 2:
+                all_tuples = [(args[0], args[1], 1)]
+            else:
+                all_tuples = [tuple(args)]
 
         for t in all_tuples:
             self._assert_tuple_valid(t)
@@ -260,10 +262,13 @@ class PartialDerivative(UnaryOperator):
         return all_tuples
 
     def _assert_tuple_valid(self, t):
-        if len(t) > 2:
+
+        if len(t) > 3:
             raise ValueError("Too many arguments in tuple.")
-        axis, order = t
+        axis, h, order = t
         if not isinstance(axis, int) or axis < 0:
-            raise ValueError("Axis must be non-negative integer")
+            raise ValueError("Axis must be non-negative integer.")
+        if h <= 0:
+            raise ValueError("Spacing must be greater than zero.")
         if not isinstance(order, int) or order <= 0:
-            raise ValueError("Derivative order must be positive integer")
+            raise ValueError("Derivative order must be positive integer.")
