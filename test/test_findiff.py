@@ -105,8 +105,8 @@ class FinDiffTest(unittest.TestCase):
         X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
         f = np.exp(-X**2-Y**2-Z**2)
 
-        d_dy = FinDiff(1, 1, acc=4)
-        fy = d_dy(f, coords=[x, y, z])
+        d_dy = FinDiff(1, y, acc=4)
+        fy = d_dy(f)
         fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
         assert_array_almost_equal(fy, fye, decimal=4)
 
@@ -116,7 +116,7 @@ class FinDiffTest(unittest.TestCase):
         X, Y = np.meshgrid(x, y, indexing='ij')
         f = np.exp(-X**2-Y**2)
 
-        d_dx = FinDiff((0, 1), coords=[x, y])
+        d_dx = FinDiff((0, x, 1))
         fx = d_dx(f)
         fxe = - 2 * X * np.exp(-X**2-Y**2)
         assert_array_almost_equal(fx, fxe, decimal=4)
@@ -128,7 +128,7 @@ class FinDiffTest(unittest.TestCase):
         X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
         f = np.exp(-X**2-Y**2-Z**2)
 
-        d_dy = FinDiff(1, 1, coords=[x, y, z], acc=4)
+        d_dy = FinDiff(1, y, acc=4)
         fy = d_dy(f)
         fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
         assert_array_almost_equal(fy, fye, decimal=4)

@@ -311,12 +311,17 @@ class PartialDerivative(UnaryOperator):
         tuples = self._convert_to_valid_tuple_list(args)
         self.derivs = {}
         self.spac = {}
+        self.coords = {}
         for t in tuples:
-            axis, spac, order = t
+            axis, spac_or_coords, order = t
             if axis in self.derivs:
                 raise ValueError("Derivative along axis %d specified more than once." % axis)
             self.derivs[axis] = order
-            self.spac[axis] = spac
+
+            if hasattr(spac_or_coords, "__len__"):
+                self.coords[axis] = spac_or_coords
+            else:
+                self.spac[axis] = spac_or_coords
 
     def axes(self):
         return sorted(list(self.derivs.keys()))
@@ -329,13 +334,13 @@ class PartialDerivative(UnaryOperator):
     def apply(self, fd, u):
 
         for axis, order in self.derivs.items():
-            if fd.is_uniform():
+            if self.spac:
                 u = fd.diff(u, self.spac[axis], order, axis, coefficients(order, fd.acc))
             else:
                 coefs = []
-                for i in range(len(fd.coords[axis])):
-                    coefs.append(coefficients_non_uni(order, fd.acc, fd.coords[axis], i))
-                u = fd.diff_non_uni(u, fd.coords[axis], axis, coefs)
+                for i in range(len(self.coords[axis])):
+                    coefs.append(coefficients_non_uni(order, fd.acc, self.coords[axis], i))
+                u = fd.diff_non_uni(u, self.coords[axis], axis, coefs)
 
         return u
 
@@ -368,10 +373,14 @@ class PartialDerivative(UnaryOperator):
 
         if len(t) > 3:
             raise ValueError("Too many arguments in tuple.")
-        axis, h, order = t
+        axis, coords_or_spac, order = t
         if not isinstance(axis, int) or axis < 0:
             raise ValueError("Axis must be non-negative integer.")
-        if h <= 0:
-            raise ValueError("Spacing must be greater than zero.")
+        if not hasattr(coords_or_spac, "__len__"):
+            h = coords_or_spac
+            if h <= 0:
+                raise ValueError("Spacing must be greater than zero.")
         if not isinstance(order, int) or order <= 0:
             raise ValueError("Derivative order must be positive integer.")
+
+

@@ -25,15 +25,19 @@ class VectorOperator(object):
         
         """
 
-        if "spac" in kwargs:
-            self.h = kwargs["spac"]
+        if "spac" in kwargs or "h" in kwargs: # necessary for backward compatibility 0.5.2 => 0.6
+            if "spac" in kwargs:
+                kw = "spac"
+            else:
+                kw = "h"
+            self.h = kwargs[kw]
             self.ndims = len(self.h)
             self.components = [FinDiff((k, self.h[k]), **kwargs) for k in range(self.ndims)]
 
         if "coords" in kwargs:
             coords = kwargs.pop("coords")
             self.ndims = self.__get_dimension(coords)
-            self.components = [FinDiff((k, 1), coords=coords, **kwargs) for k in range(self.ndims)]
+            self.components = [FinDiff((k, coords[k], 1), **kwargs) for k in range(self.ndims)]
 
     def __get_dimension(self, coords):
         if isinstance(coords, np.ndarray):
