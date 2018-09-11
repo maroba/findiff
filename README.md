@@ -109,7 +109,7 @@ X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
 f = np.exp(-X**2-Y**2-Z**2)
 
 # Define the partial derivative with respect to y, e.g.
-d_dy = FinDiff(1, x)
+d_dy = FinDiff(1, y)
 
 # Apply it to f
 fy = d_dy(f)
