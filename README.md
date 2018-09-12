@@ -69,11 +69,11 @@ d8f_dy8 = d8_dy8(f)
 d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
 
 # You can also create linear combinations of differential operators
-diff_op = Coefficient(2) * FinDiff((0, dz, 2), (2, dz, 1)) + Coefficient(3) * FinDiff((0, dx, 1), (1, dy, 2))
+diff_op = Coef(2) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3) * FinDiff((0, dx, 1), (1, dy, 2))
 
 # and even use variable coefficients:
 X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
-diff_op = Coefficient(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coefficient(3*Y*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
+diff_op = Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*Y*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
 
 # chaining operators is also possible, e.g.:
 diff_op = (FinDiff(0, dx) - FinDiff(1, dy)) * (FinDiff(0, dx) + FinDiff(1, dy))
