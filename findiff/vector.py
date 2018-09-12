@@ -30,7 +30,7 @@ class VectorOperator(object):
                 kw = "spac"
             else:
                 kw = "h"
-            self.h = kwargs[kw]
+            self.h = kwargs.pop(kw)
             self.ndims = len(self.h)
             self.components = [FinDiff((k, self.h[k]), **kwargs) for k in range(self.ndims)]
 

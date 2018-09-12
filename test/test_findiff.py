@@ -98,41 +98,6 @@ class FinDiffTest(unittest.TestCase):
         assert_array_almost_equal(f2, f)
         assert_array_almost_equal(f2, 6 * (X + Y + Z))
 
-    def test_non_uniform_3d(self):
-        x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
-        y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
-        z = np.r_[np.arange(0, 4.5, 0.05), np.arange(4.5, 10, 1)]
-        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-        f = np.exp(-X**2-Y**2-Z**2)
-
-        d_dy = FinDiff(1, y, acc=4)
-        fy = d_dy(f)
-        fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
-        assert_array_almost_equal(fy, fye, decimal=4)
-
-    def test_FinDiff_NonUni_2d(self):
-        x = np.r_[np.arange(0, 4, 0.005), np.arange(4, 10, 1)]
-        y = np.r_[np.arange(0, 4, 0.005), np.arange(4, 10, 1)]
-        X, Y = np.meshgrid(x, y, indexing='ij')
-        f = np.exp(-X**2-Y**2)
-
-        d_dx = FinDiff((0, x, 1))
-        fx = d_dx(f)
-        fxe = - 2 * X * np.exp(-X**2-Y**2)
-        assert_array_almost_equal(fx, fxe, decimal=4)
-
-    def test_BasicFinDiffNonUni_3d(self):
-        x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
-        y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
-        z = np.r_[np.arange(0, 4.5, 0.05), np.arange(4.5, 10, 1)]
-        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-        f = np.exp(-X**2-Y**2-Z**2)
-
-        d_dy = FinDiff(1, y, acc=4)
-        fy = d_dy(f)
-        fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
-        assert_array_almost_equal(fy, fye, decimal=4)
-
     def test_identity(self):
 
         x = np.linspace(-1, 1, 100)
@@ -196,6 +161,94 @@ class FinDiffTest(unittest.TestCase):
         d3_dxdydz = FinDiff((0, dx), (1, dy), (2, dz))
         diffed = d3_dxdydz(u)
         assert_array_almost_equal(8*X*Y*Z, diffed)
+
+    def test_linear_combinations(self):
+        (X, Y, Z), _, (dx, dy, dz) = grid(3, 30, 0, 1)
+
+        u = X ** 2 + Y ** 2 + Z ** 2
+        d = Coef(X) * FinDiff(0, dx) + Coef(Y**2) * FinDiff(1, dy, 2)
+        assert_array_almost_equal(d(u), 2*X**2 + 2*Y**2)
+
+
+class TestFinDiffNonUniform(unittest.TestCase):
+
+    def test_1d_different_accs(self):
+        x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+        f = np.exp(-x**2)
+
+        d_dx = FinDiff(0, x, acc=4)
+        f_x = d_dx(f)
+        assert_array_almost_equal(- 2*x * np.exp(-x**2), f_x, decimal=4)
+
+    def test_3d_different_accs(self):
+        x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+        y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+        z = np.r_[np.arange(0, 4.5, 0.05), np.arange(4.5, 10, 1)]
+        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+        f = np.exp(-X**2-Y**2-Z**2)
+
+        d_dy = FinDiff(1, y, acc=4)
+        fy = d_dy(f)
+        fye = - 2 * Y * np.exp(-X**2-Y**2-Z**2)
+        assert_array_almost_equal(fy, fye, decimal=4)
+
+        d_dy = FinDiff(1, y, acc=6)
+        fy = d_dy(f)
+        assert_array_almost_equal(fy, fye, decimal=4)
+
+    def test_1d_linear_combination(self):
+        x = np.sqrt(np.linspace(0, 1, 10))
+        d1 = Coef(x) * FinDiff(0, x, acc=4)
+        d2 = Coef(x**2) * FinDiff(0, x, 2, acc=4)
+
+        assert_array_almost_equal(3*x**3, d1(x**3))
+        assert_array_almost_equal(6*x**3, d2(x**3))
+        assert_array_almost_equal(9*x**3, (d1 + d2)(x**3))
+
+    def test_3d_linear_combination(self):
+        x, y, z = [np.sqrt(np.linspace(0, 1, 10))] * 3
+        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+
+        d1 = Coef(X) * FinDiff(0, x, acc=4)
+        d2 = Coef(Y) * FinDiff(1, y, acc=4)
+
+        assert_array_almost_equal(3 * X ** 3, d1(X**3 + Y**3 + Z**3))
+        assert_array_almost_equal(3 * Y ** 3, d2(X**3 + Y**3 + Z**3))
+        assert_array_almost_equal(3 * (X**3 + Y**3), (d1 + d2)(X**3 + Y**3 + Z**3))
+
+    def test_several_tuples_as_args(self):
+
+        x, y, z = [np.sqrt(np.linspace(0, 1, 10))] * 3
+        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+
+        d1 = FinDiff((0, x), (1, y), acc=4)
+        assert_array_almost_equal(d1(X*Y), np.ones_like(X))
+
+    def test_cannot_specify_axis_more_than_once(self):
+        x = np.linspace(0, 1, 10)
+        self.assertRaises(ValueError, lambda: FinDiff((0, x), (0, x)))
+
+    def test_accepts_not_more_than_three_args(self):
+        x = np.linspace(0, 1, 10)
+        self.assertRaises(Exception, lambda: FinDiff(0, x, 2, 3))
+
+    def test_various_input_formats(self):
+
+        def f(x):
+            return x**3
+
+        def df_dx(x):
+            return 6*x
+
+        x_nu = np.sqrt(np.linspace(0, 1, 10))
+        f_nu = f(x_nu)
+
+        self.assertRaises(Exception, lambda: FinDiff(0, 2, coords=[x_nu], acc=2))
+
+        d_dx_B = FinDiff(0, x_nu, 2, acc=4)
+        df_dx_nu_B = d_dx_B(f_nu)
+
+        assert_array_almost_equal(df_dx(x_nu), df_dx_nu_B)
 
 
 def grid(ndim, npts, a, b):

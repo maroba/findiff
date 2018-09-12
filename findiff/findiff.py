@@ -39,9 +39,6 @@ class FinDiff(UnaryOperator):
                 `acc`:    even integer
                       The desired accuracy order. Default is acc=2.
                         
-                `coords`:  a list of 1D-arrays of real numbers with the coordinate values along each axis.  
-                 
-                      This MUST be given to use a non-uniform grid.
 
         ============                                    
         **Example**:
@@ -77,16 +74,16 @@ class FinDiff(UnaryOperator):
         """
 
         self.acc = None
-        if "acc" in kwargs:
-            self.acc = kwargs["acc"]
-            if self.acc % 2 == 1:
-                self.acc += 1
 
-        self.root = PartialDerivative(*args)
+        for kw in kwargs:
+            if kw == "acc":
+                self.acc = kwargs[kw]
+                if self.acc % 2 == 1:
+                    self.acc += 1
+            else:
+                raise Exception("No such keyword argument: %s" % kw)
 
-        self.coords = None
-        if "coords" in kwargs:
-            self.coords = kwargs["coords"]
+        self.root = PartialDerivative(*args, **kwargs)
 
         self.child = None
 
@@ -105,14 +102,8 @@ class FinDiff(UnaryOperator):
                 An ndarray with the derivative. It has the same shape as y. """
 
         for kwarg in kwargs:
-            if kwarg == "spac":
-                spac = kwargs[kwarg]
-                if not hasattr(spac, "__getitem__"):
-                    raise Exception("spac must be list or dict.")
-            elif kwarg == "acc":
+            if kwarg == "acc":
                 self.set_accuracy(kwargs[kwarg])
-            elif kwarg == "coords":
-                self.coords = kwargs[kwarg]
             else:
                 raise Exception("Unknown kwarg.")
 
@@ -132,11 +123,6 @@ class FinDiff(UnaryOperator):
         self.acc = acc
         if self.child:
             self.child.set_accuracy(acc)
-
-    def is_uniform(self):
-        if self.coords:
-            return False
-        return True
 
     def __add__(self, other):
         """Add FinDiff object with other FinDiff object to linear combination.
@@ -291,7 +277,7 @@ class Identity(FinDiff):
 
 class PartialDerivative(UnaryOperator):
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         """ Representation of a general partial derivative 
 
                 \frac{\partial^(n_i + n_j + ... + n_k) / \partial}
@@ -300,7 +286,9 @@ class PartialDerivative(UnaryOperator):
             args:
             -----
                    A list of tuples of the form
-                         (axis, derivative order)
+                         (axis, M, derivative order)
+
+                      where M is the grid spacing for uniform grids or the 1D-array of coordinates for non-uniform grids.
 
                    If the list contained only one tuple, you can skip the tuple parentheses.
 
