@@ -1,6 +1,6 @@
 from copy import deepcopy
 import numpy as np
-from findiff.operators import Plus, Operator, UnaryOperator, Multiply
+from findiff.operators import Plus, Minus, Operator, UnaryOperator, Multiply
 from findiff.coefs import coefficients, coefficients_non_uni
 
 
@@ -132,6 +132,11 @@ class FinDiff(UnaryOperator):
 
         fd = deepcopy(self)
         fd.root = Plus(fd.root, deepcopy(other))
+        return fd
+
+    def __sub__(self, other):
+        fd = deepcopy(self)
+        fd.root = Minus(fd.root, deepcopy(other))
         return fd
 
     def __rmul__(self, other):

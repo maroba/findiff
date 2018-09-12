@@ -75,6 +75,11 @@ diff_op = Coefficient(2) * FinDiff((0, dz, 2), (2, dz, 1)) + Coefficient(3) * Fi
 X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
 diff_op = Coefficient(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coefficient(3*Y*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
 
+# chaining operators is also possible, e.g.:
+diff_op = (FinDiff(0, dx) - FinDiff(1, dy)) * (FinDiff(0, dx) + FinDiff(1, dy))
+# is equivalent to
+diff_op2 = FinDiff(0, dx, 2) - FinDiff(1, dy, 2)
+
 # Standard operators like gradient, divergence and curl from vector calculus are also available, for example:
 
 grad = Gradient(h=[dx, dy, dz, du])

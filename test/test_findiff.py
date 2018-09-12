@@ -169,6 +169,21 @@ class FinDiffTest(unittest.TestCase):
         d = Coef(X) * FinDiff(0, dx) + Coef(Y**2) * FinDiff(1, dy, 2)
         assert_array_almost_equal(d(u), 2*X**2 + 2*Y**2)
 
+    def test_minus(self):
+
+        (X, Y), _, h = grid(2, 50, 0, 1)
+
+        u = X**2 + Y**2
+        d_dx = FinDiff(0, h[0])
+        d_dy = FinDiff(1, h[1])
+
+        d = d_dx - d_dy
+
+        u1 = d(u)
+        u1_ex = 2*X - 2*Y
+
+        assert_array_almost_equal(u1, u1_ex)
+
 
 class TestFinDiffNonUniform(unittest.TestCase):
 
