@@ -135,6 +135,8 @@ class FinDiff(UnaryOperator):
         return fd
 
     def __sub__(self, other):
+        """ Subtract one FinDiff object from the other. """
+
         fd = deepcopy(self)
         fd.root = Minus(fd.root, deepcopy(other))
         return fd
