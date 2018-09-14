@@ -35,56 +35,84 @@ You can find the documentation of the code including examples of application at 
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
 want to differentiate four-dimensional function given as a 4D array `f` with coordiantes `x, y, z, t`.
 
+For <img src="docs/frontpage/d_dx.png" alt="d_dx" height="30"/>, where <i>x</i> denotes the 0-th axis, we can write
+
 ```python
-# First derivative with respect to x
-# axis 0 = x
+# define operator
 d_dx = FinDiff(0, dx)
+
+# apply operator
 df_dx = d_dx(f)
 
-# First derivative with respect to z
-# axis 2 = z
+```
+The partial derivative <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/>, where <i>z</i> means the 2nd axis, is
+
+```python
 d_dz = FinDiff(2, dz)
 df_dz = d_dz(f)
+```
 
-#
-# Second derivatives
-#
-# along axis 0:
+Higher derivatives like
+<img src="docs/frontpage/d2_dx2.png" alt="d2_dx2" height="30"/>  or <img src="docs/frontpage/d4_dy4.png" alt="d4_dy4" height="30"/>
+can be defined like
+
+```python
 d2_dx2 = FinDiff(0, dx, 2)
 d2f_dx2 = d2_dx2(f)
 
-# along axis 1:
-d2_dy2 = FinDiff(1, dy, 2)
-d2f_dy2 = d2_dy2(f)
+d4_dy4 = FinDiff(1, dy, 4)
+d4f_dy4 = d4_dy4(f)
+```
 
-# mixed derivative:
+Mixed partial derivatives like 
+<img src="docs/frontpage/d2_dxdz.png" alt="d2_dxdz" height="30"/> or 
+<img src="docs/frontpage/d3_dx2dz.png" alt="d3_dx2dz" height="30"/>
+
+
+```python
 d2_dxdz = FinDiff((0, dx), (2, dz))
 d2_dxdz(f)
 
-# 8th derivative with respect to axis 1
-d8_dy8 = FinDiff(1, dy, 8)
-d8f_dy8 = d8_dy8(f)
-
-# Mixed 3rd derivatives, twice with respect to x, once w.r.t. z
 d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
+```
 
-# You can also create linear combinations of differential operators
-diff_op = Coef(2) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3) * FinDiff((0, dx, 1), (1, dy, 2))
+You can also create linear combinations of differential operators like
+<p align="center">
+<img src="docs/frontpage/linear_comb.png" alt="linearCombination" height="40"/>
+</p>
 
-# and even use variable coefficients:
+```python
+diff_op = Coef(2) * FinDiff((0, dx, 2), (2, dz, 1)) + Coef(3) * FinDiff((0, dx, 1), (1, dy, 2))
+```
+and more general with variable coefficients like
+
+<p align="center">
+<img src="docs/frontpage/var_coef.png" alt="variableCoefficients" height="40"/>
+</p>
+is
+
+```python
 X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
-diff_op = Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*Y*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
+diff_op = Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*numpy.sin(Y)*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
+```
 
-# chaining operators is also possible, e.g.:
+Chaining differential operators is also possible, e.g.
+
+<p align="center">
+<img src="docs/frontpage/chaining.png" alt="chaining" height="40"/>
+</p>
+
+```python
 diff_op = (FinDiff(0, dx) - FinDiff(1, dy)) * (FinDiff(0, dx) + FinDiff(1, dy))
 # is equivalent to
 diff_op2 = FinDiff(0, dx, 2) - FinDiff(1, dy, 2)
+```
 
-# Standard operators like gradient, divergence and curl from vector calculus are also available, for example:
+Standard operators from vector calculus like gradient, divergence and curl are also available, for example:
 
+```python
 grad = Gradient(h=[dx, dy, dz, du])
 grad_f = grad(f)
-
 ```
 
 More examples, including linear combinations with variable coefficients can be found [here](https://maroba.github.io/findiff-docs/source/examples.html).

@@ -83,7 +83,7 @@ class FinDiff(UnaryOperator):
             else:
                 raise Exception("No such keyword argument: %s" % kw)
 
-        self.root = PartialDerivative(*args, **kwargs)
+        self.root = PartialDerivative(*args)
 
         self.child = None
 
@@ -275,6 +275,7 @@ class Coef(object):
 # Alias for backward compatibility
 Coefficient = Coef
 
+
 class Identity(FinDiff):
 
     def __init__(self):
@@ -284,7 +285,7 @@ class Identity(FinDiff):
 
 class PartialDerivative(UnaryOperator):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args):
         """ Representation of a general partial derivative 
 
                 \frac{\partial^(n_i + n_j + ... + n_k) / \partial}
