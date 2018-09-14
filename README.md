@@ -73,8 +73,6 @@ Mixed partial derivatives like
 d2_dxdz = FinDiff((0, dx), (2, dz))
 d2_dxdz(f)
 
-
-# Mixed 3rd derivatives, twice with respect to x, once w.r.t. z
 d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
 ```
 
@@ -84,7 +82,6 @@ You can also create linear combinations of differential operators like
 </p>
 
 ```python
-# You can also create linear combinations of differential operators
 diff_op = Coef(2) * FinDiff((0, dx, 2), (2, dz, 1)) + Coef(3) * FinDiff((0, dx, 1), (1, dy, 2))
 ```
 and more general with variable coefficients like
@@ -92,6 +89,7 @@ and more general with variable coefficients like
 <p align="center">
 <img src="docs/frontpage/var_coef.png" alt="variableCoefficients" height="40"/>
 </p>
+is
 
 ```python
 X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
@@ -103,6 +101,8 @@ Chaining differential operators is also possible, e.g.
 <p align="center">
 <img src="docs/frontpage/chaining.png" alt="chaining" height="40"/>
 </p>
+
+is
 
 ```python
 diff_op = (FinDiff(0, dx) - FinDiff(1, dy)) * (FinDiff(0, dx) + FinDiff(1, dy))
