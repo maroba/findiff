@@ -99,8 +99,6 @@ Chaining differential operators is also possible, e.g.
 <img src="docs/frontpage/chaining.png" alt="chaining" height="40"/>
 </p>
 
-is
-
 ```python
 diff_op = (FinDiff(0, dx) - FinDiff(1, dy)) * (FinDiff(0, dx) + FinDiff(1, dy))
 # is equivalent to
