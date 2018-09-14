@@ -44,7 +44,7 @@ d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
 
 ```
-For <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/> 
+The partial derivative <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/> 
 where <i>z</i> means the 2nd axis, we can write
 
 ```python
@@ -57,31 +57,36 @@ Higher derivatives like
 can be defined like
 
 ```python
-#
-# Second derivatives
-#
-# along axis 0:
 d2_dx2 = FinDiff(0, dx, 2)
 d2f_dx2 = d2_dx2(f)
 
-# along axis 1:
-d2_dy2 = FinDiff(1, dy, 2)
-d2f_dy2 = d2_dy2(f)
+d4_dy4 = FinDiff(1, dy, 4)
+d4f_dy4 = d4_dy4(f)
+```
 
-# mixed derivative:
+Mixed partial derivatives like 
+<img src="docs/frontpage/d2_dxdz.png" alt="d2_dxdz" height="30"/>or
+<img src="docs/frontpage/d3_dx2dz.png" alt="d3_dx2dz" height="30"/>:
+
+
+```python
 d2_dxdz = FinDiff((0, dx), (2, dz))
 d2_dxdz(f)
 
-# 8th derivative with respect to axis 1
-d8_dy8 = FinDiff(1, dy, 8)
-d8f_dy8 = d8_dy8(f)
 
 # Mixed 3rd derivatives, twice with respect to x, once w.r.t. z
 d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
+```
 
+You can also create linear combinations of differential operators like
+<img src="docs/frontpage/linear_comb.png" alt="linearCombination" height="30"/>:
+
+```python
 # You can also create linear combinations of differential operators
-diff_op = Coef(2) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3) * FinDiff((0, dx, 1), (1, dy, 2))
+diff_op = Coef(2) * FinDiff((0, dx, 2), (2, dz, 1)) + Coef(3) * FinDiff((0, dx, 1), (1, dy, 2))
+```
 
+```python
 # and even use variable coefficients:
 X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
 diff_op = Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*Y*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
