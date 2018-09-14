@@ -35,17 +35,14 @@ You can find the documentation of the code including examples of application at 
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
 want to differentiate four-dimensional function given as a 4D array `f` with coordiantes `x, y, z, t`.
 
-For 
-<img src="docs/frontpage/d_dx.png" alt="d_dx" height="30"/> 
-where <i>x</i> denotes the 0-th axis, we can write
+For <img src="docs/frontpage/d_dx.png" alt="d_dx" height="30"/>, where <i>x</i> denotes the 0-th axis, we can write
 
 ```python
 d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
 
 ```
-The partial derivative <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/> 
-where <i>z</i> means the 2nd axis, we can write
+The partial derivative <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/>, where <i>z</i> means the 2nd axis, we can write
 
 ```python
 d_dz = FinDiff(2, dz)
