@@ -79,7 +79,9 @@ d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
 ```
 
 You can also create linear combinations of differential operators like
+<p align="center">
 <img src="docs/frontpage/linear_comb.png" alt="linearCombination" height="30"/>:
+</p>
 
 ```python
 # You can also create linear combinations of differential operators
