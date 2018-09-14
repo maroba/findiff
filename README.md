@@ -16,18 +16,6 @@ any number of dimensions.
 * Fully vectorized for speed
 * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
 
-## Installation
-
-Simply use pip:
-
-```
-pip install findiff
-```
-
-## Documentation and Examples
-
-You can find the documentation of the code including examples of application at https://maroba.github.io/findiff-docs/index.html.
-
 ## Quickstart
 
 ### Derivatives on uniform grids
@@ -184,9 +172,17 @@ gives
               }
 ```
 
-## Further examples
+## Installation
 
-A collection of further examples using the _findiff_ package can be found in [here](https://maroba.github.io/findiff-docs/source/examples.html).
+Simply use pip:
+
+```
+pip install findiff
+```
+
+## Documentation and Examples
+
+You can find the documentation of the code including examples of application at https://maroba.github.io/findiff-docs/index.html.
 
 ## Dependencies
 
