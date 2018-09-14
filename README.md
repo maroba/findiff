@@ -31,7 +31,7 @@ d_dx = FinDiff(0, dx)
 
 # apply operator
 df_dx = d_dx(f)
-
+# df_dx is now an array of the same shape as f containing the partial derivative
 ```
 The partial derivative <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/>, where <i>z</i> means the 2nd axis, is
 
