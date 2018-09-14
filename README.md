@@ -45,6 +45,7 @@ Higher derivatives like
 can be defined like
 
 ```python
+# the derivative order is the third argument
 d2_dx2 = FinDiff(0, dx, 2)
 d2f_dx2 = d2_dx2(f)
 
