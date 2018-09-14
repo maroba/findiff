@@ -65,8 +65,8 @@ d4f_dy4 = d4_dy4(f)
 ```
 
 Mixed partial derivatives like 
-<img src="docs/frontpage/d2_dxdz.png" alt="d2_dxdz" height="30"/>or
-<img src="docs/frontpage/d3_dx2dz.png" alt="d3_dx2dz" height="30"/>:
+<img src="docs/frontpage/d2_dxdz.png" alt="d2_dxdz" height="30"/> or 
+<img src="docs/frontpage/d3_dx2dz.png" alt="d3_dx2dz" height="30"/>
 
 
 ```python
@@ -80,7 +80,7 @@ d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
 
 You can also create linear combinations of differential operators like
 <p align="center">
-<img src="docs/frontpage/linear_comb.png" alt="linearCombination" height="30"/>:
+<img src="docs/frontpage/linear_comb.png" alt="linearCombination" height="40"/>
 </p>
 
 ```python
