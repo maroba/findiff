@@ -21,7 +21,7 @@ any number of dimensions.
 ### Derivatives on uniform grids
 
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
-want to differentiate four-dimensional function given as a 4D array `f` with coordinates `x, y, z, t`.
+want to differentiate four-dimensional function given as a 4D array `f` with coordinates `x, y, z, u`.
 
 For <img src="docs/frontpage/d_dx.png" alt="d_dx" height="30"/>, where <i>x</i> denotes the 0-th axis, we can write
 
