@@ -58,7 +58,7 @@ df_dz = d_dz(f)
 ```
 For higher derivatives like
 <p align="center">
-<img src="docs/frontpage/d_dz.png" alt="d_dz" align="center" width="30"/> 
+<img src="docs/frontpage/d2_dx2.png" alt="d_dz" align="center" width="30"/> 
 </p>
 we write
 ```python
