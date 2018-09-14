@@ -35,12 +35,17 @@ You can find the documentation of the code including examples of application at 
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
 want to differentiate four-dimensional function given as a 4D array `f` with coordiantes `x, y, z, t`.
 
+![diff](https://github.com/maroba/findiff/blob/master/docs/frontpage/d_dx.png)
+
 ```python
 # First derivative with respect to x
 # axis 0 = x
 d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
 
+```
+
+```python
 # First derivative with respect to z
 # axis 2 = z
 d_dz = FinDiff(2, dz)
