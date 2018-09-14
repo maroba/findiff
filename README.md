@@ -42,7 +42,7 @@ d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
 
 ```
-The partial derivative <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/>, where <i>z</i> means the 2nd axis, we can write
+The partial derivative <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/>, where <i>z</i> means the 2nd axis, is
 
 ```python
 d_dz = FinDiff(2, dz)
