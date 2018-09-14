@@ -80,8 +80,9 @@ and more general with variable coefficients like
 is
 
 ```python
-X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
-diff_op = Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*numpy.sin(Y)*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
+from numpy import meshgrid, sin
+X, Y, Z, U = meshgrid(x, y, z, u, indexing="ij")
+diff_op = Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*sin(Y)*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
 ```
 
 Chaining differential operators is also possible, e.g.
