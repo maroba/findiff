@@ -43,16 +43,20 @@ For
 where <i>x</i> denotes the 0-th axis, we can write
 
 ```python
-# First derivative with respect to x
-# axis 0 = x
 d_dx = FinDiff(0, dx)
 df_dx = d_dx(f)
 
 ```
 
+or 
+
+<p align="center">
+<img src="docs/frontpage/d_dz.png" alt="d_dz" align="center" width="30"/> 
+</p>
+
+where <i>z</i> means the 2nd axis, we can write
+
 ```python
-# First derivative with respect to z
-# axis 2 = z
 d_dz = FinDiff(2, dz)
 df_dz = d_dz(f)
 
