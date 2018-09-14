@@ -38,7 +38,10 @@ want to differentiate four-dimensional function given as a 4D array `f` with coo
 For <img src="docs/frontpage/d_dx.png" alt="d_dx" height="30"/>, where <i>x</i> denotes the 0-th axis, we can write
 
 ```python
+# define operator
 d_dx = FinDiff(0, dx)
+
+# apply operator
 df_dx = d_dx(f)
 
 ```
