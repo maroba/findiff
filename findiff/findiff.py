@@ -1,7 +1,7 @@
 from copy import deepcopy
 import numpy as np
-from findiff.operators import Plus, Minus, Operator, UnaryOperator, Multiply
-from findiff.coefs import coefficients, coefficients_non_uni
+from operators import Plus, Minus, Operator, UnaryOperator, Multiply
+from coefs import coefficients, coefficients_non_uni
 
 
 class FinDiff(UnaryOperator):

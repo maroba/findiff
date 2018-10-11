@@ -49,6 +49,7 @@ def coefficients(deriv, acc):
 
 
 def _calc_coef(left, right, deriv):
+    left, right = np.int(left), np.int(right)
 
     matrix = _build_matrix(left, right, deriv)
 
@@ -122,6 +123,7 @@ def coefficients_non_uni(deriv, acc, coords, idx):
 
 def _build_matrix(p, q, deriv):
     """Constructs the equation system matrix for the finite difference coefficients"""
+    p, q = np.int(p), np.int(q)
     A = [([1 for _ in range(-p, q+1)])]
     for i in range(1, p + q + 1):
         A.append([j**i for j in range(-p, q+1)])
@@ -130,7 +132,7 @@ def _build_matrix(p, q, deriv):
 
 def _build_rhs(p, q, deriv):
     """The right hand side of the equation system matrix"""
-
+    p, q = np.int(p), np.int(q)
     b = [0 for _ in range(p+q+1)]
     b[deriv] = math.factorial(deriv)
     return np.array(b)
@@ -138,6 +140,7 @@ def _build_rhs(p, q, deriv):
 
 def _build_matrix_non_uniform(p, q, coords, k):
     """Constructs the equation matrix for the finite difference coefficients of non-uniform grids at location k"""
+    p, q = np.int(p), np.int(q)
     A = [[1] * (p+q+1)]
     for i in range(1, p + q + 1):
         line = [(coords[k+j] - coords[k])**i for j in range(-p, q+1)]
