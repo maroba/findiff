@@ -1,7 +1,10 @@
+import sys
+sys.path.insert(1, '..')
+
 import unittest
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
-from findiff.findiff import FinDiff, Coef, Identity
+from findiff.operators import FinDiff, Coef, Identity
 
 
 class FinDiffTest(unittest.TestCase):
@@ -174,6 +177,9 @@ class FinDiffTest(unittest.TestCase):
         (X, Y), _, h = grid(2, 50, 0, 1)
 
         u = X**2 + Y**2
+        #import pdb
+        #pdb.set_trace()
+
         d_dx = FinDiff(0, h[0])
         d_dy = FinDiff(1, h[1])
 

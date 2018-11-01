@@ -1,7 +1,10 @@
+import sys
+sys.path.insert(1, '..')
+
 from math import log
 import unittest
 import numpy as np
-from findiff.findiff import FinDiff
+from findiff.operators import FinDiff
 
 
 class TestScaling(unittest.TestCase):

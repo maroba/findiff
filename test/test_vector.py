@@ -1,7 +1,11 @@
+import sys
+sys.path.insert(1, '..')
+
 import unittest
 from numpy.testing import assert_array_almost_equal
 import numpy as np
 from findiff.vector import Gradient, Divergence, Curl
+
 
 
 class TestGradient(unittest.TestCase):

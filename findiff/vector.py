@@ -1,7 +1,7 @@
 """A module for the common differential operators of vector calculus"""
 
 import numpy as np
-from findiff.findiff import FinDiff
+from .operators import FinDiff
 
 
 class VectorOperator(object):

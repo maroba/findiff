@@ -1,7 +1,12 @@
+import sys
+sys.path.insert(1, '..')
+
 import unittest
 from findiff import coefficients
 from findiff.coefs import coefficients_non_uni
+
 import numpy as np
+
 
 
 class TestCoefs(unittest.TestCase):
