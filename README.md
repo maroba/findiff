@@ -155,6 +155,10 @@ Simply use pip:
 pip install findiff
 ```
 
+## Compatibility
+
+Currently `findiff` only supports Python 3.
+
 ## Documentation and Examples
 
 You can find the documentation of the code including examples of application at https://maroba.github.io/findiff-docs/index.html.
