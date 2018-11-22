@@ -147,7 +147,7 @@ gives
               }
 ```
 
-For an **online version**, try https://www.maroba.org.
+For an **online version**, try https://www.maroba.org/findiffapp/.
 
 
 ## Installation
