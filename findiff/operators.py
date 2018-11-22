@@ -216,7 +216,10 @@ class FinDiff(UnaryOperator):
         """The core function to take a partial derivative on a uniform grid.
         """
 
-        npts = y.shape[dim]
+        try:
+            npts = y.shape[dim]
+        except AttributeError as err:
+            raise ValueError("FinDiff objects can only be applied to arrays or evaluated(!) functions returning arrays") from err
 
         scheme = "center"
         weights = coefs[scheme]["coefficients"]
