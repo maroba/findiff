@@ -40,7 +40,7 @@ df_dz = d_dz(f)
 
 Higher derivatives like
 <img src="docs/frontpage/d2_dx2.png" alt="d2_dx2" height="30"/>  or <img src="docs/frontpage/d4_dy4.png" alt="d4_dy4" height="30"/>
-can be defined like
+can be defined like this:
 
 ```python
 # the derivative order is the third argument
