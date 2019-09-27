@@ -6,12 +6,11 @@ import unittest
 import numpy as np
 from findiff.operators import FinDiff
 
-
 class TestScaling(unittest.TestCase):
 
     def fit_1d(self, acc):
-        nx_list = [30, 100, 300, 1000]
-        Lx = 10
+        nx_list = 10 ** np.linspace(1.75, 2., 10)
+        Lx = np.pi
 
         log_err_list = []
         log_dx_list = []
