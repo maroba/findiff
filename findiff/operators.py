@@ -1,4 +1,5 @@
 from copy import deepcopy
+from copy import deepcopy
 import numpy as np
 from .coefs import coefficients, coefficients_non_uni
 
@@ -214,6 +215,11 @@ class FinDiff(UnaryOperator):
 
     def diff(self, y, h, deriv, dim, coefs):
         """The core function to take a partial derivative on a uniform grid.
+
+            Central coefficients will be used whenever possible. Backward or forward
+            coefficients will be used if not enough points are available on either side,
+            i.e. forward coefficients for the low index boundary and backward coefficients
+            for the high index boundary.
         """
 
         try:
@@ -225,8 +231,8 @@ class FinDiff(UnaryOperator):
         weights = coefs[scheme]["coefficients"]
         offsets = coefs[scheme]["offsets"]
 
-        nbndry = len(weights) // 2
-        ref_slice = slice(nbndry, npts - nbndry, 1)
+        num_bndry_points = len(weights) // 2
+        ref_slice = slice(num_bndry_points, npts - num_bndry_points, 1)
         off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
 
         yd = np.zeros_like(y)
@@ -237,7 +243,7 @@ class FinDiff(UnaryOperator):
         weights = coefs[scheme]["coefficients"]
         offsets = coefs[scheme]["offsets"]
 
-        ref_slice = slice(0, nbndry, 1)
+        ref_slice = slice(0, num_bndry_points, 1)
         off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
 
         self._apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
@@ -246,7 +252,7 @@ class FinDiff(UnaryOperator):
         weights = coefs[scheme]["coefficients"]
         offsets = coefs[scheme]["offsets"]
 
-        ref_slice = slice(npts - nbndry, npts, 1)
+        ref_slice = slice(npts - num_bndry_points, npts, 1)
         off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
 
         self._apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
