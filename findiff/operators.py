@@ -27,7 +27,7 @@ class BinaryOperator(Operator):
             if idx in stl:
                 stl[idx] = self.oper(stl[idx], coef)
             else:
-                stl[idx] = coef
+                stl[idx] = self.oper(0, coef)
         return stl
 
 
