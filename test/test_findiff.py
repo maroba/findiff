@@ -177,8 +177,6 @@ class FinDiffTest(unittest.TestCase):
         (X, Y), _, h = grid(2, 50, 0, 1)
 
         u = X**2 + Y**2
-        #import pdb
-        #pdb.set_trace()
 
         d_dx = FinDiff(0, h[0])
         d_dy = FinDiff(1, h[1])
@@ -250,6 +248,26 @@ class FinDiffTest(unittest.TestCase):
             d += c * u[idx]
 
         self.assertAlmostEqual(diffed[idx0], d)
+
+    def test_stencil_operator_addition(self):
+
+        n = 100
+        (X, Y), _, (dx, dy) = grid(2, n, -1, 1)
+
+        u = X**3 + Y**3
+
+        d = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
+        du = d(u)
+
+        idx0 = (15, 16)
+
+        stl = d.stencil(idx0, u.shape)
+
+        a = 0.
+        for idx, c in stl.items():
+            a += c * u[idx]
+
+        self.assertAlmostEqual(du[idx0], a)
 
     def dict_almost_equal(self, d1, d2):
 

@@ -12,20 +12,10 @@ class UnaryOperator(Operator):
 
 
 class BinaryOperator(Operator):
-    pass
-
-
-class Plus(Operator):
-    """ Plus operator between two FinDiff objects. """
 
     def __init__(self, left, right):
         self.left = left
         self.right = right
-
-    def apply(self, u):
-        u_left = self.left.apply(u)
-        u_right = self.right.apply(u)
-        return u_left + u_right
 
     def stencil(self, idx0, shape):
         stl = self.left.stencil(idx0, shape)
@@ -39,12 +29,17 @@ class Plus(Operator):
         return stl
 
 
-class Minus(Operator):
-    """ Minus operator between two FinDiff objects. """
+class Plus(BinaryOperator):
+    """ Plus operator between two FinDiff objects. """
 
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
+    def apply(self, u):
+        u_left = self.left.apply(u)
+        u_right = self.right.apply(u)
+        return u_left + u_right
+
+
+class Minus(BinaryOperator):
+    """ Minus operator between two FinDiff objects. """
 
     def apply(self, u):
         u_left = self.left.apply(u)
@@ -52,12 +47,8 @@ class Minus(Operator):
         return u_left - u_right
 
 
-class Multiply(Operator):
+class Multiply(BinaryOperator):
     """ Multiplication operator between two FinDiff objects or Coef and FinDiff objects. """
-
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
 
     def apply(self, u):
         return self.left * self.right.apply(u)
