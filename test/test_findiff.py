@@ -190,6 +190,75 @@ class FinDiffTest(unittest.TestCase):
 
         assert_array_almost_equal(u1, u1_ex)
 
+    def test_stencil_single_axis_center_1d(self):
+
+        h = 0.1
+
+        d2_dx2 = FinDiff((0, h, 2))
+        actual = d2_dx2.stencil((1,),(6,))
+        expected = {
+            (0,): 1 * h**-2,
+            (1,): -2 * h**-2,
+            (2,): 1 * h**-2
+        }
+        self.assertEqual(expected, actual)
+
+    def test_stencil_single_axis_forward_1d(self):
+
+        h = 1
+
+        d2_dx2 = FinDiff((0, h, 2))
+        actual = d2_dx2.stencil((0,),(6,))
+
+        expected = {
+            (0,): 2,
+            (1,): -5,
+            (2,): 4,
+            (3,): -1
+        }
+        self.dict_almost_equal(expected, actual)
+
+    def test_stencil_single_axis_backward_2d(self):
+
+        h = 1
+
+        d2_dx2 = FinDiff((1, h, 2))
+        actual = d2_dx2.stencil((3,5), (6,6))
+
+        expected = {
+            (3,5): 2,
+            (3,4): -5,
+            (3,3): 4,
+            (3,2): -1
+        }
+        self.dict_almost_equal(expected, actual)
+
+    def test_stencil_single_axis_center_2d_compared_with_findiff(self):
+        n = 70
+        (X, Y), _, (dx, dy) = grid(2, n, -1, 1)
+
+        u = X ** 3 * Y ** 3
+
+        d4_dx2dy2 = FinDiff(1, dx, 2)
+        diffed = d4_dx2dy2(u)
+
+        idx0 = (20, 25)
+        stl = d4_dx2dy2.stencil(idx0, u.shape)
+
+        d = 0.
+        for idx, c in stl.items():
+            d += c * u[idx]
+
+        self.assertAlmostEqual(diffed[idx0], d)
+
+    def dict_almost_equal(self, d1, d2):
+
+        self.assertEqual(len(d1), len(d2))
+
+        for k, v in d1.items():
+            self.assertAlmostEqual(v, d2[k])
+
+
 
 class TestFinDiffNonUniform(unittest.TestCase):
 
@@ -286,6 +355,9 @@ def grid(ndim, npts, a, b):
     spac = [coords[i][1] - coords[i][0] for i in range(ndim)]
 
     return mesh, coords, spac
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

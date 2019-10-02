@@ -27,15 +27,9 @@ class Plus(Operator):
         u_right = self.right.apply(u)
         return u_left + u_right
 
-    def stencil(self, obj, idx0, shape):
-        if isinstance(self.left, FinDiff):
-            stl = self.left.stencil(idx0, shape)
-        else:
-            stl = self.left.stencil(self, idx0, shape)
-        if isinstance(self.right, FinDiff):
-            stl_right = self.right.stencil(idx0, shape)
-        else:
-            stl_right = self.right.stencil(self, idx0, shape)
+    def stencil(self, idx0, shape):
+        stl = self.left.stencil(idx0, shape)
+        stl_right = self.right.stencil(idx0, shape)
 
         for idx, coef in stl_right.items():
             if idx in stl:
@@ -172,9 +166,6 @@ class FinDiff(UnaryOperator):
             else:
                 raise Exception("Unknown kwarg.")
 
-        if self.acc is None:
-            self.acc = 2
-
         if self.child is not None:
             u = self.child.apply(u)
 
@@ -232,9 +223,9 @@ class FinDiff(UnaryOperator):
     def stencil(self, idx, shape):
         stl = {}
         if self.child:
-            stl = self.child.stencil(self, idx, shape)
+            stl = self.child.stencil(idx, shape)
 
-        return self.root.stencil(self, idx, shape)
+        return self.root.stencil(idx, shape)
 
 
 
@@ -403,12 +394,18 @@ class PartialDerivative(UnaryOperator):
 
         return yd
 
-    def stencil(self, fd, idx0, shape):
+    def stencil(self, idx0, shape):
         if not self.uniform:
             raise NotImplementedError("stencil calculation not yet implemented for nonuniform grids")
 
+        if len(self.derivs) > 1:
+            raise NotImplementedError("stencil calculation not yet implemented for mixed partial derivatives")
+
         if not self._valid_index_tuple(idx0, shape):
             raise IndexError("index out of range")
+
+        # This code works correctly for single-axis partial derivatives, but not for mixed
+        # partial derivatives. TODO: fix
 
         stl = {}
         indices = set()
@@ -422,7 +419,7 @@ class PartialDerivative(UnaryOperator):
             new_indices = set()
 
             for idx in indices:
-                stl, inds = self._single_stencil(stl, fd.acc, axis, order, idx, shape)
+                stl, inds = self._single_stencil(stl, self.acc, axis, order, idx, shape)
                 new_indices.update(inds)
 
             indices.update(new_indices)
@@ -447,9 +444,9 @@ class PartialDerivative(UnaryOperator):
             idx = tuple(idx)
             new_indices.append(idx)
             if idx in stl:
-                stl[idx] += c
+                stl[idx] += c / self.spac[axis] ** order
             else:
-                stl[idx] = c
+                stl[idx] = c / self.spac[axis] ** order
 
         return stl, new_indices
 
