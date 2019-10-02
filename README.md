@@ -148,7 +148,7 @@ gives
 ```
 
 FinDiff operators will use central coefficients whenever possible and switch
-to backward or forward coefficients if not enough points are available to either side.
+to backward or forward coefficients if not enough points are available on either side.
 
 ## Installation
 
