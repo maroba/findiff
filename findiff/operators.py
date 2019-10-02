@@ -1,6 +1,7 @@
 from copy import deepcopy
 import numpy as np
 from .coefs import coefficients, coefficients_non_uni
+import operator
 
 
 class Operator(object):
@@ -13,9 +14,10 @@ class UnaryOperator(Operator):
 
 class BinaryOperator(Operator):
 
-    def __init__(self, left, right):
+    def __init__(self, left, right, oper):
         self.left = left
         self.right = right
+        self.oper = oper
 
     def stencil(self, idx0, shape):
         stl = self.left.stencil(idx0, shape)
@@ -23,7 +25,7 @@ class BinaryOperator(Operator):
 
         for idx, coef in stl_right.items():
             if idx in stl:
-                stl[idx] += coef
+                stl[idx] = self.oper(stl[idx], coef)
             else:
                 stl[idx] = coef
         return stl
@@ -31,6 +33,9 @@ class BinaryOperator(Operator):
 
 class Plus(BinaryOperator):
     """ Plus operator between two FinDiff objects. """
+
+    def __init__(self, left, right):
+        super().__init__(left, right, operator.add)
 
     def apply(self, u):
         u_left = self.left.apply(u)
@@ -41,6 +46,9 @@ class Plus(BinaryOperator):
 class Minus(BinaryOperator):
     """ Minus operator between two FinDiff objects. """
 
+    def __init__(self, left, right):
+        super().__init__(left, right, operator.sub)
+
     def apply(self, u):
         u_left = self.left.apply(u)
         u_right = self.right.apply(u)
@@ -49,6 +57,9 @@ class Minus(BinaryOperator):
 
 class Multiply(BinaryOperator):
     """ Multiplication operator between two FinDiff objects or Coef and FinDiff objects. """
+
+    def __init__(self, left, right):
+        super().__init__(left, right, operator.mul)
 
     def apply(self, u):
         return self.left * self.right.apply(u)
