@@ -22,10 +22,27 @@ class Plus(Operator):
         self.left = left
         self.right = right
 
-    def apply(self, fd, u):
-        u_left = self.left.apply(fd, u)
-        u_right = self.right.apply(fd, u)
+    def apply(self, u):
+        u_left = self.left.apply(u)
+        u_right = self.right.apply(u)
         return u_left + u_right
+
+    def stencil(self, obj, idx0, shape):
+        if isinstance(self.left, FinDiff):
+            stl = self.left.stencil(idx0, shape)
+        else:
+            stl = self.left.stencil(self, idx0, shape)
+        if isinstance(self.right, FinDiff):
+            stl_right = self.right.stencil(idx0, shape)
+        else:
+            stl_right = self.right.stencil(self, idx0, shape)
+
+        for idx, coef in stl_right.items():
+            if idx in stl:
+                stl[idx] += coef
+            else:
+                stl[idx] = coef
+        return stl
 
 
 class Minus(Operator):
@@ -35,9 +52,9 @@ class Minus(Operator):
         self.left = left
         self.right = right
 
-    def apply(self, fd, u):
-        u_left = self.left.apply(fd, u)
-        u_right = self.right.apply(fd, u)
+    def apply(self, u):
+        u_left = self.left.apply(u)
+        u_right = self.right.apply(u)
         return u_left - u_right
 
 
@@ -48,8 +65,8 @@ class Multiply(Operator):
         self.left = left
         self.right = right
 
-    def apply(self, fd, u):
-        return self.left * self.right.apply(fd, u)
+    def apply(self, u):
+        return self.left * self.right.apply(u)
 
 
 class FinDiff(UnaryOperator):
@@ -121,7 +138,7 @@ class FinDiff(UnaryOperator):
         
         """
 
-        self.acc = None
+        self.acc = 2
 
         for kw in kwargs:
             if kw == "acc":
@@ -131,7 +148,7 @@ class FinDiff(UnaryOperator):
             else:
                 raise Exception("No such keyword argument: %s" % kw)
 
-        self.root = PartialDerivative(*args)
+        self.root = PartialDerivative(*args, acc=self.acc)
 
         self.child = None
 
@@ -159,18 +176,18 @@ class FinDiff(UnaryOperator):
             self.acc = 2
 
         if self.child is not None:
-            u = self.child.apply(self, u)
+            u = self.child.apply(u)
 
-        return self.root.apply(self, u)
+        return self.root.apply(u)
 
     def set_accuracy(self, acc):
         """ Sets the accuracy order of the finite difference scheme.
             If the FinDiff object is not a raw partial derivative but a composition of derivatives
             the accuracy order will be propagated to the child operators.
         """
-        self.acc = acc
         if self.child:
             self.child.set_accuracy(acc)
+        self.root.acc = acc
 
     def __add__(self, other):
         """Add FinDiff object with other FinDiff object to linear combination.
@@ -209,8 +226,115 @@ class FinDiff(UnaryOperator):
 
         return self
 
-    def apply(self, fd, u):
-        return self.root.apply(fd, u)
+    def apply(self, u):
+        return self.root.apply(u)
+
+    def stencil(self, idx, shape):
+        stl = {}
+        if self.child:
+            stl = self.child.stencil(self, idx, shape)
+
+        return self.root.stencil(self, idx, shape)
+
+
+
+
+class Coef(object):
+    """
+        Encapsulates a constant (number) or variable (N-dimensional coordinate array) value to multiply with a linear operator
+
+        :param value: a number or an numpy.ndarray with meshed coordinates
+
+        ============
+        **Example**:
+
+           The following example defines the differential operator
+
+           .. math::
+
+              2x \frac{\partial^3}{\partial x^2 \partial z}
+
+           >>> X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
+           >>> diff_op = Coef(2*X) * FinDiff((0, dx, 2), (2, dz, 1))
+
+
+        """
+    def __init__(self, value):
+        self.value = value
+
+# Alias for backward compatibility
+Coefficient = Coef
+
+
+class Identity(FinDiff):
+
+    def __init__(self):
+        super().__init__()
+        self.spac = 0
+
+
+class PartialDerivative(UnaryOperator):
+
+    def __init__(self, *args, **kwargs):
+        """ Representation of a general partial derivative 
+
+                \frac{\partial^(n_i + n_j + ... + n_k) / \partial}
+                     {\partial x_i^n_i \partial x_j^n_j ... \partial x_k^_k}
+
+            args:
+            -----
+                   A list of tuples of the form
+                         (axis, M, derivative order)
+
+                      where M is the grid spacing for uniform grids or the 1D-array of coordinates for non-uniform grids.
+
+                   If the list contained only one tuple, you can skip the tuple parentheses.
+
+                   An empty argument list is equivalent to the identity operator.
+
+         """
+
+        tuples = self._convert_to_valid_tuple_list(args)
+        self.derivs = {}
+        self.spac = {}
+        self.coords = {}
+        for t in tuples:
+            axis, spac_or_coords, order = t
+            if axis in self.derivs:
+                raise ValueError("Derivative along axis %d specified more than once." % axis)
+            self.derivs[axis] = order
+
+            if hasattr(spac_or_coords, "__len__"):
+                self.coords[axis] = spac_or_coords
+                self.uniform = False
+            else:
+                self.spac[axis] = spac_or_coords
+                self.uniform = True
+
+        self.acc = 2
+        if "acc" in kwargs:
+            self.acc = kwargs["acc"]
+
+    def axes(self):
+        return sorted(list(self.derivs.keys()))
+
+    def order(self, axis):
+        if axis in self.derivs:
+            return self.derivs[axis]
+        return 0
+
+    def apply(self, u):
+
+        for axis, order in self.derivs.items():
+            if self.uniform:
+                u = self.diff(u, self.spac[axis], order, axis, coefficients(order, self.acc))
+            else:
+                coefs = []
+                for i in range(len(self.coords[axis])):
+                    coefs.append(coefficients_non_uni(order, self.acc, self.coords[axis], i))
+                u = self.diff_non_uni(u, self.coords[axis], axis, coefs)
+
+        return u
 
     def diff(self, y, h, deriv, dim, coefs):
         """The core function to take a partial derivative on a uniform grid.
@@ -279,6 +403,62 @@ class FinDiff(UnaryOperator):
 
         return yd
 
+    def stencil(self, fd, idx0, shape):
+        if not self.uniform:
+            raise NotImplementedError("stencil calculation not yet implemented for nonuniform grids")
+
+        if not self._valid_index_tuple(idx0, shape):
+            raise IndexError("index out of range")
+
+        stl = {}
+        indices = set()
+        indices.add(idx0)
+
+        for axis, order in self.derivs.items():
+
+            # Each application of a single-axis partial derivative creates new indices at which to evaluate
+            # the other single-axis partial derivatives.
+
+            new_indices = set()
+
+            for idx in indices:
+                stl, inds = self._single_stencil(stl, fd.acc, axis, order, idx, shape)
+                new_indices.update(inds)
+
+            indices.update(new_indices)
+
+        return stl
+
+    def _single_stencil(self, stl, acc, axis, order, idx0, shape):
+
+        if idx0[axis] == 0:
+            scheme = 'forward'
+        elif idx0[axis] == shape[axis] - 1:
+            scheme = 'backward'
+        else:
+            scheme = 'center'
+
+        coefs = coefficients(order, acc)[scheme]
+        new_indices = []
+
+        for o, c in zip(coefs['offsets'], coefs['coefficients']):
+            idx = list(idx0)
+            idx[axis] += o
+            idx = tuple(idx)
+            new_indices.append(idx)
+            if idx in stl:
+                stl[idx] += c
+            else:
+                stl[idx] = c
+
+        return stl, new_indices
+
+    def _valid_index_tuple(self, idx0, shape):
+        for i, s in zip(idx0, shape):
+            if i < 0 or i >= s:
+                return False
+        return True
+
     def _apply_to_array(self, yd, y, weights, off_slices, ref_slice, dim):
         """Applies the finite differences only to slices along a given axis"""
 
@@ -303,98 +483,6 @@ class FinDiff(UnaryOperator):
             raise IndexError("Shift slice out of bounds")
 
         return slice(sl.start + off, sl.stop + off, sl.step)
-
-
-class Coef(object):
-    """
-        Encapsulates a constant (number) or variable (N-dimensional coordinate array) value to multiply with a linear operator
-
-        :param value: a number or an numpy.ndarray with meshed coordinates
-
-        ============
-        **Example**:
-
-           The following example defines the differential operator
-
-           .. math::
-
-              2x \frac{\partial^3}{\partial x^2 \partial z}
-
-           >>> X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
-           >>> diff_op = Coef(2*X) * FinDiff((0, dx, 2), (2, dz, 1))
-
-
-        """
-    def __init__(self, value):
-        self.value = value
-
-# Alias for backward compatibility
-Coefficient = Coef
-
-
-class Identity(FinDiff):
-
-    def __init__(self):
-        super().__init__()
-        self.spac = 0
-
-
-class PartialDerivative(UnaryOperator):
-
-    def __init__(self, *args):
-        """ Representation of a general partial derivative 
-
-                \frac{\partial^(n_i + n_j + ... + n_k) / \partial}
-                     {\partial x_i^n_i \partial x_j^n_j ... \partial x_k^_k}
-
-            args:
-            -----
-                   A list of tuples of the form
-                         (axis, M, derivative order)
-
-                      where M is the grid spacing for uniform grids or the 1D-array of coordinates for non-uniform grids.
-
-                   If the list contained only one tuple, you can skip the tuple parentheses.
-
-                   An empty argument list is equivalent to the identity operator.
-
-         """
-
-        tuples = self._convert_to_valid_tuple_list(args)
-        self.derivs = {}
-        self.spac = {}
-        self.coords = {}
-        for t in tuples:
-            axis, spac_or_coords, order = t
-            if axis in self.derivs:
-                raise ValueError("Derivative along axis %d specified more than once." % axis)
-            self.derivs[axis] = order
-
-            if hasattr(spac_or_coords, "__len__"):
-                self.coords[axis] = spac_or_coords
-            else:
-                self.spac[axis] = spac_or_coords
-
-    def axes(self):
-        return sorted(list(self.derivs.keys()))
-
-    def order(self, axis):
-        if axis in self.derivs:
-            return self.derivs[axis]
-        return 0
-
-    def apply(self, fd, u):
-
-        for axis, order in self.derivs.items():
-            if self.spac:
-                u = fd.diff(u, self.spac[axis], order, axis, coefficients(order, fd.acc))
-            else:
-                coefs = []
-                for i in range(len(self.coords[axis])):
-                    coefs.append(coefficients_non_uni(order, fd.acc, self.coords[axis], i))
-                u = fd.diff_non_uni(u, self.coords[axis], axis, coefs)
-
-        return u
 
     def _convert_to_valid_tuple_list(self, args):
 

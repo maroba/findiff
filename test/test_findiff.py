@@ -16,7 +16,7 @@ class FinDiffTest(unittest.TestCase):
         ux_ex = np.cos(x)
 
         fd = FinDiff(0, x[1] - x[0], 1)
-        fd.acc = 4
+        fd.set_accuracy(4)
 
         ux = fd(u)
 
@@ -30,7 +30,7 @@ class FinDiffTest(unittest.TestCase):
         uxy_ex = np.cos(X) * np.cos(Y)
 
         fd = FinDiff((0, x[1] - x[0], 1), (1, y[1] - y[0], 1))
-        fd.acc = 4
+        fd.set_accuracy(4)
 
         uxy = fd(u)
 
