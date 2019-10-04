@@ -190,8 +190,6 @@ use this matrix to perform the differentiation manually by matrix-vector multipl
 d2u_dx2 = mat.dot(u.reshape(-1))
 ```
 
-__Note: This feature is not yet available on pipy but only in the current development version.__
-
 ### Stencils
 
 You can also take a look at the finite difference stencils, e.g. for a 2D grid:
@@ -242,8 +240,6 @@ lap_u = stencil.apply_all(u)
 ``` 
 
 which iterates over all grid points, selects the right right stencil and applies it.
-
-__Note: This feature is not yet available on pipy but only in the current development version.__
 
 ## Compatibility
 

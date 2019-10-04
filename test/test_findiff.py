@@ -266,7 +266,7 @@ class FinDiffTest(unittest.TestCase):
 
     def test_matrix_1d(self):
 
-        x = [np.linspace(0, 6, 7)]
+        x = np.linspace(0, 6, 7)
         d2_dx2 = FinDiff(0, x[1]-x[0], 2)
         u = x**2
 
