@@ -66,6 +66,21 @@ class Stencil(object):
 
         return du
 
+    def for_point(self, idx):
+        typ = self.type_for_point(idx)
+        return self.data[typ]
+
+    def type_for_point(self, idx):
+        typ = []
+        for axis in range(len(idx)):
+            if idx[axis] == 0:
+                typ.append('L')
+            elif idx[axis] == self.shape[axis] - 1:
+                typ.append('H')
+            else:
+                typ.append('C')
+        return tuple(typ)
+
     def _create_stencil(self):
         if not self.pd.uniform:
             raise NotImplementedError("stencil calculation not yet implemented for nonuniform grids")

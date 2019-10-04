@@ -264,6 +264,17 @@ class FinDiffTest(unittest.TestCase):
         for k, v in d1.items():
             self.assertAlmostEqual(v, d2[k])
 
+    def test_matrix_1d(self):
+
+        x = np.linspace(0, 10, 11)
+        d2_dx2 = FinDiff(0, x[1]-x[0], 2)
+        u = x**2
+
+        mat = d2_dx2.matrix(u.shape)
+        print(mat.toarray())
+
+        np.testing.assert_array_almost_equal(2*np.ones_like(x), mat.dot(u.reshape(-1)))
+        print(mat.dot(u.reshape(-1)))
 
 
 class TestFinDiffNonUniform(unittest.TestCase):

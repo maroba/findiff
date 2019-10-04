@@ -18,8 +18,6 @@ any number of dimensions.
 
 ## Installation
 
-Simply use pip:
-
 ```
 pip install findiff
 ```
@@ -204,7 +202,7 @@ Each stencil is a dictionary itself with the index offsets as keys and the finit
 In order to apply the stencil manually, you can use
 
 ```
-lap_u = stencil.apply(u)
+lap_u = stencil.apply_all(u)
 ``` 
 
 which iterates over all grid points, selects the right right stencil and applies it.
@@ -221,5 +219,6 @@ You can find the documentation of the code including examples of application at 
 
 ## Dependencies
 
-_findiff_ uses _numpy_ for fast array processing.
+_findiff_ uses _numpy_ for fast array processing and _scipy_ for sparse matrix support.
+
 

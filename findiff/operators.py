@@ -1,5 +1,7 @@
 from copy import deepcopy
+from itertools import product
 import numpy as np
+import scipy.sparse as sparse
 from .coefs import coefficients, coefficients_non_uni
 import operator
 from .stencils import Stencil
@@ -225,6 +227,12 @@ class FinDiff(UnaryOperator):
 
         return self.root.stencil(shape)
 
+    def matrix(self, shape):
+        mat = self.root.matrix(shape)
+        if self.child:
+            return mat * self.child.matrix(shape)
+        return mat
+
 
 class Coef(object):
     """
@@ -392,6 +400,40 @@ class PartialDerivative(UnaryOperator):
 
     def stencil(self, shape):
         return Stencil(self, shape)
+
+    def matrix(self, shape):
+        ndims = len(shape)
+        long_siz = np.prod(shape)
+
+        mat = sparse.dok_matrix((long_siz, long_siz))
+
+        ax_inds = (list(range(shape[k])) for k in range(ndims))
+        indices = product(*ax_inds)
+        stencil = self.stencil(shape)
+
+        for idx0 in indices:
+            long_idx0 = self._to_long_index(idx0, shape)
+            pt_stl = stencil.for_point(idx0)
+            for o, c in pt_stl.items():
+                idx = np.array(idx0) + o
+                long_idx = self._to_long_index(idx, shape)
+
+                mat[long_idx0, long_idx] += c
+
+        return sparse.coo_matrix(mat)
+
+    def _to_long_index(self, idx, shape):
+        slice_sizes = [1]
+        ndims = len(shape)
+        for i in range(-1, -ndims, -1):
+            slice_sizes.append(slice_sizes[-1] * len(shape[i]))
+
+        long_idx = 0
+
+        for axis in range(ndims):
+            long_idx += idx[ndims - axis - 1] * slice_sizes[axis]
+
+        return long_idx
 
     def _valid_index_tuple(self, idx0, shape):
         for i, s in zip(idx0, shape):
