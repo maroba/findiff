@@ -57,6 +57,9 @@ class Multiply(BinaryOperator):
     def apply(self, u):
         return self.left * self.right.apply(u)
 
+    def stencil(self, shape):
+        raise NotImplementedError("Stencil multiplication not yet implemented")
+
 
 class FinDiff(UnaryOperator):
 

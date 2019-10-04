@@ -16,6 +16,14 @@ any number of dimensions.
 * Fully vectorized for speed
 * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
 
+## Installation
+
+Simply use pip:
+
+```
+pip install findiff
+```
+
 ## Quickstart
 
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
@@ -106,12 +114,12 @@ grad_f = grad(f)
 More examples, including linear combinations with variable coefficients can be found [here](https://maroba.github.io/findiff-docs/source/examples.html).
 
 
-#### Derivatives in N dimensions
+### Derivatives in N dimensions
 
 The package can work with any number of dimensions, the generalization
 of usage is straight forward. The only limit is memory and CPU speed.
 
-#### Accuracy Control
+### Accuracy Control
 
 When constructing an instance of `FinDiff`, you can request the desired accuracy
 order by setting the keyword argument `acc`. 
@@ -124,7 +132,7 @@ d2f_dx2 = d2_dx2(f)
 If not specified, second order accuracy will be taken by default.
 
 
-#### Finite Difference Coefficients
+### Finite Difference Coefficients
 
 Sometimes you may want to have the raw finite difference coefficients.
 These can be obtained for __any__ derivative and accuracy order
@@ -150,13 +158,58 @@ gives
 FinDiff operators will use central coefficients whenever possible and switch
 to backward or forward coefficients if not enough points are available on either side.
 
-## Installation
+### Stencils
 
-Simply use pip:
+You can also take a look at the finite difference stencils, e.g. for a 2D grid:
+
+```python
+import numpy as np
+from findiff import FinDiff
+
+x, y = np.linspace(0, 1, 100)
+X, Y = np.meshgrid(x, y, indexing='ij')
+u = X**3 + Y**3
+laplace_2d = FinDiff(0, x[1]-x[0], 2) + FinDiff(1, y[1]-y[0], 2)
+
+stencil = laplace_2d.stencil(u.shape)
+
+print(stencil)
+```
+
+yields the following output
 
 ```
-pip install findiff
+('L', 'L'):	{(0, 0): 4.0, (1, 0): -5.0, (2, 0): 4.0, (3, 0): -1.0, (0, 1): -5.0, (0, 2): 4.0, (0, 3): -1.0}
+('L', 'C'):	{(0, 0): 0.0, (1, 0): -5.0, (2, 0): 4.0, (3, 0): -1.0, (0, -1): 1.0, (0, 1): 1.0}
+('L', 'H'):	{(0, 0): 4.0, (1, 0): -5.0, (2, 0): 4.0, (3, 0): -1.0, (0, -3): -1.0, (0, -2): 4.0, (0, -1): -5.0}
+('C', 'L'):	{(-1, 0): 1.0, (0, 0): 0.0, (1, 0): 1.0, (0, 1): -5.0, (0, 2): 4.0, (0, 3): -1.0}
+('C', 'C'):	{(-1, 0): 1.0, (0, 0): -4.0, (1, 0): 1.0, (0, -1): 1.0, (0, 1): 1.0}
+('C', 'H'):	{(-1, 0): 1.0, (0, 0): 0.0, (1, 0): 1.0, (0, -3): -1.0, (0, -2): 4.0, (0, -1): -5.0}
+('H', 'L'):	{(-3, 0): -1.0, (-2, 0): 4.0, (-1, 0): -5.0, (0, 0): 4.0, (0, 1): -5.0, (0, 2): 4.0, (0, 3): -1.0}
+('H', 'C'):	{(-3, 0): -1.0, (-2, 0): 4.0, (-1, 0): -5.0, (0, 0): 0.0, (0, -1): 1.0, (0, 1): 1.0}
+('H', 'H'):	{(-3, 0): -1.0, (-2, 0): 4.0, (-1, 0): -5.0, (0, 0): 4.0, (0, -3): -1.0, (0, -2): 4.0, (0, -1): -5.0}
 ```
+
+This is a dictionary with the characteristic points as keys and the stencils as values. 
+The 2D grid has 3**2 = 9 "characteristic points", so it as 9 stencils.
+
+'L' stand for 'lowest index' (which is 0), 'H' for 'highest index' (which is the number of points on the given axis minus 1)
+and 'C' for 'center', i.e. a grid point not at the boundary of the axis.
+
+In 2D the characteristic points are center points ('C', 'C'), corner points: ('L', 'L'), ('L', 'H'), ('H', 'L'), ('H', 'H')
+and edge-points (all others). For higher dimensions the characteristic points are analogous tuples with more indices.
+
+Each stencil is a dictionary itself with the index offsets as keys and the finite difference coefficients as values.
+
+In order to apply the stencil manually, you can use
+
+```
+lap_u = stencil.apply(u)
+``` 
+
+which iterates over all grid points, selects the right right stencil and applies it.
+
+__Note: This feature is not yet available on pipy but only in the current development version.__
 
 ## Compatibility
 
