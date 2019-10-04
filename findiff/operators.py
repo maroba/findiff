@@ -25,6 +25,9 @@ class BinaryOperator(Operator):
     def stencil(self, shape):
         return self.oper(self.left.stencil(shape), self.right.stencil(shape))
 
+    def matrix(self, shape):
+        return self.oper(self.left.matrix(shape), self.right.matrix(shape))
+
 
 class Plus(BinaryOperator):
     """ Plus operator between two FinDiff objects. """
@@ -405,28 +408,49 @@ class PartialDerivative(UnaryOperator):
         ndims = len(shape)
         long_siz = np.prod(shape)
 
-        mat = sparse.dok_matrix((long_siz, long_siz))
+        indices = list(product(*tuple([list(range(shape[k])) for k in range(ndims)])))
 
-        ax_inds = (list(range(shape[k])) for k in range(ndims))
-        indices = product(*ax_inds)
-        stencil = self.stencil(shape)
+        matrix = None
 
-        for idx0 in indices:
-            long_idx0 = self._to_long_index(idx0, shape)
-            pt_stl = stencil.for_point(idx0)
-            for o, c in pt_stl.items():
-                idx = np.array(idx0) + o
-                long_idx = self._to_long_index(idx, shape)
+        for axis, order in self.derivs.items():
 
-                mat[long_idx0, long_idx] += c
+            coeff_schemes = coefficients(order, self.acc)
+            mat = sparse.dok_matrix((long_siz, long_siz))
 
-        return sparse.coo_matrix(mat)
+            for idx0 in indices:
+
+                if idx0[axis] == 0:
+                    scheme = 'forward'
+                elif idx0[axis] == shape[axis] - 1:
+                    scheme = 'backward'
+                else:
+                    scheme = 'center'
+
+                coeffs = coeff_schemes[scheme]
+
+                long_idx0 = self._to_long_index(idx0, shape)
+                for o, c in zip(coeffs['offsets'], coeffs['coefficients']):
+                    offset = np.zeros_like(idx0)
+                    offset[axis] = o
+                    idx = np.array(idx0) + offset
+                    long_idx = self._to_long_index(idx, shape)
+
+                    mat[long_idx0, long_idx] += c
+
+            mat = sparse.coo_matrix(mat)
+
+            if matrix is None:
+                matrix = mat
+            else:
+                matrix = matrix.dot(mat)
+
+        return matrix
 
     def _to_long_index(self, idx, shape):
         slice_sizes = [1]
         ndims = len(shape)
         for i in range(-1, -ndims, -1):
-            slice_sizes.append(slice_sizes[-1] * len(shape[i]))
+            slice_sizes.append(slice_sizes[-1] * shape[i])
 
         long_idx = 0
 

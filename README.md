@@ -156,6 +156,39 @@ gives
 FinDiff operators will use central coefficients whenever possible and switch
 to backward or forward coefficients if not enough points are available on either side.
 
+### Matrix Representation
+
+For a given _FinDiff_ differential operator , you can get the matrix representation 
+using the `matrix(shape)` method, e.g.
+
+```python
+x = [np.linspace(0, 6, 7)]
+d2_dx2 = FinDiff(0, x[1]-x[0], 2)
+u = x**2
+
+mat = d2_dx2.matrix(u.shape)  # this method returns a scipy sparse matrix
+print(mat.toarray())
+``` 
+
+has the output
+
+```
+[[ 2. -5.  4. -1.  0.  0.  0.]
+ [ 1. -2.  1.  0.  0.  0.  0.]
+ [ 0.  1. -2.  1.  0.  0.  0.]
+ [ 0.  0.  1. -2.  1.  0.  0.]
+ [ 0.  0.  0.  1. -2.  1.  0.]
+ [ 0.  0.  0.  0.  1. -2.  1.]
+ [ 0.  0.  0. -1.  4. -5.  2.]]
+```
+
+The same works for differential operators in higher dimensions. Of course, you can
+use this matrix to perform the differentiation manually by matrix-vector multiplication:
+
+```python
+d2u_dx2 = mat.dot(u.reshape(-1))
+```
+
 ### Stencils
 
 You can also take a look at the finite difference stencils, e.g. for a 2D grid:

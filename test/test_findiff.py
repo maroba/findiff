@@ -266,7 +266,7 @@ class FinDiffTest(unittest.TestCase):
 
     def test_matrix_1d(self):
 
-        x = np.linspace(0, 10, 11)
+        x = [np.linspace(0, 6, 7)]
         d2_dx2 = FinDiff(0, x[1]-x[0], 2)
         u = x**2
 
@@ -275,6 +275,36 @@ class FinDiffTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(2*np.ones_like(x), mat.dot(u.reshape(-1)))
         print(mat.dot(u.reshape(-1)))
+
+    def test_matrix_2d(self):
+        thr = np.get_printoptions()["threshold"]
+        lw = np.get_printoptions()["linewidth"]
+        np.set_printoptions(threshold=np.inf)
+        np.set_printoptions(linewidth=500)
+        x, y = [np.linspace(0, 5, 6)] * 2
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        laplace = FinDiff(0, x[1]-x[0], 2) + FinDiff(0, y[1]-y[0], 2)
+        u = X**2 + Y**2
+
+        mat = laplace.matrix(u.shape)
+        print(mat.toarray())
+
+        np.testing.assert_array_almost_equal(4 * np.ones_like(X).reshape(-1), mat.dot(u.reshape(-1)))
+
+        np.set_printoptions(threshold=thr)
+        np.set_printoptions(linewidth=lw)
+
+    def test_matrix_2d_mixed(self):
+        x, y = [np.linspace(0, 5, 6), np.linspace(0, 6, 7)]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        d2_dxdy = FinDiff((0, x[1] - x[0]), (1, y[1] - y[0]))
+        u = X**2 * Y**2
+
+        mat = d2_dxdy.matrix(u.shape)
+        expected = d2_dxdy(u).reshape(-1)
+
+        actual = mat.dot(u.reshape(-1))
+        np.testing.assert_array_almost_equal(expected, actual)
 
 
 class TestFinDiffNonUniform(unittest.TestCase):
