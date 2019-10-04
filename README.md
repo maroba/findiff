@@ -15,6 +15,7 @@ any number of dimensions.
 * Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 * Fully vectorized for speed
 * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
+* Generate matrix representations of arbitrary linear differential operators
 
 ## Installation
 
@@ -158,7 +159,7 @@ to backward or forward coefficients if not enough points are available on either
 
 ### Matrix Representation
 
-For a given _FinDiff_ differential operator , you can get the matrix representation 
+For a given _FinDiff_ differential operator, you can get the matrix representation 
 using the `matrix(shape)` method, e.g.
 
 ```python
@@ -188,6 +189,8 @@ use this matrix to perform the differentiation manually by matrix-vector multipl
 ```python
 d2u_dx2 = mat.dot(u.reshape(-1))
 ```
+
+__Note: This feature is not yet available on pipy but only in the current development version.__
 
 ### Stencils
 
