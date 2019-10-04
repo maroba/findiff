@@ -188,68 +188,44 @@ class FinDiffTest(unittest.TestCase):
 
         assert_array_almost_equal(u1, u1_ex)
 
-    def test_stencil_single_axis_center_1d(self):
+    def test_local_stencil_single_axis_center_1d(self):
 
-        h = 0.1
+        x = np.linspace(0, 1, 50)
+        dx = x[1] - x[0]
+        u = x**3
+        d2_dx2 = FinDiff((0, dx, 2))
 
-        d2_dx2 = FinDiff((0, h, 2))
-        actual = d2_dx2.stencil((1,),(6,))
-        expected = {
-            (0,): 1 * h**-2,
-            (1,): -2 * h**-2,
-            (2,): 1 * h**-2
-        }
-        self.assertEqual(expected, actual)
+        stl = d2_dx2.stencil(u.shape)
+        idx = 5
+        actual = stl.apply(u, idx)
 
-    def test_stencil_single_axis_forward_1d(self):
+        d2u_dx2 = d2_dx2(u)
+        expected = d2u_dx2[idx]
 
-        h = 1
+        self.assertAlmostEqual(expected, actual)
 
-        d2_dx2 = FinDiff((0, h, 2))
-        actual = d2_dx2.stencil((0,),(6,))
+        actual = stl.apply_all(u)
+        expected = d2u_dx2
 
-        expected = {
-            (0,): 2,
-            (1,): -5,
-            (2,): 4,
-            (3,): -1
-        }
-        self.dict_almost_equal(expected, actual)
+        np.testing.assert_array_almost_equal(expected, actual)
 
-    def test_stencil_single_axis_backward_2d(self):
 
-        h = 1
-
-        d2_dx2 = FinDiff((1, h, 2))
-        actual = d2_dx2.stencil((3,5), (6,6))
-
-        expected = {
-            (3,5): 2,
-            (3,4): -5,
-            (3,3): 4,
-            (3,2): -1
-        }
-        self.dict_almost_equal(expected, actual)
-
-    def test_stencil_single_axis_center_2d_compared_with_findiff(self):
+    def test_local_stencil_single_axis_center_2d_compared_with_findiff(self):
         n = 70
         (X, Y), _, (dx, dy) = grid(2, n, -1, 1)
 
         u = X ** 3 * Y ** 3
 
         d4_dx2dy2 = FinDiff(1, dx, 2)
-        diffed = d4_dx2dy2(u)
+        expected = d4_dx2dy2(u)
 
-        idx0 = (20, 25)
-        stl = d4_dx2dy2.stencil(idx0, u.shape)
+        stl = d4_dx2dy2.stencil(u.shape)
 
-        d = 0.
-        for idx, c in stl.items():
-            d += c * u[idx]
+        actual = stl.apply_all(u)
 
-        self.assertAlmostEqual(diffed[idx0], d)
+        np.testing.assert_array_almost_equal(expected, actual)
 
-    def test_stencil_operator_addition(self):
+    def test_local_stencil_operator_addition(self):
 
         n = 100
         (X, Y), _, (dx, dy) = grid(2, n, -1, 1)
@@ -257,19 +233,15 @@ class FinDiffTest(unittest.TestCase):
         u = X**3 + Y**3
 
         d = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
-        du = d(u)
+        expected = d(u)
 
-        idx0 = (15, 16)
+        stl = d.stencil(u.shape)
 
-        stl = d.stencil(idx0, u.shape)
+        actual = stl.apply_all(u)
+        np.testing.assert_array_almost_equal(expected, actual)
 
-        a = 0.
-        for idx, c in stl.items():
-            a += c * u[idx]
 
-        self.assertAlmostEqual(du[idx0], a)
-
-    def test_stencil_operator_subtraction(self):
+    def test_local_stencil_operator_subtraction(self):
 
         n = 100
         (X, Y), _, (dx, dy) = grid(2, n, -1, 1)
@@ -277,17 +249,13 @@ class FinDiffTest(unittest.TestCase):
         u = X**3 + Y**3
 
         d = FinDiff(0, dx, 2) - FinDiff(1, dy, 2)
-        du = d(u)
+        expected = d(u)
 
-        idx0 = (15, 16)
+        stl = d.stencil(u.shape)
 
-        stl = d.stencil(idx0, u.shape)
+        actual = stl.apply_all(u)
+        np.testing.assert_array_almost_equal(expected, actual)
 
-        a = 0.
-        for idx, c in stl.items():
-            a += c * u[idx]
-
-        self.assertAlmostEqual(du[idx0], a)
 
     def dict_almost_equal(self, d1, d2):
 

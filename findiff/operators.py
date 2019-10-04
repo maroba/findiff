@@ -2,6 +2,7 @@ from copy import deepcopy
 import numpy as np
 from .coefs import coefficients, coefficients_non_uni
 import operator
+from .stencils import Stencil
 
 
 class Operator(object):
@@ -19,16 +20,8 @@ class BinaryOperator(Operator):
         self.right = right
         self.oper = oper
 
-    def stencil(self, idx0, shape):
-        stl = self.left.stencil(idx0, shape)
-        stl_right = self.right.stencil(idx0, shape)
-
-        for idx, coef in stl_right.items():
-            if idx in stl:
-                stl[idx] = self.oper(stl[idx], coef)
-            else:
-                stl[idx] = self.oper(0, coef)
-        return stl
+    def stencil(self, shape):
+        return self.oper(self.left.stencil(shape), self.right.stencil(shape))
 
 
 class Plus(BinaryOperator):
@@ -222,14 +215,12 @@ class FinDiff(UnaryOperator):
     def apply(self, u):
         return self.root.apply(u)
 
-    def stencil(self, idx, shape):
+    def stencil(self, shape):
         stl = {}
         if self.child:
-            stl = self.child.stencil(idx, shape)
+            stl = self.child.stencil(shape)
 
-        return self.root.stencil(idx, shape)
-
-
+        return self.root.stencil(shape)
 
 
 class Coef(object):
@@ -396,61 +387,8 @@ class PartialDerivative(UnaryOperator):
 
         return yd
 
-    def stencil(self, idx0, shape):
-        if not self.uniform:
-            raise NotImplementedError("stencil calculation not yet implemented for nonuniform grids")
-
-        if len(self.derivs) > 1:
-            raise NotImplementedError("stencil calculation not yet implemented for mixed partial derivatives")
-
-        if not self._valid_index_tuple(idx0, shape):
-            raise IndexError("index out of range")
-
-        # This code works correctly for single-axis partial derivatives, but not for mixed
-        # partial derivatives. TODO: fix
-
-        stl = {}
-        indices = set()
-        indices.add(idx0)
-
-        for axis, order in self.derivs.items():
-
-            # Each application of a single-axis partial derivative creates new indices at which to evaluate
-            # the other single-axis partial derivatives.
-
-            new_indices = set()
-
-            for idx in indices:
-                stl, inds = self._single_stencil(stl, self.acc, axis, order, idx, shape)
-                new_indices.update(inds)
-
-            indices.update(new_indices)
-
-        return stl
-
-    def _single_stencil(self, stl, acc, axis, order, idx0, shape):
-
-        if idx0[axis] == 0:
-            scheme = 'forward'
-        elif idx0[axis] == shape[axis] - 1:
-            scheme = 'backward'
-        else:
-            scheme = 'center'
-
-        coefs = coefficients(order, acc)[scheme]
-        new_indices = []
-
-        for o, c in zip(coefs['offsets'], coefs['coefficients']):
-            idx = list(idx0)
-            idx[axis] += o
-            idx = tuple(idx)
-            new_indices.append(idx)
-            if idx in stl:
-                stl[idx] += c / self.spac[axis] ** order
-            else:
-                stl[idx] = c / self.spac[axis] ** order
-
-        return stl, new_indices
+    def stencil(self, shape):
+        return Stencil(self, shape)
 
     def _valid_index_tuple(self, idx0, shape):
         for i, s in zip(idx0, shape):
