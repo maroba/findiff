@@ -191,13 +191,13 @@ yields the following output
 ```
 
 This is a dictionary with the characteristic points as keys and the stencils as values. 
-The 2D grid has 3**2 = 9 "characteristic points", so it as 9 stencils.
+The 2D grid has 3**2 = 9 "characteristic points", so it has 9 stencils.
 
-'L' stand for 'lowest index' (which is 0), 'H' for 'highest index' (which is the number of points on the given axis minus 1)
+'L' stands for 'lowest index' (which is 0), 'H' for 'highest index' (which is the number of points on the given axis minus 1)
 and 'C' for 'center', i.e. a grid point not at the boundary of the axis.
 
 In 2D the characteristic points are center points ('C', 'C'), corner points: ('L', 'L'), ('L', 'H'), ('H', 'L'), ('H', 'H')
-and edge-points (all others). For higher dimensions the characteristic points are analogous tuples with more indices.
+and edge-points (all others). For N > 2 dimensions the characteristic points are 3**N analogous tuples with N indices each.
 
 Each stencil is a dictionary itself with the index offsets as keys and the finite difference coefficients as values.
 
