@@ -5,6 +5,7 @@ import scipy.sparse as sparse
 from .coefs import coefficients, coefficients_non_uni
 import operator
 from .stencils import Stencil
+from .utils import *
 
 
 class Operator(object):
@@ -313,6 +314,8 @@ class PartialDerivative(UnaryOperator):
         if "acc" in kwargs:
             self.acc = kwargs["acc"]
 
+        self.slice_sizes = []
+
     def axes(self):
         return sorted(list(self.derivs.keys()))
 
@@ -405,37 +408,46 @@ class PartialDerivative(UnaryOperator):
         return Stencil(self, shape)
 
     def matrix(self, shape):
-        ndims = len(shape)
-        long_siz = np.prod(shape)
 
-        indices = list(product(*tuple([list(range(shape[k])) for k in range(ndims)])))
+        ndims = len(shape)
+        siz = np.prod(shape)
+        long_indices_nd = long_indices_as_ndarray(shape)
+        interior_mask_nd = interior_mask_as_ndarray(shape)
 
         matrix = None
-
         for axis, order in self.derivs.items():
+            mat = sparse.lil_matrix((siz, siz))
 
-            coeff_schemes = coefficients(order, self.acc)
-            mat = sparse.dok_matrix((long_siz, long_siz))
+            for scheme in ['center', 'forward', 'backward']:
 
-            for idx0 in indices:
+                c = coefficients(order, self.acc)
+                offsets_1d = c[scheme]['offsets']
+                coeffs = c[scheme]['coefficients']
 
-                if idx0[axis] == 0:
-                    scheme = 'forward'
-                elif idx0[axis] == shape[axis] - 1:
-                    scheme = 'backward'
+                # translate offsets of given scheme to long format
+                offsets_long = []
+                for o_1d in offsets_1d:
+                    o_nd = np.zeros(ndims)
+                    o_nd[axis] = o_1d
+                    o_long = to_long_index(o_nd, shape)
+                    offsets_long.append(o_long)
+
+                # determine points where to evaluate current scheme in long format
+                if scheme == 'center':
+                    multi_slice = [slice(None, None)] * ndims
+                    multi_slice[axis] = slice(1, -1)
+                    Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
+                elif scheme == 'forward':
+                    multi_slice = [slice(None, None)] * ndims
+                    multi_slice[axis] = 0
+                    Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
                 else:
-                    scheme = 'center'
+                    multi_slice = [slice(None, None)] * ndims
+                    multi_slice[axis] = -1
+                    Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
 
-                coeffs = coeff_schemes[scheme]
-
-                long_idx0 = self._to_long_index(idx0, shape)
-                for o, c in zip(coeffs['offsets'], coeffs['coefficients']):
-                    offset = np.zeros_like(idx0)
-                    offset[axis] = o
-                    idx = np.array(idx0) + offset
-                    long_idx = self._to_long_index(idx, shape)
-
-                    mat[long_idx0, long_idx] += c
+                for o, c in zip(offsets_long, coeffs):
+                    mat[Is, Is + o] = c
 
             mat = sparse.coo_matrix(mat)
 
@@ -445,19 +457,6 @@ class PartialDerivative(UnaryOperator):
                 matrix = matrix.dot(mat)
 
         return matrix
-
-    def _to_long_index(self, idx, shape):
-        slice_sizes = [1]
-        ndims = len(shape)
-        for i in range(-1, -ndims, -1):
-            slice_sizes.append(slice_sizes[-1] * shape[i])
-
-        long_idx = 0
-
-        for axis in range(ndims):
-            long_idx += idx[ndims - axis - 1] * slice_sizes[axis]
-
-        return long_idx
 
     def _valid_index_tuple(self, idx0, shape):
         for i, s in zip(idx0, shape):

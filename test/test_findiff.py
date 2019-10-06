@@ -281,9 +281,10 @@ class FinDiffTest(unittest.TestCase):
         lw = np.get_printoptions()["linewidth"]
         np.set_printoptions(threshold=np.inf)
         np.set_printoptions(linewidth=500)
-        x, y = [np.linspace(0, 5, 6)] * 2
+        x, y = [np.linspace(0, 4, 5)] * 2
         X, Y = np.meshgrid(x, y, indexing='ij')
         laplace = FinDiff(0, x[1]-x[0], 2) + FinDiff(0, y[1]-y[0], 2)
+        #d = FinDiff(1, y[1]-y[0], 2)
         u = X**2 + Y**2
 
         mat = laplace.matrix(u.shape)
