@@ -412,17 +412,16 @@ class PartialDerivative(UnaryOperator):
         ndims = len(shape)
         siz = np.prod(shape)
         long_indices_nd = long_indices_as_ndarray(shape)
-        interior_mask_nd = interior_mask_as_ndarray(shape)
 
         matrix = None
         for axis, order in self.derivs.items():
             mat = sparse.lil_matrix((siz, siz))
+            coeff_dict = coefficients(order, self.acc)
 
             for scheme in ['center', 'forward', 'backward']:
 
-                c = coefficients(order, self.acc)
-                offsets_1d = c[scheme]['offsets']
-                coeffs = c[scheme]['coefficients']
+                offsets_1d = coeff_dict[scheme]['offsets']
+                coeffs = coeff_dict[scheme]['coefficients']
 
                 # translate offsets of given scheme to long format
                 offsets_long = []
