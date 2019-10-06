@@ -446,7 +446,8 @@ class PartialDerivative(UnaryOperator):
                     Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
 
                 for o, c in zip(offsets_long, coeffs):
-                    mat[Is, Is + o] = c
+                    v = c / self.spac[axis]**order
+                    mat[Is, Is + o] = v
 
             mat = sparse.coo_matrix(mat)
 

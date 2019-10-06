@@ -12,7 +12,6 @@ class PDE(object):
         self.bcs = bcs
 
     def solve(self, shape):
-        #u = np.random.rand(shape, dtype=np.float64)
 
         self._L = self.lhs.matrix(shape) # expensive operation, so cache it
         L = sparse.lil_matrix(self._L)
@@ -26,17 +25,5 @@ class PDE(object):
         print(L.toarray())
         print(f)
 
-
         L = sparse.csr_matrix(L)
         return spsolve(L, f)
-
-#        for _ in range(10):
-#            Lu = self.lhs(u)
-#            f = self.rhs(u)
-#            Lu, f = self.bc(Lu, f)
-#            r = Lu - f
-#            err = np.max(np.abs(r))
-#            u -= r
-
-
-

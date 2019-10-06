@@ -11,7 +11,7 @@ from findiff.pde import PDE
 class TestPDE(unittest.TestCase):
 
 
-    def test_1d(self):
+    def test_1d_dirichlet_hom(self):
 
         shape = (11,)
 
@@ -21,12 +21,32 @@ class TestPDE(unittest.TestCase):
 
         bc = {}
 
-        bc[0] = 5
-        bc[-1] = 1
+        bc[0] = 1
+        bc[-1] = 2
 
         pde = PDE(L, np.zeros_like(x), bc)
         u = pde.solve(shape)
-        print(u)
+        expected = x + 1
+        np.testing.assert_array_almost_equal(expected, u)
+
+    def test_1d_dirichlet_inhom(self):
+
+        nx = 21
+        shape = (nx,)
+
+        x = np.linspace(0, 1, nx)
+        dx = x[1] - x[0]
+        L = FinDiff(0, dx, 2)
+
+        bc = {}
+
+        bc[0] = 1
+        bc[-1] = 2
+
+        pde = PDE(L, 6*x, bc)
+        u = pde.solve(shape)
+        expected = x**3 + 1
+        np.testing.assert_array_almost_equal(expected, u)
 
 
     def test_2d(self):
@@ -38,7 +58,7 @@ class TestPDE(unittest.TestCase):
         X, Y = np.meshgrid(x, y, indexing='ij')
         L = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
 
-        bc = BoundaryConditions(shape)
+        bc = {}
 
         bc[0, None] = 5
         bc[-1, None] = 1
