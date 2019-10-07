@@ -26,7 +26,7 @@ class PDE(object):
         print(f)
 
         L = sparse.csr_matrix(L)
-        return spsolve(L, f)
+        return spsolve(L, f).reshape(shape)
 
 
 class BoundaryConditions(object):
@@ -49,7 +49,12 @@ class BoundaryConditions(object):
         else: # Dirichlet BC
             self.lhs[lng_inds, lng_inds] = 1
 
-        self.rhs[lng_inds] = value
+        if isinstance(value, np.ndarray):
+            value = value.reshape(-1)[lng_inds]
+            for i, v in zip(lng_inds, value):
+                self.rhs[i] = v
+        else:
+            self.rhs[lng_inds] = value
 
     def row_inds(self):
         nz_rows, nz_cols = self.lhs.nonzero()

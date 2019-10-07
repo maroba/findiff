@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.8.x
+
+- Solver for partial differential equations
+
 ## Version 0.7.*
 
 - Generation of stencils for given FinDiff object

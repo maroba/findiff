@@ -68,20 +68,25 @@ class TestPDE(unittest.TestCase):
         expected = 2*x + 1
         np.testing.assert_array_almost_equal(expected, u)
 
-    #@unittest.skip
     def test_2d_dirichlet_hom(self):
 
-        shape = (4, 5)
+        shape = (11, 11)
 
         x, y = np.linspace(0, 1, shape[0]), np.linspace(0, 1, shape[1])
         dx, dy = x[1] - x[0], y[1] - y[0]
         X, Y = np.meshgrid(x, y, indexing='ij')
         L = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
 
-        expected = X**3 + Y**3
+        expected = X + 1
 
         bc = BoundaryConditions(shape)
 
-        bc[0, :] = 5
-        #bc[-1, :] = 1
-        #bc[:, 0] = 4
+        bc[0, :] = 1
+        bc[-1, :] = 2
+        bc[:, 0] = X + 1
+        bc[:, -1] = X + 1
+
+        pde = PDE(L, np.zeros_like(X), bc)
+        u = pde.solve(shape)
+
+        np.testing.assert_array_almost_equal(expected, u)
