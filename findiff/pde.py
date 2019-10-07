@@ -1,4 +1,3 @@
-from itertools import product
 import numpy as np
 import scipy.sparse as sparse
 from scipy.sparse.linalg import spsolve
@@ -40,9 +39,16 @@ class BoundaryConditions(object):
         self.rhs = sparse.lil_matrix((siz, 1))
 
     def __setitem__(self, key, value):
-        # Dirichlet only so far
+
         lng_inds = self.long_indices[key]
-        self.lhs[lng_inds, lng_inds] = 1
+
+        if isinstance(value, tuple): # Neumann BC
+            op, value = value
+            mat = sparse.lil_matrix(op.matrix(self.shape))
+            self.lhs[lng_inds, :] = mat[lng_inds, :]
+        else: # Dirichlet BC
+            self.lhs[lng_inds, lng_inds] = 1
+
         self.rhs[lng_inds] = value
 
     def row_inds(self):

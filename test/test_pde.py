@@ -49,10 +49,9 @@ class TestPDE(unittest.TestCase):
         expected = x**3 + 1
         np.testing.assert_array_almost_equal(expected, u)
 
-    @unittest.skip
     def test_1d_neumann_hom(self):
 
-        nx = 21
+        nx = 11
         shape = (nx,)
 
         x = np.linspace(0, 1, nx)
