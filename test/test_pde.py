@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from findiff.operators import FinDiff
-from findiff.pde import PDE
+from findiff.pde import *
 
 
 class TestPDE(unittest.TestCase):
@@ -48,19 +48,39 @@ class TestPDE(unittest.TestCase):
         expected = x**3 + 1
         np.testing.assert_array_almost_equal(expected, u)
 
+    @unittest.skip
+    def test_1d_neumann_hom(self):
 
-    def test_2d(self):
+        nx = 21
+        shape = (nx,)
 
-        shape = (3,4)
+        x = np.linspace(0, 1, nx)
+        dx = x[1] - x[0]
+        L = FinDiff(0, dx, 2)
 
-        x, y = np.linspace(0, 1, 30), np.linspace(0, 1, 40)
+        bc = {}
+
+        bc[0] = 1
+        bc[-1] = FinDiff(0, dx, 1), 2
+
+        pde = PDE(L, np.zeros_like(x), bc)
+        u = pde.solve(shape)
+        expected = 2*x + 1
+        np.testing.assert_array_almost_equal(expected, u)
+
+    def test_2d_dirichlet_hom(self):
+
+        shape = (30, 40)
+
+        x, y = np.linspace(0, 1, shape[0]), np.linspace(0, 1, shape[1])
         dx, dy = x[1] - x[0], y[1] - y[0]
         X, Y = np.meshgrid(x, y, indexing='ij')
         L = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
 
-        bc = {}
+        expected = X**3 + Y**3
 
-        bc[0, None] = 5
-        bc[-1, None] = 1
-        bc[None, 0] = 4
-        bc
+        bc = BoundaryConditions(shape)
+
+        bc[0, :] = 5
+        bc[-1, :] = 1
+        bc[:, 0] = 4
