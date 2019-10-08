@@ -1,14 +1,12 @@
 # findiff
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
 
-A Python package for finite difference numerical derivatives in
+A Python package for finite difference numerical derivatives and partial differential equations in
 any number of dimensions. 
 
 ## Features ##
 
-* Differentiate arrays of any number of dimensions along any axis
-* Partial derivatives of any desired order
-* Any accuracy order can be specified
+* Differentiate arrays of any number of dimensions along any axis with any desired accuracy order
 * Accurate treatment of grid boundary
 * Includes standard operators from vector calculus like gradient, divergence and curl
 * Can handle uniform and non-uniform grids
@@ -16,6 +14,8 @@ any number of dimensions.
 * Fully vectorized for speed
 * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
 * Generate matrix representations of arbitrary linear differential operators
+* Solve partial differential equations with Dirichlet or Neumann boundary conditions
+
 
 ## Installation
 
@@ -23,7 +23,7 @@ any number of dimensions.
 pip install findiff
 ```
 
-## Quickstart
+## Derivatives
 
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
 want to differentiate a four-dimensional function given on a 4D array `f` with coordinates `x, y, z, u`.
@@ -240,6 +240,16 @@ lap_u = stencil.apply_all(u)
 ``` 
 
 which iterates over all grid points, selects the right right stencil and applies it.
+
+## Partial Differential Equations
+
+### Boundary Value Problems
+
+TODO Intro
+
+### Eigenvalue Problems
+
+TODO Intro, Coding
 
 ## Compatibility
 

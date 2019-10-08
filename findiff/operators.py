@@ -2,6 +2,7 @@ from copy import deepcopy
 from itertools import product
 import numpy as np
 import scipy.sparse as sparse
+import scipy.sparse.linalg as linalg
 from .coefs import coefficients, coefficients_non_uni
 import operator
 from .stencils import Stencil
@@ -247,6 +248,11 @@ class FinDiff(UnaryOperator):
         if self.child:
             return mat * self.child.matrix(shape)
         return mat
+
+    def eigs(self, shape, num=6, which='SR', return_eigenvectors=True):
+        raise NotImplementedError()
+        mat = self.matrix(shape)
+        return linalg.eigs(mat, k=num, which=which, return_eigenvectors=return_eigenvectors)
 
 
 class Coef(object):
