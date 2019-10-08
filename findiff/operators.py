@@ -66,6 +66,17 @@ class Multiply(BinaryOperator):
     def stencil(self, shape):
         raise NotImplementedError("Stencil multiplication not yet implemented")
 
+    def matrix(self, shape):
+
+        if isinstance(self.left, np.ndarray):
+            left = sparse.diags(self.left.reshape(-1), 0)
+        elif isinstance(self.left, Operator):
+            left = self.left.matrix(shape)
+        else:
+            left = self.left * sparse.diags(np.ones(shape).reshape(-1), 0)
+
+        return left.dot(self.right.matrix(shape))
+
 
 class FinDiff(UnaryOperator):
 
@@ -261,6 +272,7 @@ class Coef(object):
     def __init__(self, value):
         self.value = value
 
+
 # Alias for backward compatibility
 Coefficient = Coef
 
@@ -270,6 +282,16 @@ class Identity(FinDiff):
     def __init__(self):
         super().__init__()
         self.spac = 0
+
+    def matrix(self, shape):
+        siz =  np.prod(shape)
+        mat = sparse.lil_matrix((siz, siz))
+        diag = list(range(siz))
+        mat[diag, diag] = 1
+        return sparse.csr_matrix(mat)
+
+# Alias
+Id = Identity
 
 
 class PartialDerivative(UnaryOperator):

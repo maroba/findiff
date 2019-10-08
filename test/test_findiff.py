@@ -271,10 +271,8 @@ class FinDiffTest(unittest.TestCase):
         u = x**2
 
         mat = d2_dx2.matrix(u.shape)
-        print(mat.toarray())
 
         np.testing.assert_array_almost_equal(2*np.ones_like(x), mat.dot(u.reshape(-1)))
-        print(mat.dot(u.reshape(-1)))
 
     def test_matrix_2d(self):
         thr = np.get_printoptions()["threshold"]
@@ -288,7 +286,6 @@ class FinDiffTest(unittest.TestCase):
         u = X**2 + Y**2
 
         mat = laplace.matrix(u.shape)
-        print(mat.toarray())
 
         np.testing.assert_array_almost_equal(4 * np.ones_like(X).reshape(-1), mat.dot(u.reshape(-1)))
 
@@ -305,6 +302,19 @@ class FinDiffTest(unittest.TestCase):
         expected = d2_dxdy(u).reshape(-1)
 
         actual = mat.dot(u.reshape(-1))
+        np.testing.assert_array_almost_equal(expected, actual)
+
+    def test_matrix_1d_coeffs(self):
+        shape = 11,
+        x = np.linspace(0, 10, 11)
+        dx = x[1] - x[0]
+
+        L = Coef(x) * FinDiff(0, dx, 2)
+
+        u = np.random.rand(*shape).reshape(-1)
+
+        actual = L.matrix(shape).dot(u)
+        expected = L(u).reshape(-1)
         np.testing.assert_array_almost_equal(expected, actual)
 
 
