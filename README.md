@@ -70,20 +70,13 @@ d2_dxdz(f)
 d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
 ```
 
-You can also create linear combinations of differential operators like
-<p align="center">
-<img src="docs/frontpage/linear_comb.png" alt="linearCombination" height="40"/>
-</p>
-
-```python
-diff_op = Coef(2) * FinDiff((0, dx, 2), (2, dz, 1)) + Coef(3) * FinDiff((0, dx, 1), (1, dy, 2))
-```
-and more general with variable coefficients like
+Linear combinations of differential operators like
 
 <p align="center">
 <img src="docs/frontpage/var_coef.png" alt="variableCoefficients" height="40"/>
 </p>
-is
+
+can be written as
 
 ```python
 from numpy import meshgrid, sin
@@ -110,7 +103,7 @@ grad = Gradient(h=[dx, dy, dz, du])
 grad_f = grad(f)
 ```
 
-More examples, including linear combinations with variable coefficients can be found [here](https://maroba.github.io/findiff-docs/source/examples.html).
+More examples can be found [here](https://maroba.github.io/findiff-docs/source/examples.html).
 
 
 ### Derivatives in N dimensions
@@ -245,7 +238,32 @@ which iterates over all grid points, selects the right right stencil and applies
 
 ### Boundary Value Problems
 
-TODO Intro
+#### A 1D Problem
+
+Find the solution of 
+
+TODO
+
+subject to the boundary conditions
+
+TODO
+
+```python
+from findiff import FinDiff, Id, PDE
+
+shape = (300, )
+t = numpy.linspace(0, 10, shape[0])
+
+L = FinDiff(0, t[1]-t[0],2) + 5 * Id()
+f = numpy.cos(2*t)
+
+bc = BoundaryConditions(shape)
+bc[0] = 0
+bc[-1] = 1
+
+pde = PDE(L, f, bc)
+u = pde.solve()
+```
 
 ### Eigenvalue Problems
 
