@@ -1,6 +1,4 @@
 from copy import deepcopy
-from itertools import product
-import numpy as np
 import scipy.sparse as sparse
 import scipy.sparse.linalg as linalg
 from .coefs import coefficients, coefficients_non_uni
@@ -18,6 +16,9 @@ class UnaryOperator(Operator):
 
 
 class BinaryOperator(Operator):
+    """ Abstraction of operator with two operands. Operands can be instances of subclasses of Operator
+        like FinDiff or Coef.
+    """
 
     def __init__(self, left, right, oper):
         self.left = left
@@ -68,6 +69,11 @@ class Multiply(BinaryOperator):
         raise NotImplementedError("Stencil multiplication not yet implemented")
 
     def matrix(self, shape):
+        """ Matrix representation of given operator product on an equidistant grid of given shape.
+
+        :param shape: tuple with the shape of the grid
+        :return: scipy sparse matrix representing the operator product
+        """
 
         if isinstance(self.left, np.ndarray):
             left = sparse.diags(self.left.reshape(-1), 0)
