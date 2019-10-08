@@ -236,9 +236,11 @@ which iterates over all grid points, selects the right right stencil and applies
 
 ## Partial Differential Equations
 
+_findiff_ can be used to easily formulate and solve partial differential equation problems.
+
 ### Boundary Value Problems
 
-#### 1D forced harmonic oscillator with friction
+#### Example 1: 1D forced harmonic oscillator with friction
 
 Find the solution of 
 
@@ -270,7 +272,7 @@ Result:
 
 TODO
 
-#### 2D heat conduction
+#### Example 2: 2D heat conduction
 
 A plate with temperature profile given on one edge and zero heat flux across the other
 edges with heat source inside.
@@ -301,7 +303,21 @@ TODO
 
 ### Eigenvalue Problems
 
-TODO Intro, Coding
+#### Example: Solve the 1D Schrödinger equation for the harmonic oscillator potential
+
+```python
+
+# 1D grid:
+shape = (300,)
+x = np.linspace(-10, 10, shape[0])
+dx = x[1] - x[0]
+
+# Build the Hamiltonian
+H = -0.5 * FinDiff(0, dx, 2).matrix(shape) + 0.5 * x**2
+
+# Solve the Schrödinger equation
+spectrum, states = scipy.sparse.linalg.eigs(H, k=6, which='SR')
+```
 
 ## Compatibility
 
