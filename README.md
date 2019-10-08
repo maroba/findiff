@@ -238,13 +238,13 @@ which iterates over all grid points, selects the right right stencil and applies
 
 ### Boundary Value Problems
 
-#### A 1D Problem
+#### 1D forced harmonic oscillator with friction
 
 Find the solution of 
 
 TODO
 
-subject to the boundary conditions
+subject to the (Dirichlet) boundary conditions
 
 TODO
 
@@ -253,8 +253,9 @@ from findiff import FinDiff, Id, PDE
 
 shape = (300, )
 t = numpy.linspace(0, 10, shape[0])
+dt = t[1]-t[0]
 
-L = FinDiff(0, t[1]-t[0],2) + 5 * Id()
+L = FinDiff(0, dt, 2) - FinDiff(0, dt, 1) + Coef(5) * Id()
 f = numpy.cos(2*t)
 
 bc = BoundaryConditions(shape)
@@ -264,6 +265,39 @@ bc[-1] = 1
 pde = PDE(L, f, bc)
 u = pde.solve()
 ```
+
+Result:
+
+TODO
+
+#### 2D heat conduction
+
+A plate with temperature profile given on one edge and zero heat flux across the other
+edges with heat source inside.
+
+```python
+shape = (60, 60)
+x, y = np.linspace(-1, 1, shape[0]), np.linspace(-1, 1, shape[1])
+dx, dy = x[1]-x[0], y[1]-y[0]
+X, Y = np.meshgrid(x, y, indexing='ij')
+
+L = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
+f = -100*(X**2 + X*Y + Y**2)
+
+bc = BoundaryConditions(shape)
+bc[0,:] = 300.  # Dirichlet BC
+bc[-1,:] = FinDiff(0, dx, 1), 0 # Neumann BC
+bc[:,0] = FinDiff(1, dy, 1), 0
+bc[:,-1] = FinDiff(1, dy, 1), 0
+
+pde = PDE(L, f, bc)
+u = pde.solve()
+```
+
+Result:
+
+TODO
+
 
 ### Eigenvalue Problems
 
