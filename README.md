@@ -276,28 +276,45 @@ u = pde.solve()
 Result:
 
 <p align="center">
-<img src="docs/frontpage/ho_bvp.jpg" alt="ResultHOBVP" height="200"/>
+<img src="docs/frontpage/ho_bvp.jpg" alt="ResultHOBVP" height="300"/>
 </p>
 
 #### Example 2: 2D heat conduction
 
 A plate with temperature profile given on one edge and zero heat flux across the other
-edges with heat source inside.
+edges, i.e.
+
+<p align="center">
+<img src="docs/frontpage/img-2b2de8b883ab262d.png" alt="heat2D" height="40"/>
+</p>
+
+with Dirichlet boundary condition
+
+<p align="center">
+<img src="docs/frontpage/img-17719361f7e419dc.png" height="15"/>
+</p>
+
+and Neumann boundary conditions
+
+<p align="center">
+<img src="docs/frontpage/img-fea6c2b797c4f20b.png" height="120"/>
+</p>
+
 
 ```python
 shape = (60, 60)
-x, y = np.linspace(-1, 1, shape[0]), np.linspace(-1, 1, shape[1])
+x, y = np.linspace(0, 1, shape[0]), np.linspace(0, 1, shape[1])
 dx, dy = x[1]-x[0], y[1]-y[0]
 X, Y = np.meshgrid(x, y, indexing='ij')
 
 L = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
-f = -100*(X**2 + X*Y + Y**2)
+f = np.zeros(shape)
 
 bc = BoundaryConditions(shape)
 bc[0,:] = 300.  # Dirichlet BC
 bc[-1,:] = FinDiff(0, dx, 1), 0 # Neumann BC
-bc[:,0] = FinDiff(1, dy, 1), 0
-bc[:,-1] = FinDiff(1, dy, 1), 0
+bc[:,0] = FinDiff(1, dy, 1), 0 # Neumann BC
+bc[:,-1] = FinDiff(1, dy, 1), 0 # Neumann BC
 
 pde = PDE(L, f, bc)
 u = pde.solve()
