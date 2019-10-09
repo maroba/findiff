@@ -239,7 +239,7 @@ which iterates over all grid points, selects the right right stencil and applies
 _findiff_ can be used to easily formulate and solve partial differential equation problems
 
 <p align="center">
-<img src="docs/frontpage/img-db2705be98d985e0.png" height="40"/>
+<img src="docs/frontpage/img-db2705be98d985e0.png" height="20"/>
 </p>
 
 where _L_ is a general linear differential operator.
@@ -254,7 +254,7 @@ can be applied.
 Find the solution of 
 
 <p align="center">
-<img src="docs/frontpage/img-66238f314ddd7bd8.png" alt="harmonicOscillator" height="20"/>
+<img src="docs/frontpage/img-66238f314ddd7bd8.png" alt="harmonicOscillator" height="40"/>
 </p>
 
 subject to the (Dirichlet) boundary conditions
