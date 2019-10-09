@@ -236,7 +236,16 @@ which iterates over all grid points, selects the right right stencil and applies
 
 ## Partial Differential Equations
 
-_findiff_ can be used to easily formulate and solve partial differential equation problems.
+_findiff_ can be used to easily formulate and solve partial differential equation problems
+
+<p align="center">
+<img src="docs/frontpage/img-db2705be98d985e0.png" height="40"/>
+</p>
+
+where _L_ is a general linear differential operator.
+ 
+In order to obtain a unique solution,  Dirichlet, Neumann or more general boundary conditions
+can be applied.
 
 ### Boundary Value Problems
 
@@ -251,7 +260,7 @@ Find the solution of
 subject to the (Dirichlet) boundary conditions
 
 <p align="center">
-<img src="docs/frontpage/img-e840919a9f9079bd.png" alt="BCharmonicOscillator" height="15"/>
+<img src="docs/frontpage/img-e840919a9f9079bd.png" alt="BCharmonicOscillator" height="20"/>
 </p>
 
 
@@ -291,7 +300,7 @@ edges, i.e.
 with Dirichlet boundary condition
 
 <p align="center">
-<img src="docs/frontpage/img-17719361f7e419dc.png" height="15"/>
+<img src="docs/frontpage/img-17719361f7e419dc.png" height="20"/>
 </p>
 
 and Neumann boundary conditions
