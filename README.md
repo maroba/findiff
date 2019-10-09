@@ -251,7 +251,7 @@ Find the solution of
 subject to the (Dirichlet) boundary conditions
 
 <p align="center">
-<img src="docs/frontpage/img-e840919a9f9079bd.png" alt="BCharmonicOscillator" height="40"/>
+<img src="docs/frontpage/img-e840919a9f9079bd.png" alt="BCharmonicOscillator" height="15"/>
 </p>
 
 
@@ -275,7 +275,9 @@ u = pde.solve()
 
 Result:
 
-TODO
+<p align="center">
+<img src="docs/frontpage/ho_bvp.png" alt="ResultHOBVP" height="15"/>
+</p>
 
 #### Example 2: 2D heat conduction
 
