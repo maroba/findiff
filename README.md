@@ -276,7 +276,7 @@ u = pde.solve()
 Result:
 
 <p align="center">
-<img src="docs/frontpage/ho_bvp.png" alt="ResultHOBVP" height="200"/>
+<img src="docs/frontpage/ho_bvp.jpg" alt="ResultHOBVP" height="200"/>
 </p>
 
 #### Example 2: 2D heat conduction
