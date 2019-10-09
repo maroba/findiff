@@ -244,11 +244,16 @@ _findiff_ can be used to easily formulate and solve partial differential equatio
 
 Find the solution of 
 
-TODO
+<p align="center">
+<img src="docs/frontpage/img-66238f314ddd7bd8.png" alt="harmonicOscillator" height="40"/>
+</p>
 
 subject to the (Dirichlet) boundary conditions
 
-TODO
+<p align="center">
+<img src="docs/frontpage/img-e840919a9f9079bd.png" alt="BCharmonicOscillator" height="40"/>
+</p>
+
 
 ```python
 from findiff import FinDiff, Id, PDE
