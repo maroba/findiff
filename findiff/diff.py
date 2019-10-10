@@ -11,12 +11,12 @@ class BinaryOperator(object):
 
     def apply(self, rhs, *args, **kwargs):
 
-        if isinstance(self.right, LinearMap):
+        if isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
             right = self.right.apply(rhs, *args, **kwargs)
         else:
             right = self.right
 
-        if isinstance(self.left, LinearMap):
+        if isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
             left = self.left.apply(right, *args, **kwargs)
         else:
             left = self.left
@@ -31,7 +31,6 @@ class Plus(BinaryOperator):
 
     def __init__(self, left, right):
         super().__init__(left, right)
-        self.oper = operator.add
 
     def __add__(self, other):
         return Plus(self, other)
@@ -39,31 +38,69 @@ class Plus(BinaryOperator):
     def __radd__(self, other):
         return Plus(self, other)
 
+    def __sub__(self, other):
+        return Minus(self, other)
+
+    def __rsub__(self, other):
+        return Minus(self, other)
+
     def __mul__(self, other):
         return Mul(self, other)
 
     def __rmul__(self, other):
         return Mul(self, other)
 
-    def __pow__(self, other):
-        return Pow(self, other)
-
-    def __rpow__(self, other):
-        return Pow(self, other)
-
     def apply(self, rhs, *args, **kwargs):
 
-        if isinstance(self.right, LinearMap):
+        if isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
             right = self.right.apply(rhs, *args, **kwargs)
         else:
             right = self.right
 
-        if isinstance(self.left, LinearMap):
+        if isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
             left = self.left.apply(rhs, *args, **kwargs)
         else:
             left = self.left * rhs
 
         return left + right
+
+
+class Minus(BinaryOperator):
+
+    def __init__(self, left, right):
+        super().__init__(left, right)
+
+    def __add__(self, other):
+        return Plus(self, other)
+
+    def __radd__(self, other):
+        return Plus(self, other)
+
+    def __sub__(self, other):
+        return Minus(self, other)
+
+    def __rsub__(self, other):
+        return Minus(self, other)
+
+    def __mul__(self, other):
+        return Mul(self, other)
+
+    def __rmul__(self, other):
+        return Mul(self, other)
+
+    def apply(self, rhs, *args, **kwargs):
+
+        if isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
+            right = self.right.apply(rhs, *args, **kwargs)
+        else:
+            right = self.right
+
+        if isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
+            left = self.left.apply(rhs, *args, **kwargs)
+        else:
+            left = self.left * rhs
+
+        return left - right
 
 
 class Mul(BinaryOperator):
@@ -78,57 +115,30 @@ class Mul(BinaryOperator):
     def __radd__(self, other):
         return Plus(self, other)
 
+    def __sub__(self, other):
+        return Minus(self, other)
+
+    def __rsub__(self, other):
+        return Minus(self, other)
+
     def __mul__(self, other):
         return Mul(self, other)
 
     def __rmul__(self, other):
         return Mul(self, other)
 
-    def __pow__(self, other):
-        return Pow(self, other)
-
-    def __rpow__(self, other):
-        return Pow(self, other)
-
     def apply(self, rhs, *args, **kwargs):
 
-        if isinstance(self.right, LinearMap):
+        if isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
             result = self.right.apply(rhs, *args, **kwargs)
         else:
             result = self.right * rhs
 
-        if isinstance(self.left, LinearMap):
+        if isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
             result = self.left.apply(result, *args, **kwargs)
         else:
             result = self.left * result
 
-        return result
-
-class Pow(BinaryOperator):
-
-    def __init__(self, left, right):
-        super().__init__(left, right)
-        if not isinstance(right, int) or right < 0:
-            raise ValueError('Differential operators can only be raised to positive integer powers')
-
-    def __pow__(self, power):
-        return Pow(self, power)
-
-    def __rpow__(self, power):
-        return Pow(self, power)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(self, other)
-
-    def apply(self, rhs, *args, **kwargs):
-
-        result = rhs
-
-        for _ in range(self.right):
-            result = self.right.apply(result, *args, **kwargs)
         return result
 
 
@@ -143,17 +153,17 @@ class LinearMap(object):
     def __radd__(self, other):
         return Plus(self, other)
 
+    def __sub__(self, other):
+        return Minus(self, other)
+
+    def __rsub__(self, other):
+        return Minus(self, other)
+
     def __mul__(self, other):
         return Mul(self, other)
 
     def __rmul__(self, other):
         return Mul(self, other)
-
-    def __pow__(self, other):
-        return Pow(self, other)
-
-    def __rpow__(self, other):
-        return Pow(self, other)
 
     def apply(self, rhs, *args, **kwargs):
         raise NotImplementedError('Base class LinearMap is not to be used directly!')
@@ -267,7 +277,7 @@ class Id(LinearMap):
         return rhs
 
 
-class Scalar(object):
+class Coef(object):
 
     def __init__(self, value):
         self.value = value

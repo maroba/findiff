@@ -7,6 +7,7 @@ from numpy.testing import assert_array_almost_equal, assert_array_equal
 from findiff.diff import *
 import matplotlib.pyplot as plt
 import findiff
+from numpy import cos, sin
 
 class DiffTest(unittest.TestCase):
 
@@ -88,6 +89,18 @@ class DiffTest(unittest.TestCase):
         expected = -2 * np.sin(X) * np.sin(Y)
         assert_array_almost_equal(expected, actual, decimal=3)
 
+    def test_sub_two_diffs(self):
+
+        shape = 50, 50
+        (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
+        u = np.sin(X) * np.sin(Y)
+
+        fd = Diff(0, 2) - Diff(1, 2)
+        actual = fd(u, dy)
+
+        expected = np.zeros(shape)
+        assert_array_almost_equal(expected, actual, decimal=3)
+
     def test_multiply_with_scalar(self):
 
         shape = 50, 50
@@ -106,14 +119,12 @@ class DiffTest(unittest.TestCase):
         (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
         u = np.sin(X) * np.sin(Y)
 
-        #fd = Scalar(3*X*Y) * Diff(0, 2)
-        fd = (3 * X * Y) * Diff(0, 2)
+        fd = Coef(3 * X * Y) * Diff(0, 2)
         actual = fd(u, dy, acc=4)
 
         expected = - 3*X *Y* np.sin(X) * np.sin(Y)
         assert_array_almost_equal(expected, actual)
 
-    #@unittest.skip
     def test_identity(self):
 
         shape = 50, 50
@@ -126,17 +137,15 @@ class DiffTest(unittest.TestCase):
         expected = np.zeros_like(u)
         assert_array_almost_equal(expected, actual)
 
-    @unittest.skip
-    def test_multiply_with_variable_from_right(self):
-
+    def test_linear_comb(self):
         shape = 50, 50
         (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
         u = np.sin(X) * np.sin(Y)
 
-        fd =  Diff(0, 1) * Scalar(3*X*Y)
-        actual = fd(u, dy, acc=4)
+        fd = Coef(3*X)*Diff(0, 2) - Coef(Y) * (Diff(1, 2) + Diff(0, 1))
+        actual = fd(u, h={0: dx, 1:dy}, acc=4)
 
-        expected = 3*Y*np.sin(X)*np.sin(Y) + 3*X*Y*np.cos(X)*np.sin(Y)
+        expected = -3*X*u - Y * (-sin(X)*sin(Y) + cos(X)*sin(Y))
         assert_array_almost_equal(expected, actual)
 
 
