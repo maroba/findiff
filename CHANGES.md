@@ -2,7 +2,7 @@
 
 ## Version 0.8.x
 
-- Solver for partial differential equations
+- Formulate and solve partial differential equations
 
 ## Version 0.7.*
 

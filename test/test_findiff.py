@@ -9,6 +9,20 @@ from findiff.operators import FinDiff, Coef, Identity
 
 class FinDiffTest(unittest.TestCase):
 
+    def test_partial_diff_1d(self):
+        nx = 11
+        x = np.linspace(0, 1, nx)
+        u = x**3
+        ux_ex = 3*x**2
+
+        fd = FinDiff(0, x[1] - x[0], 1)
+        fd.set_accuracy(4)
+
+        ux = fd(u)
+
+        assert_array_almost_equal(ux, ux_ex, decimal=5)
+
+
     def test_partial_diff(self):
         nx = 100
         x = np.linspace(0, np.pi, nx)
