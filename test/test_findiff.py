@@ -223,7 +223,6 @@ class FinDiffTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(expected, actual)
 
-
     def test_local_stencil_single_axis_center_2d_compared_with_findiff(self):
         n = 70
         (X, Y), _, (dx, dy) = grid(2, n, -1, 1)
@@ -247,22 +246,6 @@ class FinDiffTest(unittest.TestCase):
         u = X**3 + Y**3
 
         d = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
-        expected = d(u)
-
-        stl = d.stencil(u.shape)
-
-        actual = stl.apply_all(u)
-        np.testing.assert_array_almost_equal(expected, actual)
-
-
-    def test_local_stencil_operator_subtraction(self):
-
-        n = 100
-        (X, Y), _, (dx, dy) = grid(2, n, -1, 1)
-
-        u = X**3 + Y**3
-
-        d = FinDiff(0, dx, 2) - FinDiff(1, dy, 2)
         expected = d(u)
 
         stl = d.stencil(u.shape)

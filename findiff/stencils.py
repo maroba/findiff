@@ -7,13 +7,15 @@ from .coefs import coefficients
 
 class Stencil(object):
 
-    def __init__(self, partial_deriv, shape, old_stl=None):
+    def __init__(self, shape, axis, order, h, acc, old_stl=None):
         self.shape = shape
-        self.char_pts = self._det_characteristic_points()
-        self.pd = partial_deriv
+        self.axis = axis
+        self.order = order
+        self.h = h
+        self.acc = acc
         self.char_pts = self._det_characteristic_points()
         if old_stl:
-            self.data = old_stl
+            self.data = old_stl.data
         else:
             self.data = {}
 
@@ -82,37 +84,32 @@ class Stencil(object):
         return tuple(typ)
 
     def _create_stencil(self):
-        if not self.pd.uniform:
-            raise NotImplementedError("stencil calculation not yet implemented for nonuniform grids")
-
-        if len(self.pd.derivs) > 1:
-            raise NotImplementedError("stencil calculation not yet implemented for mixed partial derivatives")
 
         ndim = len(self.shape)
         data = self.data
         smap = {'L': 'forward', 'C': 'center', 'H': 'backward'}
 
-        for axis, order in self.pd.derivs.items():
+        axis, order, h = self.axis, self.order, self.h
 
-            for pt in self.char_pts:
-                scheme = smap[pt[axis]]
-                coefs = coefficients(order, self.pd.acc)[scheme]
+        for pt in self.char_pts:
+            scheme = smap[pt[axis]]
+            coefs = coefficients(order, self.acc)[scheme]
 
-                if pt in data:
-                    lstl = data[pt]
+            if pt in data:
+                lstl = data[pt]
+            else:
+                lstl = {}
+
+            for off, c in zip(coefs['offsets'], coefs['coefficients']):
+                long_off = [0] * ndim
+                long_off[axis] += off
+                long_off = tuple(long_off)
+
+                if long_off in lstl:
+                    lstl[long_off] += c / h ** order
                 else:
-                    lstl = {}
-
-                for off, c in zip(coefs['offsets'], coefs['coefficients']):
-                    long_off = [0] * ndim
-                    long_off[axis] += off
-                    long_off = tuple(long_off)
-
-                    if long_off in lstl:
-                        lstl[long_off] += c / self.pd.spac[axis] ** order
-                    else:
-                        lstl[long_off] = c / self.pd.spac[axis] ** order
-                data[pt] = lstl
+                    lstl[long_off] = c / h ** order
+            data[pt] = lstl
 
     def _det_characteristic_points(self):
         shape = self.shape

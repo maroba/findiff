@@ -1,9 +1,16 @@
 import operator
 import numpy as np
-from findiff.coefs import coefficients
+import scipy.sparse as sparse
+from findiff.coefs import coefficients, coefficients_non_uni
+from .stencils import Stencil
+from .utils import *
 
 
-class BinaryOperator(object):
+class Operator(object):
+    pass
+
+
+class BinaryOperator(Operator):
 
     def __init__(self, left, right):
         self.left = left
@@ -25,6 +32,12 @@ class BinaryOperator(object):
 
     def __call__(self, rhs, *args, **kwargs):
         return self.apply(rhs, *args, **kwargs)
+
+    def set_accuracy(self, acc):
+        if isinstance(self.left, Operator):
+            self.left.set_accuracy(acc)
+        if isinstance(self.right, Operator):
+            self.right.set_accuracy(acc)
 
 
 class Plus(BinaryOperator):
@@ -64,6 +77,26 @@ class Plus(BinaryOperator):
 
         return left + right
 
+    def matrix(self, shape, h=None, acc=None):
+        left, right = self.left, self.right
+        if isinstance(self.left, Operator):
+            left = self.left.matrix(shape, h, acc)
+        elif isinstance(self.left, np.ndarray):
+            left = sparse.diags(self.left.reshape(-1), 0)
+        if isinstance(self.right, Operator):
+            right = self.right.matrix(shape, h, acc)
+        elif isinstance(self.right, np.ndarray):
+            right = sparse.diags(self.right.reshape(-1), 0)
+        return left + right
+
+    def stencil(self, shape, h=None, acc=None, old_stl=None):
+
+        if isinstance(self.left, Operator):
+            left = self.left.stencil(shape, h, acc)
+        if isinstance(self.right, Operator):
+            right = self.right.stencil(shape, h, acc, old_stl=left)
+        return right
+
 
 class Minus(BinaryOperator):
 
@@ -100,6 +133,18 @@ class Minus(BinaryOperator):
         else:
             left = self.left * rhs
 
+        return left - right
+
+    def matrix(self, shape, h=None, acc=None):
+        left, right = self.left, self.right
+        if isinstance(self.left, Operator):
+            left = self.left.matrix(shape, h, acc)
+        elif isinstance(self.left, np.ndarray):
+            left = sparse.diags(self.left.reshape(-1), 0)
+        if isinstance(self.right, Operator):
+            right = self.right.matrix(shape, h, acc)
+        elif isinstance(self.right, np.ndarray):
+            right = sparse.diags(self.right.reshape(-1), 0)
         return left - right
 
 
@@ -141,8 +186,31 @@ class Mul(BinaryOperator):
 
         return result
 
+    def matrix(self, shape):
+        """ Matrix representation of given operator product on an equidistant grid of given shape.
 
-class LinearMap(object):
+        :param shape: tuple with the shape of the grid
+        :return: scipy sparse matrix representing the operator product
+        """
+
+        if isinstance(self.left, np.ndarray):
+            left = sparse.diags(self.left.reshape(-1), 0)
+        elif isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
+            left = self.left.matrix(shape)
+        else:
+            left = self.left * sparse.diags(np.ones(shape).reshape(-1), 0)
+
+        if isinstance(self.right, np.ndarray):
+            right = sparse.diags(self.right.reshape(-1), 0)
+        elif isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
+            right = self.right.matrix(shape)
+        else:
+            right = self.right * sparse.diags(np.ones(shape).reshape(-1), 0)
+
+        return left.dot(right)
+
+
+class LinearMap(Operator):
 
     def __init__(self, value):
         self.value = value
@@ -165,6 +233,9 @@ class LinearMap(object):
     def __rmul__(self, other):
         return Mul(self, other)
 
+    def __call__(self, rhs, *args, **kwargs):
+        return self.apply(rhs, *args, **kwargs)
+
     def apply(self, rhs, *args, **kwargs):
         raise NotImplementedError('Base class LinearMap is not to be used directly!')
 
@@ -174,11 +245,13 @@ class Diff(LinearMap):
     def __init__(self, axis, order=1):
         self.axis = axis
         self.order = order
+        self.h = None
+        self.acc = None
 
-    def __call__(self, rhs, *args, **kwargs):
-        return self.apply(rhs, *args, **kwargs)
+    def apply(self, u, h=None, **kwargs):
 
-    def apply(self, u, h, **kwargs):
+        if h is None:
+            h = self.h
 
         if isinstance(h, dict):
             h = h[self.axis]
@@ -194,10 +267,12 @@ class Diff(LinearMap):
             for the high index boundary.
         """
 
-        acc = 2
-
         if "acc" in kwargs:
             acc = kwargs["acc"]
+        elif self.acc is not None:
+            acc = self.acc
+        else:
+            acc = 2
 
         dim = self.axis
         coefs = coefficients(self.order, acc)
@@ -242,6 +317,102 @@ class Diff(LinearMap):
         h_inv = 1. / h ** deriv
         return yd * h_inv
 
+    def diff_non_uni(self, y, coords, idx, **kwargs):
+        """The core function to take a partial derivative on a non-uniform grid"""
+
+        if "acc" in kwargs:
+            acc = kwargs["acc"]
+        elif self.acc is not None:
+            acc = self.acc
+        else:
+            acc = 2
+
+        order, dim = self.order, self.axis
+
+        yd = np.zeros_like(y)
+
+        coefs = coefficients_non_uni(order, acc, coords, idx)
+
+        ndims = len(y.shape)
+        multi_slice = [slice(None, None)] * ndims
+        ref_multi_slice = [slice(None, None)] * ndims
+
+        for i, x in enumerate(coords):
+            weights = coefs[i]["coefficients"]
+            offsets = coefs[i]["offsets"]
+            ref_multi_slice[dim] = i
+
+            for off, w in zip(offsets, weights):
+                multi_slice[dim] = i + off
+                yd[tuple(ref_multi_slice)] += w * y[tuple(multi_slice)]
+
+        return yd
+
+    def matrix(self, shape, h=None, acc=None):
+
+        acc = self._properties(self.acc, acc, 2)
+        h = self._properties(self.h, h, 1)
+
+        ndims = len(shape)
+        siz = np.prod(shape)
+        long_indices_nd = long_indices_as_ndarray(shape)
+
+        axis, order = self.axis, self.order
+        mat = sparse.lil_matrix((siz, siz))
+        coeff_dict = coefficients(order, acc)
+
+        for scheme in ['center', 'forward', 'backward']:
+
+            offsets_1d = coeff_dict[scheme]['offsets']
+            coeffs = coeff_dict[scheme]['coefficients']
+
+            # translate offsets of given scheme to long format
+            offsets_long = []
+            for o_1d in offsets_1d:
+                o_nd = np.zeros(ndims)
+                o_nd[axis] = o_1d
+                o_long = to_long_index(o_nd, shape)
+                offsets_long.append(o_long)
+
+            # determine points where to evaluate current scheme in long format
+            if scheme == 'center':
+                multi_slice = [slice(None, None)] * ndims
+                multi_slice[axis] = slice(1, -1)
+                Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
+            elif scheme == 'forward':
+                multi_slice = [slice(None, None)] * ndims
+                multi_slice[axis] = 0
+                Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
+            else:
+                multi_slice = [slice(None, None)] * ndims
+                multi_slice[axis] = -1
+                Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
+
+            for o, c in zip(offsets_long, coeffs):
+                v = c / h**order
+                mat[Is, Is + o] = v
+
+        mat = sparse.csr_matrix(mat)
+
+        return mat
+
+    def stencil(self, shape, h=None, acc=None, old_stl=None):
+        h = self._properties(self.h, h, 1)
+        acc = self._properties(self.acc, acc, 2)
+        return Stencil(shape, self.axis, self.order, h, acc, old_stl)
+
+    def set_accuracy(self, acc):
+        self.acc = acc
+
+    def _properties(self, self_value, value, default_value):
+
+        if value is not None:
+            return value
+        elif self_value is None:
+            return default_value
+        else:
+            return self_value
+
     def _apply_to_array(self, yd, y, weights, off_slices, ref_slice, dim):
         """Applies the finite differences only to slices along a given axis"""
 
@@ -276,34 +447,37 @@ class Id(LinearMap):
     def apply(self, rhs, *args, **kwargs):
         return rhs
 
+    def matrix(self, shape):
+        siz =  np.prod(shape)
+        mat = sparse.lil_matrix((siz, siz))
+        diag = list(range(siz))
+        mat[diag, diag] = 1
+        return sparse.csr_matrix(mat)
+
 
 class Coef(object):
+    """
+            Encapsulates a constant (number) or variable (N-dimensional coordinate array) value to multiply with a linear operator
+
+            :param value: a number or an numpy.ndarray with meshed coordinates
+
+            ============
+            **Example**:
+
+               The following example defines the differential operator
+
+               .. math::
+
+                  2x \frac{\partial^3}{\partial x^2 \partial z}
+
+               >>> X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
+               >>> diff_op = Coef(2*X) * FinDiff((0, dx, 2), (2, dz, 1))
+
+    """
 
     def __init__(self, value):
         self.value = value
 
     def __mul__(self, other):
         return Mul(self.value , other)
-
-#    def __rmul__(self, other):
-#        print("rmul of %s called" % self.name)
-
-"""
-L = Diff(0, 2) + X * Diff(0) * Diff(1) + Diff(1, 2) + X + 1
-L = D(0, 2) + X * D(0) * D(1) + D(1, 2) + X + 1
-
-L.set_properties(acc=2, h={0: dx, 1: dy})
-L(u)
-
-or 
-
-L(u, acc=2, h={0: dx, 1: dy})
-
-"""
-
-#L = LinearMap(1) + 2*(LinearMap(3) + LinearMap(4) + LinearMap(5)) ** LinearMap(2) * LinearMap(6)
-#L = LinearMap(3) * 2
-#print(L.apply(1))
-
-
 
