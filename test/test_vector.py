@@ -7,7 +7,6 @@ import numpy as np
 from findiff.vector import Gradient, Divergence, Curl
 
 
-
 class TestGradient(unittest.TestCase):
 
     def test_3d_gradient_on_scalar_func(self):

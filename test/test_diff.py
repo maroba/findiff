@@ -5,9 +5,11 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from findiff.diff import *
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import findiff
 from numpy import cos, sin
+from findiff.grids import UniformGrid
+
 
 class DiffTest(unittest.TestCase):
 

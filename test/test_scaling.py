@@ -16,7 +16,7 @@ class TestScaling(unittest.TestCase):
         log_dx_list = []
 
         for nx in nx_list:
-            x = np.linspace(0, Lx, nx)
+            x = np.linspace(0., Lx, nx)
             dx = x[1] - x[0]
             f = np.sin(x)
             d_dx = FinDiff(0, dx)

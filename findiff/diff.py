@@ -4,6 +4,10 @@ import scipy.sparse as sparse
 from findiff.coefs import coefficients, coefficients_non_uni
 from .stencils import Stencil
 from .utils import *
+from .grids import Grid, UniformGrid
+
+
+DEFAULT_ACC = 2
 
 
 class Operator(object):
@@ -77,14 +81,14 @@ class Plus(BinaryOperator):
 
         return left + right
 
-    def matrix(self, shape, h=None, acc=None):
+    def matrix(self, shape, *args, **kwargs):
         left, right = self.left, self.right
         if isinstance(self.left, Operator):
-            left = self.left.matrix(shape, h, acc)
+            left = self.left.matrix(shape, *args, **kwargs)
         elif isinstance(self.left, np.ndarray):
             left = sparse.diags(self.left.reshape(-1), 0)
         if isinstance(self.right, Operator):
-            right = self.right.matrix(shape, h, acc)
+            right = self.right.matrix(shape, *args, **kwargs)
         elif isinstance(self.right, np.ndarray):
             right = sparse.diags(self.right.reshape(-1), 0)
         return left + right
@@ -135,14 +139,14 @@ class Minus(BinaryOperator):
 
         return left - right
 
-    def matrix(self, shape, h=None, acc=None):
+    def matrix(self, shape, *args, **kwargs):
         left, right = self.left, self.right
         if isinstance(self.left, Operator):
-            left = self.left.matrix(shape, h, acc)
+            left = self.left.matrix(shape, *args, **kwargs)
         elif isinstance(self.left, np.ndarray):
             left = sparse.diags(self.left.reshape(-1), 0)
         if isinstance(self.right, Operator):
-            right = self.right.matrix(shape, h, acc)
+            right = self.right.matrix(shape, *args, **kwargs)
         elif isinstance(self.right, np.ndarray):
             right = sparse.diags(self.right.reshape(-1), 0)
         return left - right
@@ -186,7 +190,7 @@ class Mul(BinaryOperator):
 
         return result
 
-    def matrix(self, shape):
+    def matrix(self, shape, *args, **kwargs):
         """ Matrix representation of given operator product on an equidistant grid of given shape.
 
         :param shape: tuple with the shape of the grid
@@ -196,14 +200,14 @@ class Mul(BinaryOperator):
         if isinstance(self.left, np.ndarray):
             left = sparse.diags(self.left.reshape(-1), 0)
         elif isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
-            left = self.left.matrix(shape)
+            left = self.left.matrix(shape, *args, **kwargs)
         else:
             left = self.left * sparse.diags(np.ones(shape).reshape(-1), 0)
 
         if isinstance(self.right, np.ndarray):
             right = sparse.diags(self.right.reshape(-1), 0)
         elif isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
-            right = self.right.matrix(shape)
+            right = self.right.matrix(shape, *args, **kwargs)
         else:
             right = self.right * sparse.diags(np.ones(shape).reshape(-1), 0)
 
@@ -236,29 +240,49 @@ class LinearMap(Operator):
     def __call__(self, rhs, *args, **kwargs):
         return self.apply(rhs, *args, **kwargs)
 
-    def apply(self, rhs, *args, **kwargs):
-        raise NotImplementedError('Base class LinearMap is not to be used directly!')
 
 
 class Diff(LinearMap):
 
-    def __init__(self, axis, order=1):
+    def __init__(self, axis, order, **kwargs):
         self.axis = axis
         self.order = order
-        self.h = None
         self.acc = None
+        if 'acc' in kwargs:
+            self.acc = kwargs['acc']
 
-    def apply(self, u, h=None, **kwargs):
+    def apply(self, u, *args, **kwargs):
+
+        h = None
+        acc = DEFAULT_ACC
+
+        def get_h(a):
+            if isinstance(a, Grid):
+                grid = a
+                h = grid.spacing(self.axis)
+            elif isinstance(a, dict):
+                h = a[self.axis]
+            else:
+                h = a
+            return h
+
+        for key, value in kwargs.items():
+            if key == 'h' or key == 'grid':
+                h = get_h(value)
+                break
 
         if h is None:
-            h = self.h
+            h = get_h(args[0])
 
-        if isinstance(h, dict):
-            h = h[self.axis]
+        if 'acc' in kwargs:
+            acc = kwargs['acc']
 
-        return self.diff(u, h, **kwargs)
+        if isinstance(h, np.ndarray):
+            return self.diff_non_uni(u, h, **kwargs)
 
-    def diff(self, y, h, **kwargs):
+        return self.diff(u, h, acc)
+
+    def diff(self, y, h, acc):
         """The core function to take a partial derivative on a uniform grid.
 
             Central coefficients will be used whenever possible. Backward or forward
@@ -266,13 +290,6 @@ class Diff(LinearMap):
             i.e. forward coefficients for the low index boundary and backward coefficients
             for the high index boundary.
         """
-
-        if "acc" in kwargs:
-            acc = kwargs["acc"]
-        elif self.acc is not None:
-            acc = self.acc
-        else:
-            acc = 2
 
         dim = self.axis
         coefs = coefficients(self.order, acc)
@@ -317,7 +334,7 @@ class Diff(LinearMap):
         h_inv = 1. / h ** deriv
         return yd * h_inv
 
-    def diff_non_uni(self, y, coords, idx, **kwargs):
+    def diff_non_uni(self, y, coords, **kwargs):
         """The core function to take a partial derivative on a non-uniform grid"""
 
         if "acc" in kwargs:
@@ -329,17 +346,22 @@ class Diff(LinearMap):
 
         order, dim = self.order, self.axis
 
+        coef_list = []
+        for i in range(len(coords)):
+            coef_list.append(coefficients_non_uni(order, acc, coords, i))
+
         yd = np.zeros_like(y)
 
-        coefs = coefficients_non_uni(order, acc, coords, idx)
 
         ndims = len(y.shape)
         multi_slice = [slice(None, None)] * ndims
         ref_multi_slice = [slice(None, None)] * ndims
 
         for i, x in enumerate(coords):
-            weights = coefs[i]["coefficients"]
-            offsets = coefs[i]["offsets"]
+
+            coefs = coef_list[i]
+            weights = coefs["coefficients"]
+            offsets = coefs["offsets"]
             ref_multi_slice[dim] = i
 
             for off, w in zip(offsets, weights):
@@ -350,8 +372,10 @@ class Diff(LinearMap):
 
     def matrix(self, shape, h=None, acc=None):
 
+        if isinstance(h, dict):
+            h = h[self.axis]
+
         acc = self._properties(self.acc, acc, 2)
-        h = self._properties(self.h, h, 1)
 
         ndims = len(shape)
         siz = np.prod(shape)
@@ -397,7 +421,8 @@ class Diff(LinearMap):
         return mat
 
     def stencil(self, shape, h=None, acc=None, old_stl=None):
-        h = self._properties(self.h, h, 1)
+        if isinstance(h, dict):
+            h = h[self.axis]
         acc = self._properties(self.acc, acc, 2)
         return Stencil(shape, self.axis, self.order, h, acc, old_stl)
 

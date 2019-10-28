@@ -16,9 +16,8 @@ class FinDiffTest(unittest.TestCase):
         ux_ex = 3*x**2
 
         fd = FinDiff(0, x[1] - x[0], 1)
-        fd.set_accuracy(4)
 
-        ux = fd(u)
+        ux = fd(u, acc=4)
 
         assert_array_almost_equal(ux, ux_ex, decimal=5)
 
@@ -30,9 +29,8 @@ class FinDiffTest(unittest.TestCase):
         ux_ex = np.cos(x)
 
         fd = FinDiff(0, x[1] - x[0], 1)
-        fd.set_accuracy(4)
 
-        ux = fd(u)
+        ux = fd(u, acc=4)
 
         assert_array_almost_equal(ux, ux_ex, decimal=5)
 
@@ -44,9 +42,8 @@ class FinDiffTest(unittest.TestCase):
         uxy_ex = np.cos(X) * np.cos(Y)
 
         fd = FinDiff((0, x[1] - x[0], 1), (1, y[1] - y[0], 1))
-        fd.set_accuracy(4)
 
-        uxy = fd(u)
+        uxy = fd(u, acc=4)
 
         assert_array_almost_equal(uxy, uxy_ex, decimal=5)
 
@@ -337,8 +334,6 @@ class FinDiffTest(unittest.TestCase):
         print(vecs)
 
 
-
-
 class TestFinDiffNonUniform(unittest.TestCase):
 
     def test_1d_different_accs(self):
@@ -393,31 +388,10 @@ class TestFinDiffNonUniform(unittest.TestCase):
         d1 = FinDiff((0, x), (1, y), acc=4)
         assert_array_almost_equal(d1(X*Y), np.ones_like(X))
 
-    def test_cannot_specify_axis_more_than_once(self):
-        x = np.linspace(0, 1, 10)
-        self.assertRaises(ValueError, lambda: FinDiff((0, x), (0, x)))
-
     def test_accepts_not_more_than_three_args(self):
         x = np.linspace(0, 1, 10)
         self.assertRaises(Exception, lambda: FinDiff(0, x, 2, 3))
 
-    def test_various_input_formats(self):
-
-        def f(x):
-            return x**3
-
-        def df_dx(x):
-            return 6*x
-
-        x_nu = np.sqrt(np.linspace(0, 1, 10))
-        f_nu = f(x_nu)
-
-        self.assertRaises(Exception, lambda: FinDiff(0, 2, coords=[x_nu], acc=2))
-
-        d_dx_B = FinDiff(0, x_nu, 2, acc=4)
-        df_dx_nu_B = d_dx_B(f_nu)
-
-        assert_array_almost_equal(df_dx(x_nu), df_dx_nu_B)
 
 
 def grid(ndim, npts, a, b):

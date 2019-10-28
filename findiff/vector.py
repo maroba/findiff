@@ -2,6 +2,7 @@
 
 import numpy as np
 from .operators import FinDiff
+from.diff import Diff
 
 
 class VectorOperator(object):
@@ -24,6 +25,11 @@ class VectorOperator(object):
         
         """
 
+        if "acc" in kwargs:
+            self.acc = kwargs.pop("acc")
+        else:
+            self.acc = 2
+
         if "spac" in kwargs or "h" in kwargs: # necessary for backward compatibility 0.5.2 => 0.6
             if "spac" in kwargs:
                 kw = "spac"
@@ -31,7 +37,7 @@ class VectorOperator(object):
                 kw = "h"
             self.h = kwargs.pop(kw)
             self.ndims = len(self.h)
-            self.components = [FinDiff((k, self.h[k]), **kwargs) for k in range(self.ndims)]
+            self.components = [FinDiff(k, self.h[k], 1) for k in range(self.ndims)]
 
         if "coords" in kwargs:
             coords = kwargs.pop("coords")
@@ -97,7 +103,7 @@ class Gradient(VectorOperator):
         result = []
         for k in range(self.ndims):
             d_dxk = self.components[k]
-            result.append(d_dxk(f))
+            result.append(d_dxk(f, acc=self.acc))
 
         return np.array(result)
 
@@ -148,7 +154,7 @@ class Divergence(VectorOperator):
         result = np.zeros(f.shape[1:])
 
         for k in range(self.ndims):
-            result += self.components[k](f[k])
+            result += self.components[k](f[k], acc=self.acc)
 
         return result
 
@@ -205,9 +211,9 @@ class Curl(VectorOperator):
 
         result = np.zeros(f.shape)
 
-        result[0] += self.components[1](f[2]) - self.components[2](f[1])
-        result[1] += self.components[2](f[0]) - self.components[0](f[2])
-        result[2] += self.components[0](f[1]) - self.components[1](f[0])
+        result[0] += self.components[1](f[2], acc=self.acc) - self.components[2](f[1], acc=self.acc)
+        result[1] += self.components[2](f[0], acc=self.acc) - self.components[0](f[2], acc=self.acc)
+        result[2] += self.components[0](f[1], acc=self.acc) - self.components[1](f[0], acc=self.acc)
 
         return result
 
