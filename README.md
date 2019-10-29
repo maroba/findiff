@@ -300,13 +300,13 @@ edges, i.e.
 with Dirichlet boundary condition
 
 <p align="center">
-<img src="docs/frontpage/img-17719361f7e419dc.png" height="20"/>
+<img src="docs/frontpage/img-a06bc52fe5a97f4a.png" height="20"/>
 </p>
 
 and Neumann boundary conditions
 
 <p align="center">
-<img src="docs/frontpage/img-fea6c2b797c4f20b.png" height="120"/>
+<img src="docs/frontpage/iimg-79ec3ad29895a658.png" height="120"/>
 </p>
 
 
