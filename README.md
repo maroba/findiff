@@ -336,24 +336,6 @@ Result:
 </p>
 
 
-### Eigenvalue Problems
-
-#### Example: Solve the 1D Schrödinger equation for the harmonic oscillator potential
-
-```python
-
-# 1D grid:
-shape = (300,)
-x = np.linspace(-10, 10, shape[0])
-dx = x[1] - x[0]
-
-# Build the Hamiltonian
-H = -0.5 * FinDiff(0, dx, 2).matrix(shape) + 0.5 * x**2
-
-# Solve the Schrödinger equation
-spectrum, states = scipy.sparse.linalg.eigs(H, k=6, which='SR')
-```
-
 ## Compatibility
 
 Currently `findiff` only supports Python 3.
