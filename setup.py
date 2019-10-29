@@ -39,9 +39,10 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     keywords=['finite-differences',  'numerical-derivatives', 'scientific-computing'],  # Optional
     packages=['findiff'],
-    install_requires=['numpy'],  # Optional
+    install_requires=['numpy', 'scipy'],  # Optional
 
 )
