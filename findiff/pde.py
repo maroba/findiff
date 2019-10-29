@@ -9,11 +9,14 @@ class PDE(object):
         self.lhs = lhs
         self.rhs = rhs
         self.bcs = bcs
+        self._L = None
 
     def solve(self):
 
         shape = self.bcs.shape
-        self._L = self.lhs.matrix(shape) # expensive operation, so cache it
+        if self._L is None:
+            self._L = self.lhs.matrix(shape) # expensive operation, so cache it
+
         L = sparse.lil_matrix(self._L)
         f = self.rhs.reshape(-1, 1)
 
@@ -38,9 +41,6 @@ class BoundaryConditions(object):
     def __setitem__(self, key, value):
 
         lng_inds = self.long_indices[key]
-
-        #if len(lng_inds) == np.prod(self.shape):
-        #    raise ValueError('Boundary can only be specified on, well, the boundary!')
 
         if isinstance(value, tuple): # Neumann BC
             op, value = value

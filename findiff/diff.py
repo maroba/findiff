@@ -1,10 +1,9 @@
 import operator
-import numpy as np
 import scipy.sparse as sparse
 from findiff.coefs import coefficients, coefficients_non_uni
 from .stencils import Stencil
 from .utils import *
-from .grids import Grid, UniformGrid
+from .grids import Grid
 
 
 DEFAULT_ACC = 2
