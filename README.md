@@ -13,8 +13,8 @@ any number of dimensions.
 * Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 * Fully vectorized for speed
 * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
-* Generate matrix representations of arbitrary linear differential operators
-* Solve partial differential equations with Dirichlet or Neumann boundary conditions
+* _New in version 0.7:_ Generate matrix representations of arbitrary linear differential operators
+* _New in version 0.8:_ Solve __partial differential equations__ with Dirichlet or Neumann boundary conditions
 
 
 ## Installation
@@ -311,7 +311,7 @@ and Neumann boundary conditions
 
 
 ```python
-shape = (60, 60)
+shape = (100, 100)
 x, y = np.linspace(0, 1, shape[0]), np.linspace(0, 1, shape[1])
 dx, dy = x[1]-x[0], y[1]-y[0]
 X, Y = np.meshgrid(x, y, indexing='ij')
@@ -320,10 +320,10 @@ L = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
 f = np.zeros(shape)
 
 bc = BoundaryConditions(shape)
-bc[0,:] = 300.  # Dirichlet BC
-bc[-1,:] = FinDiff(0, dx, 1), 0 # Neumann BC
-bc[:,0] = FinDiff(1, dy, 1), 0 # Neumann BC
-bc[:,-1] = FinDiff(1, dy, 1), 0 # Neumann BC
+bc[1,:] = FinDiff(0, dx, 1), 0  # Neumann BC
+bc[-1,:] = 300. - 200*Y   # Dirichlet BC
+bc[:, 0] = 300.   # Dirichlet BC
+bc[1:-1, -1] = FinDiff(1, dy, 1), 0  # Neumann BC
 
 pde = PDE(L, f, bc)
 u = pde.solve()
@@ -331,7 +331,9 @@ u = pde.solve()
 
 Result:
 
-TODO
+<p align="center">
+<img src="docs/frontpage/heat.png"/>
+</p>
 
 
 ### Eigenvalue Problems
