@@ -125,7 +125,7 @@ def _build_matrix(p, q, deriv):
     A = [([1 for _ in range(-p, q+1)])]
     for i in range(1, p + q + 1):
         A.append([j**i for j in range(-p, q+1)])
-    return np.array(A)
+    return np.array(A,dtype='float')
 
 
 def _build_rhs(p, q, deriv):
@@ -133,7 +133,7 @@ def _build_rhs(p, q, deriv):
 
     b = [0 for _ in range(p+q+1)]
     b[deriv] = math.factorial(deriv)
-    return np.array(b)
+    return np.array(b,dtype='float')
 
 
 def _build_matrix_non_uniform(p, q, coords, k):
@@ -142,4 +142,4 @@ def _build_matrix_non_uniform(p, q, coords, k):
     for i in range(1, p + q + 1):
         line = [(coords[k+j] - coords[k])**i for j in range(-p, q+1)]
         A.append(line)
-    return np.array(A)
+    return np.array(A,dtype='float')
