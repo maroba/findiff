@@ -16,6 +16,7 @@ class TestScaling(unittest.TestCase):
         log_dx_list = []
 
         for nx in nx_list:
+            nx = int(nx)
             x = np.linspace(0., Lx, nx)
             dx = x[1] - x[0]
             f = np.sin(x)
@@ -54,19 +55,19 @@ class TestScaling(unittest.TestCase):
         return fit[0]
 
     def test_1d_acc2(self):
-        self.assertAlmostEqual(2, self.fit_1d(acc=2), 1)
+        self.assertAlmostEqual(2., self.fit_1d(acc=2), 1)
 
     def test_1d_acc4(self):
-        self.assertAlmostEqual(4, self.fit_1d(acc=4), 1)
+        self.assertAlmostEqual(4., self.fit_1d(acc=4), 1)
 
     def test_1d_acc6(self):
-        self.assertAlmostEqual(6, self.fit_1d(acc=6), 1)
+        self.assertAlmostEqual(6., self.fit_1d(acc=6), 1)
 
     def test_2d_acc2(self):
-        self.assertAlmostEqual(2, self.fit_2d(acc=2), 1)
+        self.assertAlmostEqual(2., self.fit_2d(acc=2), 1)
 
     def test_2d_acc4(self):
-        self.assertAlmostEqual(4, self.fit_2d(acc=4), 1)
+        self.assertAlmostEqual(4., self.fit_2d(acc=4), 1)
 
 
 if __name__ == '__main__':
