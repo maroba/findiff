@@ -398,7 +398,7 @@ class Diff(LinearMap):
                 offsets_long.append(o_long)
 
             # determine points where to evaluate current scheme in long format
-            nside = len(coeffs) // 2
+            nside = len(coeff_dict['center']['coefficients']) // 2
             if scheme == 'center':
                 multi_slice = [slice(None, None)] * ndims
                 multi_slice[axis] = slice(nside, -nside)
