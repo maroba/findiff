@@ -3,4 +3,4 @@ from .operators import FinDiff, Coef, Identity, Coefficient
 from .vector import Gradient, Divergence, Curl, Laplacian
 from .pde import PDE, BoundaryConditions
 
-__version__ = "0.8.2"
+__version__ = "0.8.3"

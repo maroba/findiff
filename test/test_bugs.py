@@ -4,6 +4,7 @@ sys.path.insert(1, '..')
 import unittest
 import numpy as np
 from findiff import FinDiff
+import findiff
 
 
 class TestOldBugs(unittest.TestCase):
@@ -23,6 +24,10 @@ class TestOldBugs(unittest.TestCase):
         self.assertAlmostEqual(-2.5, mat[0, 0])
         self.assertAlmostEqual(-2.5, mat[1, 1])
         self.assertAlmostEqual(-0.5, mat[2, 0])
+
+    def test_high_accuracy_results_in_type_error(self):
+        # in issue 25 the following line resulted in a TypeError
+        findiff.coefficients(deriv=1, acc=15)
 
 
 if __name__ == '__main__':
