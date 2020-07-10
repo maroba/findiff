@@ -398,17 +398,18 @@ class Diff(LinearMap):
                 offsets_long.append(o_long)
 
             # determine points where to evaluate current scheme in long format
+            nside = len(coeffs) // 2
             if scheme == 'center':
                 multi_slice = [slice(None, None)] * ndims
-                multi_slice[axis] = slice(1, -1)
+                multi_slice[axis] = slice(nside, -nside)
                 Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
             elif scheme == 'forward':
                 multi_slice = [slice(None, None)] * ndims
-                multi_slice[axis] = 0
+                multi_slice[axis] = slice(0, nside)
                 Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
             else:
                 multi_slice = [slice(None, None)] * ndims
-                multi_slice[axis] = -1
+                multi_slice[axis] = slice(-nside, None)
                 Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
 
             for o, c in zip(offsets_long, coeffs):
