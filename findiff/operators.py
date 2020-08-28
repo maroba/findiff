@@ -99,11 +99,15 @@ class FinDiff(LinearMap):
         return self.pds.stencil(shape, h, acc, old_stl)
 
     def matrix(self, shape, h=None, acc=None):
-        if h is None and self.spac is not None:
-            h = self.spac
         if acc is None:
             acc = DEFAULT_ACC
-        return self.pds.matrix(shape, h, acc)
+
+        if self.uniform:
+            if h is None and self.spac is not None:
+                h = self.spac
+            return self.pds.matrix(shape, h=h, acc=acc)
+        else:
+            return self.pds.matrix(shape, coords=self.coords, acc=acc)
 
     def set_accuracy(self, acc):
         self.pds.set_accuracy(acc)

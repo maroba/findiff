@@ -1,3 +1,4 @@
+import itertools
 import operator
 import scipy.sparse as sparse
 from findiff.coefs import coefficients, coefficients_non_uni
@@ -242,6 +243,8 @@ class LinearMap(Operator):
 
 
 class Diff(LinearMap):
+    """ Representation of a single partial derivative based on finite differences """
+
 
     def __init__(self, axis, order, **kwargs):
         self.axis = axis
@@ -369,7 +372,44 @@ class Diff(LinearMap):
 
         return yd
 
-    def matrix(self, shape, h=None, acc=None):
+    def matrix(self, shape, h=None, acc=None, coords=None, sparse_type=sparse.csr_matrix):
+        if h is not None:
+            return sparse_type(self._matrix_uniform(shape, h, acc))
+        elif coords is not None:
+            return sparse_type(self._matrix_nonuniform(shape, coords, acc))
+        else:
+            raise ValueError('Neither spacing nor coordinates given.')
+
+    def _matrix_nonuniform(self, shape, coords, acc):
+
+        coords = coords[self.axis]
+
+        siz = np.prod(shape)
+        long_inds = np.arange(siz).reshape(shape)
+        short_inds = [np.arange(shape[k]) for k in range(len(shape))]
+        short_inds = list(itertools.product(*short_inds))
+
+        coef_dicts = []
+        for i in range(len(coords)):
+            coef_dicts.append(coefficients_non_uni(self.order, acc, coords, i))
+
+        mat = sparse.lil_matrix((siz, siz))
+
+        for base_ind_long, base_ind_short in enumerate(short_inds):
+            cd = coef_dicts[base_ind_short[self.axis]]
+            cs, os = cd['coefficients'], cd['offsets']
+            for c, o in zip(cs, os):
+
+                off_short = np.zeros(len(shape), dtype=np.int)
+                off_short[self.axis] = int(o)
+                off_ind_short = np.array(base_ind_short, dtype=np.int) + off_short
+                off_long = long_inds[tuple(off_ind_short)]
+
+                mat[base_ind_long, off_long] += c
+
+        return mat
+
+    def _matrix_uniform(self, shape, h=None, acc=None):
 
         if isinstance(h, dict):
             h = h[self.axis]
@@ -415,8 +455,6 @@ class Diff(LinearMap):
             for o, c in zip(offsets_long, coeffs):
                 v = c / h**order
                 mat[Is, Is + o] = v
-
-        mat = sparse.csr_matrix(mat)
 
         return mat
 

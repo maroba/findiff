@@ -392,6 +392,69 @@ class TestFinDiffNonUniform(unittest.TestCase):
         x = np.linspace(0, 1, 10)
         self.assertRaises(Exception, lambda: FinDiff(0, x, 2, 3))
 
+    def test_matrix_1d_nonuni(self):
+
+        x = np.linspace(0, 6, 7)
+        d2_dx2 = FinDiff(0, x, 2)
+        u = x**2
+
+        mat = d2_dx2.matrix(u.shape)
+
+        np.testing.assert_array_almost_equal(2*np.ones_like(x), mat.dot(u.reshape(-1)))
+
+    def test_matrix_2d_nonuni(self):
+        thr = np.get_printoptions()["threshold"]
+        lw = np.get_printoptions()["linewidth"]
+        np.set_printoptions(threshold=np.inf)
+        np.set_printoptions(linewidth=500)
+        x, y = [np.linspace(0, 4, 5)] * 2
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        laplace = FinDiff(0, x, 2) + FinDiff(1, y, 2)
+        #d = FinDiff(1, y[1]-y[0], 2)
+        u = X**2 + Y**2
+
+        mat = laplace.matrix(u.shape)
+
+        np.testing.assert_array_almost_equal(4 * np.ones_like(X).reshape(-1), mat.dot(u.reshape(-1)))
+
+        np.set_printoptions(threshold=thr)
+        np.set_printoptions(linewidth=lw)
+
+    def test_matrix_2d_mixed_nonuni(self):
+        x, y = [np.linspace(0, 5, 6), np.linspace(0, 6, 7)]
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        d2_dxdy = FinDiff((0, x), (1, y))
+        u = X**2 * Y**2
+
+        mat = d2_dxdy.matrix(u.shape)
+        expected = d2_dxdy(u).reshape(-1)
+
+        actual = mat.dot(u.reshape(-1))
+        np.testing.assert_array_almost_equal(expected, actual)
+
+    def test_matrix_1d_coeffs_nonuni(self):
+        shape = 11,
+        x = np.linspace(0, 10, 11)
+
+        L = Coef(x) * FinDiff(0, x, 2)
+
+        u = np.random.rand(*shape).reshape(-1)
+
+        actual = L.matrix(shape).dot(u)
+        expected = L(u).reshape(-1)
+        np.testing.assert_array_almost_equal(expected, actual)
+
+    @unittest.skip
+    def test_matrix_3d_nonuni_performance(self):
+
+        x = y = z = np.linspace(0, 4, 30)
+        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+        laplace = FinDiff(0, x, 2) + FinDiff(1, y, 2) + FinDiff(2, z, 2)
+        u = X**2 + Y**2 + Z**2
+
+        mat = laplace.matrix(u.shape)
+
+        np.testing.assert_array_almost_equal(6 * np.ones_like(X).reshape(-1), mat.dot(u.reshape(-1)))
 
 
 def grid(ndim, npts, a, b):
