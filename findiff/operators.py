@@ -100,7 +100,10 @@ class FinDiff(LinearMap):
 
     def matrix(self, shape, h=None, acc=None):
         if acc is None:
-            acc = DEFAULT_ACC
+            if self.acc is None:
+                acc = DEFAULT_ACC
+            else:
+                acc = self.acc
 
         if self.uniform:
             if h is None and self.spac is not None:

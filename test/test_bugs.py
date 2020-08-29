@@ -29,6 +29,19 @@ class TestOldBugs(unittest.TestCase):
         # in issue 25 the following line resulted in a TypeError
         findiff.coefficients(deriv=1, acc=15)
 
+    def test_matrix_repr_with_different_accs(self):
+        # issue 28
+        shape = (11, )
+        d1 = findiff.FinDiff(0, 1, 2).matrix(shape)
+        d2 = findiff.FinDiff(0, 1, 2, acc=4).matrix(shape)
+
+        self.assertTrue(np.max(np.abs((d1 - d2).toarray())) > 1)
+
+        x = np.linspace(0, 10, 11)
+        f = x**2
+        df = d2.dot(f)
+        np.testing.assert_almost_equal(2*np.ones_like(f), df)
+
 
 if __name__ == '__main__':
     unittest.main()
