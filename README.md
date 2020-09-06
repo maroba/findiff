@@ -183,6 +183,9 @@ use this matrix to perform the differentiation manually by matrix-vector multipl
 d2u_dx2 = mat.dot(u.reshape(-1))
 ```
 
+Examples using the matrix representation like solving the Schrödinger equation can be found
+in this [blog](https://computing-blog.com/2020/09/05/schroedinger-in-3-lines/).
+
 ### Stencils
 
 You can also take a look at the finite difference stencils, e.g. for a 2D grid:
