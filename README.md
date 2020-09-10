@@ -103,7 +103,7 @@ grad = Gradient(h=[dx, dy, dz, du])
 grad_f = grad(f)
 ```
 
-More examples can be found [here](https://maroba.github.io/findiff-docs/source/examples.html).
+More examples can be found [here](https://maroba.github.io/findiff-docs/source/examples.html) and in [this blog](https://computing-blog.com).
 
 
 ### Derivatives in N dimensions
