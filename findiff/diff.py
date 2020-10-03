@@ -11,10 +11,12 @@ DEFAULT_ACC = 2
 
 
 class Operator(object):
+    """ Base class for all operator classes """
     pass
 
 
 class BinaryOperator(Operator):
+    """ Base class for all binary operators (like addition) that allow to combine or chain differential operators """
 
     def __init__(self, left, right):
         self.left = left
@@ -45,6 +47,7 @@ class BinaryOperator(Operator):
 
 
 class Plus(BinaryOperator):
+    """ A class to add two differential operators """
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -103,6 +106,7 @@ class Plus(BinaryOperator):
 
 
 class Minus(BinaryOperator):
+    """ A class to subtract two differential operators from each other """
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -153,6 +157,7 @@ class Minus(BinaryOperator):
 
 
 class Mul(BinaryOperator):
+    """ A class to multiply (chain) two differential operators """
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -243,10 +248,31 @@ class LinearMap(Operator):
 
 
 class Diff(LinearMap):
-    """ Representation of a single partial derivative based on finite differences """
+    """ Representation of a single partial derivative based on finite differences.
+
+            This class is usually not used directly by the user, but is wrapped in
+            a FinDiff object.
+
+            :param axis: the numpy axis along which to apply the derivative
+
+            :param order: the order of the derivative
+
+            :param kwargs: optional keyword arguments
+
+                Allowed keywords:
+
+                    `acc`:  even integer
+                            The desired accuracy order.
+    """
 
 
     def __init__(self, axis, order, **kwargs):
+
+        assert isinstance(axis, int)
+        assert isinstance(order, int)
+        assert axis >= 0
+        assert order > 0
+
         self.axis = axis
         self.order = order
         self.acc = None
@@ -254,6 +280,7 @@ class Diff(LinearMap):
             self.acc = kwargs['acc']
 
     def apply(self, u, *args, **kwargs):
+        """ Applies the partial derivative to a numpy array."""
 
         h = None
         acc = DEFAULT_ACC
@@ -373,6 +400,23 @@ class Diff(LinearMap):
         return yd
 
     def matrix(self, shape, h=None, acc=None, coords=None, sparse_type=sparse.csr_matrix):
+        """ Matrix representation of the partial derivative.
+
+                :param shape: Tuple with the shape of the grid (number of grid points in each dimension)
+
+                :param h: The grid spacing for the axis of the partial derivative
+                            (only used for uniform grids)
+
+                :param coords: The coordinate values of the grid on the axis of the partial derivative
+                            (only used for non-uniform grids)
+
+                :param acc: The accuracy order of the derivative (even int)
+
+                :param sparse_type: The scipy sparse matrix type used for the matrix representation.
+
+                :returns matrix representation (scipy sparse matrix)
+        """
+
         if h is not None:
             return sparse_type(self._matrix_uniform(shape, h, acc))
         elif coords is not None:
