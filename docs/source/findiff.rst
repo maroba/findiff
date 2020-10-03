@@ -1,6 +1,6 @@
-=============
+================
 Module *findiff*
-=============
+================
 
 .. automodule:: findiff
 
@@ -8,7 +8,4 @@ Module *findiff*
     :members:
 
 .. autoclass:: Coefficient
-    :members:
-
-.. autoclass:: PartialDerivative
     :members:

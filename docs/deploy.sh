@@ -1,6 +1,7 @@
 #!/bin/bash
 
 FINDOCDIR=../../findiff-docs/html
+#FINDOCDIR=./_build/html
 DOCDIR=`pwd`
 
 cd $FINDOCDIR || exit

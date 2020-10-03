@@ -9,4 +9,5 @@ Examples
     examples-vector-calculus
     examples-polar
     examples-non-uniform-grids
+    examples-matrix
 

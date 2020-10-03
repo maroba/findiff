@@ -7,5 +7,5 @@ Modules Description
     :caption: Modules
 
     findiff
-    coefs
+    coefs 
     vector
