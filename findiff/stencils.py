@@ -6,8 +6,31 @@ from .coefs import coefficients
 
 
 class Stencil(object):
+    """
+    Represent the finite difference stencil for a given differential operator.
+    """
 
     def __init__(self, shape, axis, order, h, acc, old_stl=None):
+        """
+        Constructor for Stencil objects.
+
+        :param shape: tuple of ints
+            Shape of the grid on which the stencil should be applied.
+
+        :param axis: int >= 0
+            The coordinate axis along which to take the partial derivative.
+
+        :param order: int > 0
+            The order of the derivative.
+
+        :param h: float
+            The spacing of the (equidistant) grid
+
+        :param acc: (even) int > 0
+            The desired accuracy order of the finite difference scheme.
+
+        """
+
         self.shape = shape
         self.axis = axis
         self.order = order
@@ -22,6 +45,17 @@ class Stencil(object):
         self._create_stencil()
 
     def apply(self, u, idx0):
+        """ Applies the stencil to a point in an equidistant grid.
+
+        :param u: ndarray
+            An array with the function to differentiate.
+
+        :param idx0: int or tuple of ints
+            The index of the grid point where to differentiate the function.
+
+        :return:
+            The derivative at the given point.
+        """
 
         if not hasattr(idx0, '__len__'):
             idx0 = (idx0, )
@@ -47,6 +81,14 @@ class Stencil(object):
         return du
 
     def apply_all(self, u):
+        """ Applies the stencil to all grid points.
+
+        :param u: ndarray
+            An array with the function to differentiate.
+
+        :return:
+            An array with the derivative.
+        """
 
         assert self.shape == u.shape
 
@@ -69,6 +111,17 @@ class Stencil(object):
         return du
 
     def for_point(self, idx):
+        """ The returns the stencil for a given grid point.
+
+        Stencil forms are different depending on whether the grid point is in the interior
+        or at some boundary. This function selects the appropriate one.
+
+        :param idx: int or tuple of ints
+            The index of the grid point.
+
+        :return:
+            The stencil data for that point.
+        """
         typ = self.type_for_point(idx)
         return self.data[typ]
 
