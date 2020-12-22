@@ -1,8 +1,5 @@
 from itertools import product
-from copy import deepcopy
-import operator
 import numpy as np
-from .coefs import coefficients
 from .utils import to_long_index, to_index_tuple
 
 
@@ -11,7 +8,7 @@ class Stencil(object):
     Represent the finite difference stencil for a given differential operator.
     """
 
-    def __init__(self, diff_op, shape, old_stl=None):
+    def __init__(self, diff_op, shape, old_stl=None, acc=None):
         """
         Constructor for Stencil objects.
 
@@ -35,10 +32,11 @@ class Stencil(object):
         self.shape = shape
         self.diff_op = diff_op
         self.char_pts = self._det_characteristic_points()
-        if old_stl:
-            self.data = old_stl.data
-        else:
-            self.data = {}
+        self.acc = None
+        if acc is not None:
+            self.acc = acc
+
+        self.data = {}
 
         self._create_stencil()
 
@@ -136,34 +134,34 @@ class Stencil(object):
 
     def _create_stencil(self):
 
-        ndim = len(self.shape)
-        data = self.data
-
-        matrix = self.diff_op.matrix(self.shape)
+        matrix = self.diff_op.matrix(self.shape, acc=self.acc)
 
         for pt in self.char_pts:
 
-            coef_dict = {}
-            data[pt] = coef_dict
+            char_point_stencil = {}
+            self.data[pt] = char_point_stencil
 
-            index_for_char_pt = []
-            for axis, key in enumerate(pt):
-                if key == 'L':
-                    index_for_char_pt.append(0)
-                elif key == 'C':
-                    index_for_char_pt.append(self.shape[axis] // 2)
-                else:
-                    index_for_char_pt.append(self.shape[axis] - 1)
+            index_tuple_for_char_pt = self._typical_index_tuple_for_char_point(pt)
+            long_index_for_char_pt = to_long_index(index_tuple_for_char_pt, self.shape)
 
-            long_index_for_char_pt = to_long_index(index_for_char_pt, self.shape)
             row = matrix[long_index_for_char_pt, :]
             long_row_inds, long_col_inds = row.nonzero()
+
             for long_offset_ind in long_col_inds:
                 offset_ind_tuple = np.array(to_index_tuple(long_offset_ind, self.shape), dtype=np.int)
-                offset_ind_tuple -= np.array(index_for_char_pt, dtype=np.int)
-                coef_dict[tuple(offset_ind_tuple)] = row[0, long_offset_ind]
+                offset_ind_tuple -= np.array(index_tuple_for_char_pt, dtype=np.int)
+                char_point_stencil[tuple(offset_ind_tuple)] = row[0, long_offset_ind]
 
-        return None
+    def _typical_index_tuple_for_char_point(self, pt):
+        index_tuple_for_char_pt = []
+        for axis, key in enumerate(pt):
+            if key == 'L':
+                index_tuple_for_char_pt.append(0)
+            elif key == 'C':
+                index_tuple_for_char_pt.append(self.shape[axis] // 2)
+            else:
+                index_tuple_for_char_pt.append(self.shape[axis] - 1)
+        return tuple(index_tuple_for_char_pt)
 
     def _det_characteristic_points(self):
         shape = self.shape
@@ -177,22 +175,3 @@ class Stencil(object):
             s += str(typ) + ":\t" + str(stl) + "\n"
         return s
 
-    def _binaryop(self, other, op):
-        stl = deepcopy(self)
-        assert stl.shape == other.shape
-
-        for char_pt, single_stl in stl.data.items():
-            other_single_stl = other.data[char_pt]
-            for o, c in other_single_stl.items():
-                if o in single_stl:
-                    single_stl[o] = op(single_stl[o], c)
-                else:
-                    single_stl[o] = op(0, c)
-
-        return stl
-
-    def __add__(self, other):
-        return self._binaryop(other, operator.__add__)
-
-    def __sub__(self, other):
-        return self._binaryop(other, operator.__sub__)

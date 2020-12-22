@@ -44,8 +44,8 @@ class BinaryOperator(Operator):
         if isinstance(self.right, Operator):
             self.right.set_accuracy(acc)
 
-    def stencil(self, shape, h=None, acc=None, old_stl=None):
-        return Stencil(self, shape)
+    def stencil(self, shape, acc=None):
+        return Stencil(self, shape, acc=acc)
 
 
 class Plus(BinaryOperator):

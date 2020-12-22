@@ -75,6 +75,12 @@ class TestOldBugs(unittest.TestCase):
             stl = stencil1.data[char_pt]
             self.assertDictEqual(expected[char_pt], stl)
 
+        d1x = FinDiff(0, dx, 1)
+        stencil1 = d1x.stencil(shape, acc=4)
+        for char_pt in stencil1.data:
+            stl = stencil1.data[char_pt]
+            self.assertDictEqual(expected[char_pt], stl)
+
 
 if __name__ == '__main__':
     unittest.main()
