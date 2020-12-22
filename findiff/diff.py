@@ -6,7 +6,6 @@ from .stencils import Stencil
 from .utils import *
 from .grids import Grid
 
-
 DEFAULT_ACC = 2
 
 
@@ -44,6 +43,9 @@ class BinaryOperator(Operator):
             self.left.set_accuracy(acc)
         if isinstance(self.right, Operator):
             self.right.set_accuracy(acc)
+
+    def stencil(self, shape, h=None, acc=None, old_stl=None):
+        return Stencil(self, shape)
 
 
 class Plus(BinaryOperator):
@@ -95,14 +97,6 @@ class Plus(BinaryOperator):
         elif isinstance(self.right, np.ndarray):
             right = sparse.diags(self.right.reshape(-1), 0)
         return left + right
-
-    def stencil(self, shape, h=None, acc=None, old_stl=None):
-
-        if isinstance(self.left, Operator):
-            left = self.left.stencil(shape, h, acc)
-        if isinstance(self.right, Operator):
-            right = self.right.stencil(shape, h, acc, old_stl=left)
-        return right
 
 
 class Minus(BinaryOperator):
@@ -246,7 +240,6 @@ class LinearMap(Operator):
         return self.apply(rhs, *args, **kwargs)
 
 
-
 class Diff(LinearMap):
     """ Representation of a single partial derivative based on finite differences.
 
@@ -264,7 +257,6 @@ class Diff(LinearMap):
                     `acc`:  even integer
                             The desired accuracy order.
     """
-
 
     def __init__(self, axis, order, **kwargs):
 
@@ -381,7 +373,6 @@ class Diff(LinearMap):
 
         yd = np.zeros_like(y)
 
-
         ndims = len(y.shape)
         multi_slice = [slice(None, None)] * ndims
         ref_multi_slice = [slice(None, None)] * ndims
@@ -443,7 +434,6 @@ class Diff(LinearMap):
             cd = coef_dicts[base_ind_short[self.axis]]
             cs, os = cd['coefficients'], cd['offsets']
             for c, o in zip(cs, os):
-
                 off_short = np.zeros(len(shape), dtype=np.int)
                 off_short[self.axis] = int(o)
                 off_ind_short = np.array(base_ind_short, dtype=np.int) + off_short
@@ -497,16 +487,16 @@ class Diff(LinearMap):
                 Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
 
             for o, c in zip(offsets_long, coeffs):
-                v = c / h**order
+                v = c / h ** order
                 mat[Is, Is + o] = v
 
         return mat
 
-    def stencil(self, shape, h=None, acc=None, old_stl=None):
-        if isinstance(h, dict):
-            h = h[self.axis]
-        acc = self._properties(self.acc, acc, 2)
-        return Stencil(shape, self.axis, self.order, h, acc, old_stl)
+#    def stencil(self, shape, h=None, acc=None, old_stl=None):
+#        if isinstance(h, dict):
+#            h = h[self.axis]
+#        acc = self._properties(self.acc, acc, 2)
+#        return Stencil(shape, self.axis, self.order, h, acc, old_stl)
 
     def set_accuracy(self, acc):
         self.acc = acc
@@ -555,7 +545,7 @@ class Id(LinearMap):
         return rhs
 
     def matrix(self, shape):
-        siz =  np.prod(shape)
+        siz = np.prod(shape)
         mat = sparse.lil_matrix((siz, siz))
         diag = list(range(siz))
         mat[diag, diag] = 1
@@ -586,5 +576,4 @@ class Coef(object):
         self.value = value
 
     def __mul__(self, other):
-        return Mul(self.value , other)
-
+        return Mul(self.value, other)

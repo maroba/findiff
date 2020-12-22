@@ -250,6 +250,31 @@ class FinDiffTest(unittest.TestCase):
         actual = stl.apply_all(u)
         np.testing.assert_array_almost_equal(expected, actual)
 
+    def test_local_stencil_operator_mixed_partials(self):
+        x = np.linspace(0, 10, 101)
+        y = np.linspace(0, 10, 101)
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        u = X * Y
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+        d1x = FinDiff((0, dx), (1, dy))
+        stencil1 = d1x.stencil(u.shape)
+        du_dx = stencil1.apply_all(u)
+
+        np.testing.assert_array_almost_equal(np.ones_like(X), du_dx)
+
+    def test_local_stencil_operator_multiplication(self):
+        x = np.linspace(0, 10, 101)
+        y = np.linspace(0, 10, 101)
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        u = X * Y
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+        d1x = FinDiff(0, dx) * FinDiff(1, dy)
+        stencil1 = d1x.stencil(u.shape)
+        du_dx = stencil1.apply_all(u)
+
+        np.testing.assert_array_almost_equal(np.ones_like(X), du_dx)
 
     def dict_almost_equal(self, d1, d2):
 

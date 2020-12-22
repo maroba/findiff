@@ -3,6 +3,7 @@ from copy import deepcopy
 import operator
 import numpy as np
 from .coefs import coefficients
+from .utils import to_long_index, to_index_tuple
 
 
 class Stencil(object):
@@ -10,7 +11,7 @@ class Stencil(object):
     Represent the finite difference stencil for a given differential operator.
     """
 
-    def __init__(self, shape, axis, order, h, acc, old_stl=None):
+    def __init__(self, diff_op, shape, old_stl=None):
         """
         Constructor for Stencil objects.
 
@@ -32,10 +33,7 @@ class Stencil(object):
         """
 
         self.shape = shape
-        self.axis = axis
-        self.order = order
-        self.h = h
-        self.acc = acc
+        self.diff_op = diff_op
         self.char_pts = self._det_characteristic_points()
         if old_stl:
             self.data = old_stl.data
@@ -140,29 +138,32 @@ class Stencil(object):
 
         ndim = len(self.shape)
         data = self.data
-        smap = {'L': 'forward', 'C': 'center', 'H': 'backward'}
 
-        axis, order, h = self.axis, self.order, self.h
+        matrix = self.diff_op.matrix(self.shape)
 
         for pt in self.char_pts:
-            scheme = smap[pt[axis]]
-            coefs = coefficients(order, self.acc)[scheme]
 
-            if pt in data:
-                lstl = data[pt]
-            else:
-                lstl = {}
+            coef_dict = {}
+            data[pt] = coef_dict
 
-            for off, c in zip(coefs['offsets'], coefs['coefficients']):
-                long_off = [0] * ndim
-                long_off[axis] += off
-                long_off = tuple(long_off)
-
-                if long_off in lstl:
-                    lstl[long_off] += c / h ** order
+            index_for_char_pt = []
+            for axis, key in enumerate(pt):
+                if key == 'L':
+                    index_for_char_pt.append(0)
+                elif key == 'C':
+                    index_for_char_pt.append(self.shape[axis] // 2)
                 else:
-                    lstl[long_off] = c / h ** order
-            data[pt] = lstl
+                    index_for_char_pt.append(self.shape[axis] - 1)
+
+            long_index_for_char_pt = to_long_index(index_for_char_pt, self.shape)
+            row = matrix[long_index_for_char_pt, :]
+            long_row_inds, long_col_inds = row.nonzero()
+            for long_offset_ind in long_col_inds:
+                offset_ind_tuple = np.array(to_index_tuple(long_offset_ind, self.shape), dtype=np.int)
+                offset_ind_tuple -= np.array(index_for_char_pt, dtype=np.int)
+                coef_dict[tuple(offset_ind_tuple)] = row[0, long_offset_ind]
+
+        return None
 
     def _det_characteristic_points(self):
         shape = self.shape

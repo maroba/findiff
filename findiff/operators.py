@@ -1,5 +1,6 @@
 from .utils import *
 from .diff import Coef, Id, Diff, Plus, Minus, Mul, DEFAULT_ACC, LinearMap
+from .stencils import Stencil
 
 
 class FinDiff(LinearMap):
@@ -98,7 +99,7 @@ class FinDiff(LinearMap):
             h = self.spac
         if acc is None and self.acc is not None:
             acc = self.acc
-        return self.pds.stencil(shape, h, acc, old_stl)
+        return Stencil(self, shape)
 
     def matrix(self, shape, h=None, acc=None):
         if acc is None:
