@@ -30,7 +30,7 @@ def coefficients(deriv, acc):
     num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
     num_side = num_central // 2
 
-    ret["center"] = calc_coefs(num_side, num_side, deriv)
+    ret["center"] = calc_coefs(deriv, num_side, num_side)
 
     # Determine forward coefficients
 
@@ -39,16 +39,16 @@ def coefficients(deriv, acc):
     else:
         num_coef = num_central
 
-    ret["forward"] = calc_coefs(0, num_coef - 1, deriv)
+    ret["forward"] = calc_coefs(deriv, 0, num_coef - 1)
 
     # Determine backward coefficients
 
-    ret["backward"] = calc_coefs(num_coef - 1, 0, deriv)
+    ret["backward"] = calc_coefs(deriv, num_coef - 1, 0)
 
     return ret
 
 
-def calc_coefs(left, right, deriv):
+def calc_coefs(deriv, left, right):
 
     matrix = _build_matrix(left, right, deriv)
     rhs = _build_rhs(left, right, deriv)
@@ -165,3 +165,4 @@ def _calc_accuracy(left, coefs, deriv):
             raise Exception('Cannot compute accuracy.')
 
     return round(n - deriv)
+

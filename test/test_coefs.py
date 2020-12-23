@@ -89,28 +89,28 @@ class TestCoefs(unittest.TestCase):
     def test_calc_accuracy_central_deriv2_acc2(self):
         left = 1
         right = 1
-        coefs = calc_coefs(left, right, 2)
+        coefs = calc_coefs(2, left, right)
 
         self.assertEqual(2, coefs["accuracy"])
 
     def test_calc_accuracy_central_deriv1_acc2(self):
         left = 1
         right = 1
-        coefs = calc_coefs(left, right, 1)
+        coefs = calc_coefs(1, left, right)
 
         self.assertEqual(2, coefs["accuracy"])
 
     def test_calc_accuracy_left1_right0_deriv1_acc1(self):
         left = 1
         right = 0
-        coefs = calc_coefs(left, right, 1)
+        coefs = calc_coefs(1, left, right)
 
         self.assertEqual(1, coefs["accuracy"])
 
     def test_calc_accuracy_left0_right3_deriv1_acc3(self):
         left = 0
         right = 3
-        coefs = calc_coefs(left, right, 1)
+        coefs = calc_coefs(1, left, right)
 
         self.assertEqual(3, coefs["accuracy"])
 
