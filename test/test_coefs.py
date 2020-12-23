@@ -4,6 +4,7 @@ sys.path.insert(1, '..')
 import unittest
 from findiff import coefficients
 from findiff.coefs import coefficients_non_uni
+from findiff.coefs import calc_coefs
 
 import numpy as np
 
@@ -84,6 +85,34 @@ class TestCoefs(unittest.TestCase):
         np.testing.assert_array_almost_equal(np.array([15/4, -77/6, 107/6, -13, 61/12, -5/6])[::-1], coefs)
         offs = c["backward"]["offsets"]
         np.testing.assert_array_almost_equal(-np.array([0, 1, 2, 3, 4, 5])[::-1], offs)
+
+    def test_calc_accuracy_central_deriv2_acc2(self):
+        left = 1
+        right = 1
+        coefs = calc_coefs(left, right, 2)
+
+        self.assertEqual(2, coefs["accuracy"])
+
+    def test_calc_accuracy_central_deriv1_acc2(self):
+        left = 1
+        right = 1
+        coefs = calc_coefs(left, right, 1)
+
+        self.assertEqual(2, coefs["accuracy"])
+
+    def test_calc_accuracy_left1_right0_deriv1_acc1(self):
+        left = 1
+        right = 0
+        coefs = calc_coefs(left, right, 1)
+
+        self.assertEqual(1, coefs["accuracy"])
+
+    def test_calc_accuracy_left0_right3_deriv1_acc3(self):
+        left = 0
+        right = 3
+        coefs = calc_coefs(left, right, 1)
+
+        self.assertEqual(3, coefs["accuracy"])
 
     def test_non_uniform(self):
 

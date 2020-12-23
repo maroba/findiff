@@ -30,7 +30,7 @@ def coefficients(deriv, acc):
     num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
     num_side = num_central // 2
 
-    ret["center"] = _calc_coef(num_side, num_side, deriv)
+    ret["center"] = calc_coefs(num_side, num_side, deriv)
 
     # Determine forward coefficients
 
@@ -39,24 +39,26 @@ def coefficients(deriv, acc):
     else:
         num_coef = num_central
 
-    ret["forward"] = _calc_coef(0, num_coef - 1, deriv)
+    ret["forward"] = calc_coefs(0, num_coef - 1, deriv)
 
     # Determine backward coefficients
 
-    ret["backward"] = _calc_coef(num_coef - 1, 0, deriv)
+    ret["backward"] = calc_coefs(num_coef - 1, 0, deriv)
 
     return ret
 
 
-def _calc_coef(left, right, deriv):
+def calc_coefs(left, right, deriv):
 
     matrix = _build_matrix(left, right, deriv)
-
     rhs = _build_rhs(left, right, deriv)
+    coefs = np.linalg.solve(matrix, rhs)
+    acc = _calc_accuracy(left, coefs, deriv)
 
     return {
-        "coefficients": np.linalg.solve(matrix, rhs),
-        "offsets": np.array([p for p in range(-left, right+1)])
+        "coefficients": coefs,
+        "offsets": np.array([p for p in range(-left, right+1)]),
+        "accuracy": acc
     }
 
 
@@ -143,3 +145,23 @@ def _build_matrix_non_uniform(p, q, coords, k):
         line = [(coords[k+j] - coords[k])**i for j in range(-p, q+1)]
         A.append(line)
     return np.array(A,dtype='float')
+
+
+def _calc_accuracy(left, coefs, deriv):
+
+    n = deriv + 1
+    max_n = 999
+    while True:
+        b = 0.
+        for i, coef in enumerate(coefs):
+            k = -left + i
+            b += coef * k ** n
+
+        if abs(b) > 1.E-6:
+            break
+
+        n += 1
+        if n > max_n:
+            raise Exception('Cannot compute accuracy.')
+
+    return round(n - deriv)
