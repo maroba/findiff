@@ -84,8 +84,9 @@ class TestOldBugs(unittest.TestCase):
     def test_order_as_numpy_integer(self):
 
         order = np.ones(3, dtype=np.int32)[0]
+        d_dx = FinDiff(0, 0.1, order) # raised an AssertionError with the bug
 
-        FinDiff(0, 0.1, order)
+        np.testing.assert_allclose(d_dx(np.linspace(0, 1, 11)), np.ones(11))
 
 
 
