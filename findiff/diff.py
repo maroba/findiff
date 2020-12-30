@@ -1,5 +1,6 @@
 import itertools
 import operator
+import numbers
 import scipy.sparse as sparse
 from findiff.coefs import coefficients, coefficients_non_uni
 from .stencils import Stencil
@@ -260,8 +261,8 @@ class Diff(LinearMap):
 
     def __init__(self, axis, order, **kwargs):
 
-        assert int(axis) == axis and axis >= 0
-        assert int(order) == order and order >= 0
+        assert isinstance(axis, numbers.Integral) and axis >= 0
+        assert isinstance(order, numbers.Integral) and order >= 0
 
         self.axis = axis
         self.order = order
