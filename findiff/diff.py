@@ -260,10 +260,8 @@ class Diff(LinearMap):
 
     def __init__(self, axis, order, **kwargs):
 
-        assert isinstance(axis, int)
-        assert isinstance(order, int)
-        assert axis >= 0
-        assert order > 0
+        assert int(axis) == axis and axis >= 0
+        assert int(order) == order and order >= 0
 
         self.axis = axis
         self.order = order

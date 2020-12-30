@@ -81,6 +81,13 @@ class TestOldBugs(unittest.TestCase):
             stl = stencil1.data[char_pt]
             self.assertDictEqual(expected[char_pt], stl)
 
+    def test_order_as_numpy_integer(self):
+
+        order = np.ones(3, dtype=np.int32)[0]
+
+        FinDiff(0, 0.1, order)
+
+
 
 if __name__ == '__main__':
     unittest.main()
