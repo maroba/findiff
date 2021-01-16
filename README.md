@@ -1,5 +1,6 @@
 # findiff
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
+![Build status](https://img.shields.io/github/workflow/status/maroba/findiff/Checks)
 
 A Python package for finite difference numerical derivatives and partial differential equations in
 any number of dimensions. 
