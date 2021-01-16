@@ -45,15 +45,7 @@ class VectorOperator(object):
             self.components = [FinDiff((k, coords[k], 1), **kwargs) for k in range(self.ndims)]
 
     def __get_dimension(self, coords):
-        if isinstance(coords, np.ndarray):
-            shape = coords.shape
-            if len(shape) > 1:
-                ndims = shape[0]
-            else:
-                ndims = 1
-        else:
-            ndims = len(coords)
-        return ndims
+        return len(coords)
 
 
 class Gradient(VectorOperator):

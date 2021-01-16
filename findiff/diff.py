@@ -23,18 +23,7 @@ class BinaryOperator(Operator):
         self.right = right
 
     def apply(self, rhs, *args, **kwargs):
-
-        if isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
-            right = self.right.apply(rhs, *args, **kwargs)
-        else:
-            right = self.right
-
-        if isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
-            left = self.left.apply(right, *args, **kwargs)
-        else:
-            left = self.left
-
-        return self.oper(left, right)
+        raise NotImplementedError
 
     def __call__(self, rhs, *args, **kwargs):
         return self.apply(rhs, *args, **kwargs)
@@ -568,7 +557,6 @@ class Coef(object):
 
                >>> X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
                >>> diff_op = Coef(2*X) * FinDiff((0, dx, 2), (2, dz, 1))
-
     """
 
     def __init__(self, value):

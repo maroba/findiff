@@ -4,7 +4,7 @@ sys.path.insert(1, '..')
 import unittest
 from numpy.testing import assert_array_almost_equal
 import numpy as np
-from findiff.vector import Gradient, Divergence, Curl
+from findiff.vector import Gradient, Divergence, Curl, Laplacian
 
 
 class TestGradient(unittest.TestCase):
@@ -102,6 +102,12 @@ class TestCurl(unittest.TestCase):
         f = np.array([np.sin(X) * np.sin(Y)] * 2)
         curl = Curl(spac=[1, 1, 1], acc=4)
         self.assertRaises(ValueError, curl, f)
+
+    def test_laplacian(self):
+        axes, h, [X, Y] = init_mesh(2, (50, 50))
+        f = X**2 + Y**2
+        laplace = Laplacian(h)
+        np.testing.assert_array_almost_equal(laplace(f), 4 * np.ones_like(X))
 
 
 def init_mesh(ndims, npoints):

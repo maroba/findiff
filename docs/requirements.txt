@@ -1,0 +1,8 @@
+# requirement on rtd
+numpy
+scipy
+# Remove sphinx from requirements b/c it lead to issues
+# on rtd and it's a dependency of the rtd theme anyway.
+# sphinx>=1.6.4,<2
+sphinxcontrib.bibtex>=2.0
+sphinx_rtd_theme

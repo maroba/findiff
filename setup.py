@@ -10,7 +10,6 @@ name = 'findiff'
 sys.path.insert(0, realpath(dirname(__file__))+"/"+name)
 try:
     from _version import version
-    print('>>>>>>>>>>', version)
 except BaseException:
     version = "unknown"
 

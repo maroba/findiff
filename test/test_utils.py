@@ -43,3 +43,9 @@ class TestUtils(unittest.TestCase):
             actual = to_index_tuple(long_idx, shape)
             np.testing.assert_array_equal(expected, actual)
 
+    def test_interior_mask_2d(self):
+        shape = 5, 5
+        expected = np.zeros(shape, dtype=np.bool)
+        expected[1:-1, 1:-1] = True
+
+        np.testing.assert_array_equal(expected, interior_mask_as_ndarray(shape))
