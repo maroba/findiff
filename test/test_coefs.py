@@ -127,6 +127,18 @@ class TestCoefs(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(coefs_non_uni, coefs_uni)
 
+    def test_invalid_acc_raises_exception(self):
+        with self.assertRaises(ValueError):
+            coefficients(deriv=1, acc=3)
+        with self.assertRaises(ValueError):
+            coefficients(deriv=1, acc=0)
+        with self.assertRaises(ValueError):
+            coefficients_non_uni(1, 3, None, None)
+        with self.assertRaises(ValueError):
+            coefficients_non_uni(1, 0, None, None)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

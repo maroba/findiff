@@ -27,7 +27,7 @@ class TestOldBugs(unittest.TestCase):
 
     def test_high_accuracy_results_in_type_error(self):
         # in issue 25 the following line resulted in a TypeError
-        findiff.coefficients(deriv=1, acc=15)
+        findiff.coefficients(deriv=1, acc=16)
 
     def test_matrix_repr_with_different_accs(self):
         # issue 28

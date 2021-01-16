@@ -74,12 +74,8 @@ class Plus(BinaryOperator):
         left, right = self.left, self.right
         if isinstance(self.left, Operator):
             left = self.left.matrix(shape, *args, **kwargs)
-        elif isinstance(self.left, np.ndarray):
-            left = sparse.diags(self.left.reshape(-1), 0)
         if isinstance(self.right, Operator):
             right = self.right.matrix(shape, *args, **kwargs)
-        elif isinstance(self.right, np.ndarray):
-            right = sparse.diags(self.right.reshape(-1), 0)
         return left + right
 
 
@@ -125,12 +121,8 @@ class Minus(BinaryOperator):
         left, right = self.left, self.right
         if isinstance(self.left, Operator):
             left = self.left.matrix(shape, *args, **kwargs)
-        elif isinstance(self.left, np.ndarray):
-            left = sparse.diags(self.left.reshape(-1), 0)
         if isinstance(self.right, Operator):
             right = self.right.matrix(shape, *args, **kwargs)
-        elif isinstance(self.right, np.ndarray):
-            right = sparse.diags(self.right.reshape(-1), 0)
         return left - right
 
 

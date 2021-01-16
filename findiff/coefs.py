@@ -20,8 +20,7 @@ def coefficients(deriv, acc):
     :return: dict with the finite difference coefficients and corresponding offsets 
     """
 
-    if acc % 2 == 1:
-        acc += 1
+    _validate_acc(acc)
 
     ret = {}
 
@@ -78,8 +77,7 @@ def coefficients_non_uni(deriv, acc, coords, idx):
     :return: dict with the finite difference coefficients and corresponding offsets 
     """
 
-    if acc % 2 == 1:
-        acc += 1
+    _validate_acc(acc)
 
     num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
     num_side = num_central // 2
@@ -166,3 +164,6 @@ def _calc_accuracy(left, coefs, deriv):
 
     return round(n - deriv)
 
+def _validate_acc(acc):
+    if acc % 2 == 1 or acc <= 0:
+        raise ValueError('Accuracy order acc must be positive EVEN integer')
