@@ -73,13 +73,13 @@ class TestOldBugs(unittest.TestCase):
 
         for char_pt in stencil1.data:
             stl = stencil1.data[char_pt]
-            self.assertDictEqual(expected[char_pt], stl)
+            self.assert_dict_almost_equal(expected[char_pt], stl)
 
         d1x = FinDiff(0, dx, 1)
         stencil1 = d1x.stencil(shape, acc=4)
         for char_pt in stencil1.data:
             stl = stencil1.data[char_pt]
-            self.assertDictEqual(expected[char_pt], stl)
+            self.assert_dict_almost_equal(expected[char_pt], stl)
 
     def test_order_as_numpy_integer(self):
 
@@ -88,6 +88,13 @@ class TestOldBugs(unittest.TestCase):
 
         np.testing.assert_allclose(d_dx(np.linspace(0, 1, 11)), np.ones(11))
 
+
+    def assert_dict_almost_equal(self, actual, expected, places=7):
+        if len(actual) != len(expected):
+            return False
+
+        for key, value in actual.items():
+            self.assertAlmostEqual(actual[key], expected[key], places=places)
 
 
 if __name__ == '__main__':
