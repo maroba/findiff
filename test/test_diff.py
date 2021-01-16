@@ -150,6 +150,13 @@ class DiffTest(unittest.TestCase):
         expected = -3*X*u - Y * (-sin(X)*sin(Y) + cos(X)*sin(Y))
         assert_array_almost_equal(expected, actual)
 
+    def test_apply_base_binary_operator_raises_exception(self):
+
+        op = BinaryOperator(None, None)
+        with self.assertRaises(NotImplementedError):
+            op(None)
+
+
 
 def make_grid(shape, edges):
 

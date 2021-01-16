@@ -106,32 +106,6 @@ class Stencil(object):
 
         return du
 
-    def for_point(self, idx):
-        """ The returns the stencil for a given grid point.
-
-        Stencil forms are different depending on whether the grid point is in the interior
-        or at some boundary. This function selects the appropriate one.
-
-        :param idx: int or tuple of ints
-            The index of the grid point.
-
-        :return:
-            The stencil data for that point.
-        """
-        typ = self.type_for_point(idx)
-        return self.data[typ]
-
-    def type_for_point(self, idx):
-        typ = []
-        for axis in range(len(idx)):
-            if idx[axis] == 0:
-                typ.append('L')
-            elif idx[axis] == self.shape[axis] - 1:
-                typ.append('H')
-            else:
-                typ.append('C')
-        return tuple(typ)
-
     def _create_stencil(self):
 
         matrix = self.diff_op.matrix(self.shape, acc=self.acc)
@@ -169,9 +143,4 @@ class Stencil(object):
         typ = [("L", "C", "H")]*ndim
         return product(*typ)
 
-    def __str__(self):
-        s = ""
-        for typ, stl in self.data.items():
-            s += str(typ) + ":\t" + str(stl) + "\n"
-        return s
 

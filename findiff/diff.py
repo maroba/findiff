@@ -28,12 +28,6 @@ class BinaryOperator(Operator):
     def __call__(self, rhs, *args, **kwargs):
         return self.apply(rhs, *args, **kwargs)
 
-    def set_accuracy(self, acc):
-        if isinstance(self.left, Operator):
-            self.left.set_accuracy(acc)
-        if isinstance(self.right, Operator):
-            self.right.set_accuracy(acc)
-
     def stencil(self, shape, acc=None):
         return Stencil(self, shape, acc=acc)
 
