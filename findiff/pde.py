@@ -1,3 +1,9 @@
+"""
+This module contains class for solving Partial Differential Equations (PDE)
+with Dirichlet and Neumann Boundary Conditions.
+"""
+
+
 import numpy as np
 import scipy.sparse as sparse
 from scipy.sparse.linalg import spsolve

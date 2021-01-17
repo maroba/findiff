@@ -347,7 +347,7 @@ Currently `findiff` only supports Python 3.
 
 ## Documentation and Examples
 
-You can find the documentation of the code including examples of application at https://maroba.github.io/findiff-docs/index.html.
+You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/latest/.
 
 ## Dependencies
 

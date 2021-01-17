@@ -2,7 +2,7 @@
 Module *vector*
 ===============
 
-.. automodule:: vector
+.. automodule:: findiff.vector
 
 .. autoclass:: Gradient
     :members:

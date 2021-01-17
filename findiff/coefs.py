@@ -1,6 +1,6 @@
 """
 This module determines finite difference coefficients for uniform and 
-non-uniform grids for any desired accuracy order.
+non-uniform grids for any desired even accuracy order.
 """
 
 import math
