@@ -3,14 +3,11 @@ Getting Started
 ===============
 
 Installation
-^^^^^^^^^^^^
+::::::::::::
 
 .. code-block:: ipython
 
     pip install --upgrade findiff
-
-Basic Usage
-^^^^^^^^^^^
 
 First Derivatives
 :::::::::::::::::
@@ -143,3 +140,75 @@ or in `findiff`:
     d_dy = FinDiff(1, dx, 1)
 
     (d_dx - d_dy) * (d_dx + d_dy)
+
+
+Accuracy Control
+::::::::::::::::
+
+By default, `findiff` uses finite difference schemes with
+second order accuracy in the grid spacing. Higher orders can be selected
+by setting the keyword argument ``acc``, e.g.
+
+.. code-block:: ipython
+
+    FinDiff(0, dx, 2, acc=4)
+
+for fourth order accuracy.
+
+
+Finite Difference Coefficients
+::::::::::::::::::::::::::::::
+
+`findiff` uses finite difference schemes to calculate numerical derivatives.
+If needed, the finite difference coefficients can be obtained from the
+``coefficients`` function, e.g. for second derivative with second order
+accuracy:
+
+.. code-block:: ipython
+
+    from findiff import coefficients
+    coefficients(deriv=2, acc=2)
+
+which yields
+
+.. code-block:: ipython
+
+       {'backward': {'accuracy': 2,
+                     'coefficients': array([-1.,  4., -5.,  2.]),
+                     'offsets': array([-3, -2, -1,  0])},
+        'center': {'accuracy': 2,
+                   'coefficients': array([ 1., -2.,  1.]),
+                   'offsets': array([-1,  0,  1])},
+        'forward': {'accuracy': 2,
+                    'coefficients': array([ 2., -5.,  4., -1.]),
+                    'offsets': array([0, 1, 2, 3])}}
+
+Matrix Representation
+:::::::::::::::::::::
+
+For a given FinDiff differential operator, you can get the matrix
+representation using the matrix(shape) method, e.g.
+
+.. code-block:: ipython
+
+    x = [np.linspace(0, 6, 7)]
+    d2_dx2 = FinDiff(0, x[1]-x[0], 2)
+    u = x**2
+
+    mat = d2_dx2.matrix(u.shape)  # this method returns a scipy sparse matrix
+    print(mat.toarray())
+
+yields
+
+.. code-block:: ipython
+
+    [[ 2. -5.  4. -1.  0.  0.  0.]
+     [ 1. -2.  1.  0.  0.  0.  0.]
+     [ 0.  1. -2.  1.  0.  0.  0.]
+     [ 0.  0.  1. -2.  1.  0.  0.]
+     [ 0.  0.  0.  1. -2.  1.  0.]
+     [ 0.  0.  0.  0.  1. -2.  1.]
+     [ 0.  0.  0. -1.  4. -5.  2.]]
+
+Of course this also works for general differential operators.
+

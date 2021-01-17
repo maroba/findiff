@@ -32,6 +32,8 @@ sys.path.insert(0, os.path.abspath('../findiff'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.imgmath', 'sphinx.ext.intersphinx',
+              'IPython.sphinxext.ipython_console_highlighting',
+              'IPython.sphinxext.ipython_directive'
               ]
 
 
