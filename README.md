@@ -342,16 +342,9 @@ Result:
 </p>
 
 
-## Compatibility
-
-Currently `findiff` only supports Python 3.
-
 ## Documentation and Examples
 
 You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/latest/.
 
-## Dependencies
-
-_findiff_ uses _numpy_ for fast array processing and _scipy_ for sparse matrix support.
 
 
