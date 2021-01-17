@@ -6,3 +6,4 @@ scipy
 # sphinx>=1.6.4,<2
 sphinxcontrib.bibtex>=2.0
 sphinx_rtd_theme
+ipython
