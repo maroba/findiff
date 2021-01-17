@@ -252,10 +252,7 @@ class Diff(LinearMap):
         acc = DEFAULT_ACC
 
         def get_h(a):
-            if isinstance(a, Grid):
-                grid = a
-                h = grid.spacing(self.axis)
-            elif isinstance(a, dict):
+            if isinstance(a, dict):
                 h = a[self.axis]
             else:
                 h = a
@@ -465,12 +462,6 @@ class Diff(LinearMap):
                 mat[Is, Is + o] = v
 
         return mat
-
-#    def stencil(self, shape, h=None, acc=None, old_stl=None):
-#        if isinstance(h, dict):
-#            h = h[self.axis]
-#        acc = self._properties(self.acc, acc, 2)
-#        return Stencil(shape, self.axis, self.order, h, acc, old_stl)
 
     def set_accuracy(self, acc):
         self.acc = acc

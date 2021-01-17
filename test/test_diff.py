@@ -157,7 +157,6 @@ class DiffTest(unittest.TestCase):
             op(None)
 
 
-
 def make_grid(shape, edges):
 
     if len(shape) == 1:

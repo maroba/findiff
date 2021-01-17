@@ -382,6 +382,14 @@ class TestFinDiffNonUniform(unittest.TestCase):
         f_x = d_dx(f)
         assert_array_almost_equal(- 2*x * np.exp(-x**2), f_x, decimal=4)
 
+        # same, but this time with default acc
+        x = np.linspace(0, 1, 100)
+        f = np.exp(-x ** 2)
+        d_dx = FinDiff(0, x)
+        f_x = d_dx(f)
+        assert_array_almost_equal(- 2*x * np.exp(-x**2), f_x, decimal=4)
+
+
     def test_3d_different_accs(self):
         x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
         y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
