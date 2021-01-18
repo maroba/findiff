@@ -502,6 +502,7 @@ class Diff(LinearMap):
 
 
 class Id(LinearMap):
+    """ The identity operator. When applied to an array, returns the same array (not a copy) """
 
     def __init__(self):
         self.value = 1
@@ -510,6 +511,14 @@ class Id(LinearMap):
         return rhs
 
     def matrix(self, shape):
+        """ Matrix representation of the identity operator, i.e. identity matrix of given shape.
+
+        :param shape: Shape of the arrays to which Id shall be applied
+        :type shape: tuple of ints
+        :return: Sparse identity matrix.
+        :rtype: scipy.sparse.csr_matrix
+        """
+
         siz = np.prod(shape)
         mat = sparse.lil_matrix((siz, siz))
         diag = list(range(siz))
