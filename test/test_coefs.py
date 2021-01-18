@@ -137,7 +137,11 @@ class TestCoefs(unittest.TestCase):
         with self.assertRaises(ValueError):
             coefficients_non_uni(1, 0, None, None)
 
-
+    def test_invalid_deriv_raises_exception(self):
+        with self.assertRaises(ValueError):
+            coefficients(-1, 2)
+        with self.assertRaises(ValueError):
+            coefficients_non_uni(-1, 2, None, None)
 
 
 if __name__ == '__main__':
