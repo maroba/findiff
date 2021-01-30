@@ -2,7 +2,7 @@
 Module *operators*
 ==================
 
-.. automodule:: operators
+.. automodule:: findiff.operators
     :members:
 
 

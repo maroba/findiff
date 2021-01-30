@@ -2,7 +2,7 @@
 Module *coefs*
 ==============
 
-.. automodule:: coefs
+.. automodule:: findiff.coefs
     :members:
 
 
