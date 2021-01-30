@@ -4,22 +4,22 @@ Module *vector*
 
 .. automodule:: findiff.vector
 
-.. autoclass:: Gradient
+.. autoclass:: findiff.Gradient
     :members:
 
     .. automethod:: __call__
 
-.. autoclass:: Divergence
+.. autoclass:: findiff.Divergence
     :members:
 
     .. automethod:: __call__
 
-.. autoclass:: Curl
+.. autoclass:: findiff.Curl
     :members:
 
     .. automethod:: __call__
 
-.. autoclass:: Laplacian
+.. autoclass:: findiff.Laplacian
     :members:
 
     .. automethod:: __call__

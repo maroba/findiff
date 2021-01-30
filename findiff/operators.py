@@ -37,7 +37,6 @@ class FinDiff(LinearMap):
 
             This class is actually deprecated and will be replaced by the Diff class in the future.
 
-        ============
         **Example**:
 
 
