@@ -153,6 +153,25 @@ gives
 FinDiff operators will use central coefficients whenever possible and switch
 to backward or forward coefficients if not enough points are available on either side.
 
+If you need exact values instead of floating point numbers, you
+can request a symbolic solution, e.g.
+
+```python
+import findiff
+coefs = findiff.coefficients(deriv=3, acc=4, symbolic=True)
+```
+
+gives
+
+```
+{'backward': {'coefficients': [15/8, -13, 307/8, -62, 461/8, -29, 49/8],
+              'offsets': [-6, -5, -4, -3, -2, -1, 0]},
+ 'center': {'coefficients': [1/8, -1, 13/8, 0, -13/8, 1, -1/8],
+            'offsets': [-3, -2, -1, 0, 1, 2, 3]},
+ 'forward': {'coefficients': [-49/8, 29, -461/8, 62, -307/8, 13, -15/8],
+             'offsets': [0, 1, 2, 3, 4, 5, 6]}}
+```
+
 ### Matrix Representation
 
 For a given _FinDiff_ differential operator, you can get the matrix representation 
