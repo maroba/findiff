@@ -10,14 +10,41 @@ from scipy.sparse.linalg import spsolve
 
 
 class PDE(object):
+    """
+    Representation of a partial differential equation.
+    """
 
     def __init__(self, lhs, rhs, bcs):
+        """
+        Initializes the PDE.
+
+        You need to specify the left hand side (lhs) in terms of derivatives
+        as well as the right hand side in terms of an array.
+
+        Parameters
+        ----------
+        lhs: FinDiff object or combination of FinDiff objects
+            the left hand side of the PDE
+        rhs: numpy.ndarray
+            the right hand side of the PDE
+        bcs: BoundaryConditions
+            the boundary conditions for the PDE
+
+        """
         self.lhs = lhs
         self.rhs = rhs
         self.bcs = bcs
         self._L = None
 
     def solve(self):
+        """
+        Solves the PDE.
+
+        Returns
+        -------
+        out: numpy.ndarray
+            Array with the solution of the PDE.
+        """
 
         shape = self.bcs.shape
         if self._L is None:
@@ -36,8 +63,25 @@ class PDE(object):
 
 
 class BoundaryConditions(object):
+    """
+    Represents Dirichlet or Neumann boundary conditions for a PDE.
+    """
 
     def __init__(self, shape):
+        """
+        Initializes the BoundaryCondition object.
+
+        The BoundaryCondition objects needs information about the
+        grid on which to solve the PDE, specifically the shape
+        of the (equidistant) grid.
+
+        Parameters
+        ----------
+        shape: tuple of ints
+            the number of grid points in each dimension
+
+        """
+
         self.shape = shape
         siz = np.prod(shape)
         self.long_indices = np.array(list(range(siz))).reshape(shape)
@@ -45,6 +89,19 @@ class BoundaryConditions(object):
         self.rhs = sparse.lil_matrix((siz, 1))
 
     def __setitem__(self, key, value):
+        """
+        Sets the boundary condition for specific grid points.
+
+        Parameters
+        ----------
+        key: int, tuple of ints or slices
+            where (on what grid points) to apply the boundary condition.
+            Specified by the indices (or slices) of the grid point(s).
+
+        value: Constant or FinDiff object
+            the boundary condition to apply. Is a constant (scalar or array)
+            for Dirichlet and a FinDiff object for Neumann boundary conditions
+        """
 
         lng_inds = self.long_indices[key]
 

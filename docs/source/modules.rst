@@ -6,5 +6,6 @@ Code Reference
     :maxdepth: 2
 
     operators
+    pde
     stencils
     vector
