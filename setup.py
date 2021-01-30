@@ -55,7 +55,7 @@ setup(
     packages=find_packages(),
     package_dir={name: name},
     include_package_data=True,
-    install_requires=['numpy', 'scipy'],
+    install_requires=['numpy', 'scipy', 'sympy'],
 
     setup_requires=["pytest-runner"],
     python_requires=">=3.6",

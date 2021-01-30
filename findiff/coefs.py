@@ -5,9 +5,10 @@ non-uniform grids for any desired even accuracy order.
 
 import math
 import numpy as np
+import sympy
 
 
-def coefficients(deriv, acc):
+def coefficients(deriv, acc, symbolic=False):
     """
     Calculates the finite difference coefficients for given derivative order and accuracy order.
     Assumes that the underlying grid is uniform. This function is available at the `findiff`
@@ -30,7 +31,7 @@ def coefficients(deriv, acc):
     num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
     num_side = num_central // 2
 
-    ret["center"] = calc_coefs(deriv, num_side, num_side)
+    ret["center"] = calc_coefs(deriv, num_side, num_side, symbolic)
 
     # Determine forward coefficients
 
@@ -39,27 +40,36 @@ def coefficients(deriv, acc):
     else:
         num_coef = num_central
 
-    ret["forward"] = calc_coefs(deriv, 0, num_coef - 1)
+    ret["forward"] = calc_coefs(deriv, 0, num_coef - 1, symbolic)
 
     # Determine backward coefficients
 
-    ret["backward"] = calc_coefs(deriv, num_coef - 1, 0)
+    ret["backward"] = calc_coefs(deriv, num_coef - 1, 0, symbolic)
 
     return ret
 
 
-def calc_coefs(deriv, left, right):
+def calc_coefs(deriv, left, right, symbolic=False):
 
-    matrix = _build_matrix(left, right, deriv)
-    rhs = _build_rhs(left, right, deriv)
-    coefs = np.linalg.solve(matrix, rhs)
-    acc = _calc_accuracy(left, coefs, deriv)
+    matrix = _build_matrix(left, right, symbolic)
+    rhs = _build_rhs(left, right, deriv, symbolic)
+    if symbolic:
+        coefs = sympy.linsolve((matrix, rhs))
+        coefs = list(tuple(coefs)[0])
+        return {
+            "coefficients": coefs,
+            "offsets": [p for p in range(-left, right+1)],
+        }
 
-    return {
-        "coefficients": coefs,
-        "offsets": np.array([p for p in range(-left, right+1)]),
-        "accuracy": acc
-    }
+    else:
+        coefs = np.linalg.solve(matrix, rhs)
+        acc = _calc_accuracy(left, coefs, deriv)
+
+        return {
+            "coefficients": coefs,
+            "offsets": np.array([p for p in range(-left, right+1)]),
+            "accuracy": acc
+        }
 
 
 def coefficients_non_uni(deriv, acc, coords, idx):
@@ -122,20 +132,26 @@ def coefficients_non_uni(deriv, acc, coords, idx):
     return ret
 
 
-def _build_matrix(p, q, deriv):
+def _build_matrix(p, q, symbolic=False):
     """Constructs the equation system matrix for the finite difference coefficients"""
     A = [([1 for _ in range(-p, q+1)])]
     for i in range(1, p + q + 1):
         A.append([j**i for j in range(-p, q+1)])
-    return np.array(A,dtype='float')
+    if symbolic:
+        return sympy.Matrix(A)
+    else:
+        return np.array(A,dtype='float')
 
 
-def _build_rhs(p, q, deriv):
+def _build_rhs(p, q, deriv, symbolic=False):
     """The right hand side of the equation system matrix"""
 
     b = [0 for _ in range(p+q+1)]
     b[deriv] = math.factorial(deriv)
-    return np.array(b,dtype='float')
+    if symbolic:
+        return sympy.Matrix(b)
+    else:
+        return np.array(b,dtype='float')
 
 
 def _build_matrix_non_uniform(p, q, coords, k):
