@@ -172,6 +172,23 @@ gives
              'offsets': [0, 1, 2, 3, 4, 5, 6]}}
 ```
 
+If you want to specify the detailed offsets instead of the
+accuracy order, you can do this by setting the offset keyword
+argument:
+
+```python
+import findiff
+coefs = findiff.coefficients(deriv=2, offsets=[-2, 1, 0, 2, 3, 4, 7], symbolic=True)
+```
+
+The resulting accuracy order is computed and part of the output:
+
+```
+{'coefficients': [187/1620, -122/27, 9/7, 103/20, -13/5, 31/54, -19/2835], 
+ 'offsets': [-2, 1, 0, 2, 3, 4, 7], 
+ 'accuracy': 5}
+```
+
 ### Matrix Representation
 
 For a given _FinDiff_ differential operator, you can get the matrix representation 

@@ -102,9 +102,19 @@ class TestCoefs(unittest.TestCase):
         self.assertEqual(1, coefs["accuracy"])
 
     def test_calc_accuracy_left0_right3_deriv1_acc3(self):
-        coefs = calc_coefs(1, [0, 1, 2, 3])
+        coefs = calc_coefs(2, [0, 1, 2, 3])
 
-        self.assertEqual(3, coefs["accuracy"])
+        self.assertEqual(2, coefs["accuracy"])
+
+    def test_calc_accuracy_from_offsets_symbolic(self):
+        coefs = calc_coefs(2, [0, 1, 2, 3], symbolic=True)
+
+        self.assertEqual(2, coefs["accuracy"])
+
+    def test_calc_accuracy_from_offsets_symbolic(self):
+        coefs = coefficients(1, offsets=[-4, -2, 0, 2, 4], symbolic=True)
+
+        self.assertEqual(4, coefs["accuracy"])
 
     def test_calc_coefs_from_offsets(self):
         coefs = calc_coefs(1, [-2, 0, 1])

@@ -1,6 +1,13 @@
 """
 This module determines finite difference coefficients for uniform and 
 non-uniform grids for any desired even accuracy order.
+
+Most important function:
+
+coefficients(deriv, acc=None, offsets=None, symbolic=False)
+
+to calculate the finite difference coefficients for a given derivative
+order and given accuracy order to given offsets.
 """
 
 import math
@@ -11,14 +18,30 @@ import sympy
 def coefficients(deriv, acc=None, offsets=None, symbolic=False):
     """
     Calculates the finite difference coefficients for given derivative order and accuracy order.
+
+    If acc is given, the coefficients are calculated for central, forward and backward
+    schemes resulting in the specified accuracy order.
+
+    If offsets are given, the coefficients are calculated for the offsets as specified
+    and the resulting accuracy order is computed.
+
+    *Either* acc *or* offsets must be given.
+
     Assumes that the underlying grid is uniform. This function is available at the `findiff`
     package level.
-    
-    :param deriv: int > 0: The derivative order.
-          
-    :param acc:  even int > 0: The accuracy order. 
-          
-    :return: dict with the finite difference coefficients and corresponding offsets 
+
+    :param deriv: The derivative order.
+    :type deriv: int > 0
+
+    :param acc: The accuracy order.
+    :type acc:  even int > 0:
+
+    :param offsets: The offsets for which to calculate the coefficients.
+    :type offsets: list of ints
+
+    :raises ValueError: if invalid arguments are given
+
+    :return: dict with the finite difference coefficients and corresponding offsets
     """
 
     _validate_deriv(deriv)
@@ -65,15 +88,16 @@ def calc_coefs(deriv, offsets, symbolic=False):
     if symbolic:
         coefs = sympy.linsolve((matrix, rhs))
         coefs = list(tuple(coefs)[0])
-
+        acc = _calc_accuracy(offsets, coefs, deriv, symbolic)
         return {
             "coefficients": coefs,
             "offsets": offsets,
+            "accuracy": acc
         }
 
     else:
         coefs = np.linalg.solve(matrix, rhs)
-        acc = _calc_accuracy(offsets, coefs, deriv)
+        acc = _calc_accuracy(offsets, coefs, deriv, symbolic)
 
         return {
             "coefficients": coefs,
@@ -187,10 +211,11 @@ def _calc_accuracy(offsets, coefs, deriv, symbolic=False):
         break_cond = lambda b: abs(b) > 1.E-6
 
     while True:
-        b = 0.
-        for i, coef in enumerate(coefs):
-            k = min(offsets) + i
-            b += coef * k ** n
+        b = 0
+        #for i, coef in enumerate(coefs):
+        for o, coef in zip(offsets, coefs):
+            #k = min(offsets) + i
+            b += coef * o ** n
 
         if break_cond(b):
             break
