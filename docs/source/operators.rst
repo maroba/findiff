@@ -6,15 +6,15 @@ Module *operators*
     :members:
 
 
-.. autoclass:: findiff.FinDiff
+.. autoclass:: findiff.operators.FinDiff
     :members:
 
 
-.. autoclass:: findiff.Coefficient
+.. autoclass:: findiff.operators.Coefficient
     :members:
 
 
-.. autoclass:: findiff.Identity
+.. autoclass:: findiff.operators.Identity
     :members:
 
 
