@@ -7,7 +7,7 @@ from findiff.coefs import coefficients_non_uni
 from findiff.coefs import calc_coefs
 
 import numpy as np
-
+from sympy import Rational
 
 
 class TestCoefs(unittest.TestCase):
@@ -87,32 +87,42 @@ class TestCoefs(unittest.TestCase):
         np.testing.assert_array_almost_equal(-np.array([0, 1, 2, 3, 4, 5])[::-1], offs)
 
     def test_calc_accuracy_central_deriv2_acc2(self):
-        left = 1
-        right = 1
-        coefs = calc_coefs(2, left, right)
+        coefs = calc_coefs(2, [-1, 0, 1])
 
         self.assertEqual(2, coefs["accuracy"])
 
     def test_calc_accuracy_central_deriv1_acc2(self):
-        left = 1
-        right = 1
-        coefs = calc_coefs(1, left, right)
+        coefs = calc_coefs(1, [-1, 0, 1])
 
         self.assertEqual(2, coefs["accuracy"])
 
     def test_calc_accuracy_left1_right0_deriv1_acc1(self):
-        left = 1
-        right = 0
-        coefs = calc_coefs(1, left, right)
+        coefs = calc_coefs(1, [-1, 0])
 
         self.assertEqual(1, coefs["accuracy"])
 
     def test_calc_accuracy_left0_right3_deriv1_acc3(self):
-        left = 0
-        right = 3
-        coefs = calc_coefs(1, left, right)
+        coefs = calc_coefs(1, [0, 1, 2, 3])
 
         self.assertEqual(3, coefs["accuracy"])
+
+    def test_calc_accuracy_left0_right3_deriv1_acc3_symbolic(self):
+        coefs = calc_coefs(1, [0, 1, 2, 3], symbolic=True)
+
+        self.assertEqual(3, coefs["accuracy"])
+
+    def test_calc_coefs_from_offsets(self):
+        coefs = calc_coefs(1, [-2, 0, 1])
+        np.testing.assert_array_almost_equal(coefs["coefficients"], [-1./6, -0.5, 2./3])
+
+    def test_calc_coefs_from_offsets_no_central_point(self):
+        coefs = calc_coefs(1, [-2, 1, 2])
+        np.testing.assert_array_almost_equal(coefs["coefficients"], [-1./4, 0, 1./4])
+
+    def test_calc_coefs_symbolic(self):
+        coefs = calc_coefs(1, [-2, 0, 1], symbolic=True)
+        expected = [Rational(-1, 6), Rational(-1, 2), Rational(2, 3)]
+        np.testing.assert_array_almost_equal(coefs["coefficients"], expected)
 
     def test_non_uniform(self):
 
