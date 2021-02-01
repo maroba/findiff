@@ -106,11 +106,6 @@ class TestCoefs(unittest.TestCase):
 
         self.assertEqual(3, coefs["accuracy"])
 
-    def test_calc_accuracy_left0_right3_deriv1_acc3_symbolic(self):
-        coefs = calc_coefs(1, [0, 1, 2, 3], symbolic=True)
-
-        self.assertEqual(3, coefs["accuracy"])
-
     def test_calc_coefs_from_offsets(self):
         coefs = calc_coefs(1, [-2, 0, 1])
         np.testing.assert_array_almost_equal(coefs["coefficients"], [-1./6, -0.5, 2./3])

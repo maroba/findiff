@@ -22,7 +22,6 @@ def coefficients(deriv, acc=None, offsets=None, symbolic=False):
     """
 
     _validate_deriv(deriv)
-    _validate_acc(acc)
 
     if acc and offsets:
         raise ValueError('acc and offsets cannot both be given')
@@ -30,6 +29,7 @@ def coefficients(deriv, acc=None, offsets=None, symbolic=False):
     if offsets:
         return calc_coefs(deriv, offsets, symbolic)
 
+    _validate_acc(acc)
     ret = {}
 
     # Determine central coefficients
@@ -65,11 +65,10 @@ def calc_coefs(deriv, offsets, symbolic=False):
     if symbolic:
         coefs = sympy.linsolve((matrix, rhs))
         coefs = list(tuple(coefs)[0])
-        acc = _calc_accuracy(offsets, coefs, deriv, symbolic)
+
         return {
             "coefficients": coefs,
             "offsets": offsets,
-            "accuracy": acc
         }
 
     else:
