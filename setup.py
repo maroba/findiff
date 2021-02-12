@@ -56,7 +56,6 @@ setup(
     package_dir={name: name},
     include_package_data=True,
     install_requires=['numpy', 'scipy', 'sympy'],
-    license="MIT",
     setup_requires=["pytest-runner"],
     python_requires=">=3.6",
     tests_require=["pytest"],
