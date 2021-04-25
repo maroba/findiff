@@ -3,6 +3,7 @@
 ![Build status](https://img.shields.io/github/workflow/status/maroba/findiff/Checks)
 ![Coverage](https://img.shields.io/codecov/c/github/maroba/findiff/master.svg)
 [![Doc Status](https://readthedocs.org/projects/findiff/badge/?version=latest)](https://findiff.readthedocs.io/en/latest/index.html)
+[![PyPI downloads](https://img.shields.io/pypi/dm/findiff.svg)]()
 
 A Python package for finite difference numerical derivatives and partial differential equations in
 any number of dimensions. 
