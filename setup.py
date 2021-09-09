@@ -18,8 +18,8 @@ setup(
     version=version,
     description='A Python package for finite difference derivatives in any number of dimensions.',
     long_description="""A Python package for finite difference derivatives in any number of dimensions.
-    
-    Features: 
+
+    Features:
 
         * Differentiate arrays of any number of dimensions along any axis
         * Partial derivatives of any desired order
@@ -52,7 +52,7 @@ setup(
         'Programming Language :: Python :: 3.9',
     ],
     keywords=['finite-differences',  'numerical-derivatives', 'scientific-computing'],
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests",)),
     package_dir={name: name},
     include_package_data=True,
     install_requires=['numpy', 'scipy', 'sympy'],
