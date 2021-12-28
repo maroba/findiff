@@ -23,7 +23,7 @@ The Laplacian can be expressed as a ``FinDiff`` object, e.g. as
    >>> laplace = FinDiff(0, dx, 2) + FinDiff(1, dy, 2) + FinDiff(2, dz, 2)
 
 Then we can convert the resulting ``FinDiff`` object into a matrix
-representation by calling its ```matrix`` method:
+representation by calling its ``matrix`` method:
 
 .. code::
 
