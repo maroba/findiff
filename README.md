@@ -384,5 +384,23 @@ Result:
 
 You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/latest/.
 
+## Development
 
+### Set up development environment
+
+- Fork the repository
+- Clone your fork to your machine
+- Install in development mode:
+
+```
+python setup.py develop
+```
+
+### Running tests
+
+From the console:
+
+```
+python -m unittest discover test
+```
 
