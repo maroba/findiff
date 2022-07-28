@@ -1,9 +1,11 @@
+import math
 from itertools import product
 import numpy as np
+
 from .utils import to_long_index, to_index_tuple
 
 
-class Stencil(object):
+class StencilSet(object):
     """
     Represent the finite difference stencil for a given differential operator.
     """
@@ -143,4 +145,92 @@ class Stencil(object):
         typ = [("L", "C", "H")]*ndim
         return product(*typ)
 
+
+class Stencil:
+
+    def __init__(self, offsets, partials, spacings=None):
+        self.offsets = offsets
+        self.partials = partials
+        self.max_order = 100
+        ndims = len(offsets[0])
+        if spacings is None:
+            spacings = [1] * ndims
+        elif not hasattr(spacings, "__len__"):
+            spacings = [spacings] * ndims
+        assert len(spacings) == ndims
+        self.spacings = spacings
+        self.ndims = ndims
+        self.sol, self.sol_as_dict = self._make_stencil()
+
+    @property
+    def values(self):
+        return self.sol_as_dict
+
+    @property
+    def accuracy(self):
+        return self._calc_accuracy()
+
+    def _calc_accuracy(self):
+        tol = 1.E-9
+        deriv_order = 0
+        for pows in self.partials.keys():
+            order = sum(pows)
+            if order > deriv_order:
+                deriv_order = order
+        for order in range(deriv_order, deriv_order + 10):
+            terms = self._multinomial_powers(order)
+            for term in terms:
+                row = self._system_matrix_row(term)
+                resid = np.sum(np.array(self.sol) * np.array(row))
+                if abs(resid) > tol and term not in self.partials:
+                    return order - deriv_order
+
+    def _make_stencil(self):
+        sys_matrix, taylor_terms = self._system_matrix()
+        rhs = [0] * len(self.offsets)
+
+        for i, term in enumerate(taylor_terms):
+            if term in self.partials:
+                weight = self.partials[term]
+                multiplicity = np.prod([math.factorial(a) for a in term])
+                vol = np.prod([self.spacings[j] ** term[j] for j in range(self.ndims)])
+                rhs[i] = weight * multiplicity / vol
+
+        sol = np.linalg.solve(sys_matrix, rhs)
+        assert len(sol) == len(self.offsets)
+        return sol, {off: coef for off, coef in zip(self.offsets, sol) if coef != 0}
+
+    def _system_matrix(self):
+        rows = []
+        used_taylor_terms = []
+        for order in range(self.max_order):
+            taylor_terms = self._multinomial_powers(order)
+            for term in taylor_terms:
+                rows.append(self._system_matrix_row(term))
+                used_taylor_terms.append(term)
+                if not self._rows_are_linearly_independent(rows):
+                    rows.pop()
+                    used_taylor_terms.pop()
+                if len(rows) == len(self.offsets):
+                    return np.array(rows), used_taylor_terms
+        raise Exception("Not enough terms. Try to increase max_order.")
+
+    def _system_matrix_row(self, powers):
+        row = []
+        for a in self.offsets:
+            value = 1
+            for i, power in enumerate(powers):
+                value *= a[i] ** power
+            row.append(value)
+        return row
+
+    def _multinomial_powers(self, the_sum):
+        """Returns all tuples of a given dimension that add up to the_sum."""
+        all_combs = list(product(range(the_sum + 1), repeat=self.ndims))
+        return list(filter(lambda tpl: sum(tpl) == the_sum, all_combs))
+
+    def _rows_are_linearly_independent(self, matrix):
+        """Checks the linear independence of the rows of a matrix."""
+        matrix = np.array(matrix).astype(float)
+        return np.linalg.matrix_rank(matrix) == len(matrix)
 

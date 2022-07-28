@@ -3,7 +3,7 @@ import operator
 import numbers
 import scipy.sparse as sparse
 from findiff.coefs import coefficients, coefficients_non_uni
-from .stencils import Stencil
+from .stencils import StencilSet
 from .utils import *
 from .grids import Grid
 
@@ -29,7 +29,7 @@ class BinaryOperator(Operator):
         return self.apply(rhs, *args, **kwargs)
 
     def stencil(self, shape, acc=None):
-        return Stencil(self, shape, acc=acc)
+        return StencilSet(self, shape, acc=acc)
 
 
 class Plus(BinaryOperator):
