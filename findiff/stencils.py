@@ -180,9 +180,11 @@ class Stencil:
         raise Exception('Cannot specify both *at* and *on* parameters.')
 
     def _apply_on_mask(self, f, mask):
-        # TODO: Implement _apply_on_mask
-        # Basic idea: use offset-masks, possibly convert from short to long index form
-        raise NotImplementedError()
+        result = np.zeros_like(f)
+        for offset, coeff in self.values.items():
+            offset_mask = self._make_offset_mask(mask, offset)
+            result[mask] += coeff * f[offset_mask]
+        return result
 
     def _apply_on_multi_slice(self, f, on):
         result = np.zeros_like(f)
@@ -206,6 +208,28 @@ class Stencil:
                 raise Exception('Cannot evaluate outside of grid.')
             result += coeff * f[tuple(eval_at)]
         return result
+
+    def _make_offset_mask(self, mask, offset):
+        offset_mask = np.full_like(mask, fill_value=False, dtype=bool)
+        mslice_off = []
+        mslice_base = []
+        for off_ in offset:
+            if off_ == 0:
+                sl_off = slice(None, None)
+                sl_base = slice(None, None)
+            elif off_ > 0:
+                sl_off = slice(off_, None)
+                sl_base = slice(None, -off_)
+            else:
+                sl_off = slice(None, off_)
+                sl_base = slice(-off_, None)
+            mslice_off.append(sl_off)
+            mslice_base.append(sl_base)
+        offset_mask[tuple(mslice_base)] = mask[tuple(mslice_off)]
+        return offset_mask
+
+
+
 
     def _canonic_slice(self, sl, length):
         start = sl.start

@@ -153,9 +153,7 @@ class TestStencilOperations(unittest.TestCase):
         actual = stencil(f, on=on_slice)
         np.testing.assert_array_almost_equal(expected[on_slice], actual[on_slice])
 
-    @unittest.skip
     def tests_apply_stencil_on_mask(self):
-        # Stencil._apply_on_mask is not yet implemented
         x = y = np.linspace(0, 1, 21)
         dx = dy = x[1] - x[0]
         X, Y = np.meshgrid(x, y, indexing='ij')
@@ -166,7 +164,7 @@ class TestStencilOperations(unittest.TestCase):
         offsets = [(-1, 0), (0, 0), (1, 0), (0, 1), (0, -1)]
         stencil = Stencil(offsets, {(2, 0): 1, (0, 2): 1}, spacings=(dx, dy))
 
-        mask = np.zeros_like(f, dtype=bool)
+        mask = np.full_like(f, fill_value=False, dtype=bool)
         mask[1:-1, 1:-1] = True
         actual = stencil(f, on=mask)
         np.testing.assert_array_almost_equal(expected[mask], actual[mask])
