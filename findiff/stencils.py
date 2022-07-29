@@ -171,29 +171,41 @@ class Stencil:
 
     def __call__(self, f, at=None, on=None):
         if at is not None and on is None:
-            result = 0.
-            at = np.array(at)
-            for off, coeff in self.values.items():
-                off = np.array(off)
-                eval_at = at + off
-                if np.any(eval_at < 0) or not np.all(eval_at < f.shape):
-                    raise Exception('Cannot evaluate outside of grid.')
-                result += coeff * f[tuple(eval_at)]
-            return result
+            return self._apply_at_single_point(f, at)
         if at is None and on is not None:
-            result = np.zeros_like(f)
-            base_mslice = [self._canonic_slice(sl, f.shape[axis]) for axis, sl in enumerate(on)]
-
-            for off, coeff in self.values.items():
-                off_mslice = list(base_mslice)
-                for axis, off_ in enumerate(off):
-                    start = base_mslice[axis].start + off_
-                    stop = base_mslice[axis].stop + off_
-                    off_mslice[axis] = slice(start, stop)
-                result[tuple(base_mslice)] += coeff * f[tuple(off_mslice)]
-            return result
-
+            if isinstance(on[0], slice):
+                return self._apply_on_multi_slice(f, on)
+            else:
+                return self._apply_on_mask(f, on)
         raise Exception('Cannot specify both *at* and *on* parameters.')
+
+    def _apply_on_mask(self, f, mask):
+        # TODO: Implement _apply_on_mask
+        # Basic idea: use offset-masks, possibly convert from short to long index form
+        raise NotImplementedError()
+
+    def _apply_on_multi_slice(self, f, on):
+        result = np.zeros_like(f)
+        base_mslice = [self._canonic_slice(sl, f.shape[axis]) for axis, sl in enumerate(on)]
+        for off, coeff in self.values.items():
+            off_mslice = list(base_mslice)
+            for axis, off_ in enumerate(off):
+                start = base_mslice[axis].start + off_
+                stop = base_mslice[axis].stop + off_
+                off_mslice[axis] = slice(start, stop)
+            result[tuple(base_mslice)] += coeff * f[tuple(off_mslice)]
+        return result
+
+    def _apply_at_single_point(self, f, at):
+        result = 0.
+        at = np.array(at)
+        for off, coeff in self.values.items():
+            off = np.array(off)
+            eval_at = at + off
+            if np.any(eval_at < 0) or not np.all(eval_at < f.shape):
+                raise Exception('Cannot evaluate outside of grid.')
+            result += coeff * f[tuple(eval_at)]
+        return result
 
     def _canonic_slice(self, sl, length):
         start = sl.start
@@ -207,7 +219,6 @@ class Stencil:
         if stop < 0:
             stop = length - start
         return slice(start, stop)
-
 
     @property
     def values(self):
