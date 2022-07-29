@@ -278,6 +278,45 @@ lap_u = stencil.apply_all(u)
 
 which iterates over all grid points, selects the right right stencil and applies it.
 
+### Generic Stencils
+
+In contrast to generating stencils from given differential operators for fixed
+accuracy, it is also possible to do the reverse: create differential operators 
+on given stencils. The resulting accuracy will then be computed.
+For instance, suppose you want to create the 2D Laplacian using a given set
+of offset grid points, say, in X-shape instead of Plus-shape. You can do this
+as follows:
+
+```
+from findiff.stencils import Stencil
+
+# use grid points in X-shape:
+offsets = [(0, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
+diff_op = Stencil(offsets, partials={(2, 0): 1, (0, 2): 1}, spacings=(1, 1))
+```
+
+This returns the coefficients
+
+```
+{(0, 0): -2.0, (1, 1): 0.5, (-1, -1): 0.5, (1, -1): 0.5, (-1, 1): 0.5}
+```
+
+Note the format of the `partials` argument. It is a dictionary, where each
+key is a tuple denoting a single partial derivative: `(2, 0)` means seconds
+partial derivative with respect to axis 0, no derivative with respect to axis 1.
+The length of the tuple denotes the number of space dimensions. The value 
+assigned to each key gives the weight of each partial derivative and all in all,
+we sum over all items. So `partials={(2, 0): 1, (0, 2): 1}` is the 2D Laplacian.
+
+The accuracy of a stencil for given differential operator can be obtained
+by the `accuracy` attribute:
+
+```
+> diff_op.accuracy
+
+2
+```
+
 ## Partial Differential Equations
 
 _findiff_ can be used to easily formulate and solve partial differential equation problems
