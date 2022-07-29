@@ -13,12 +13,10 @@ Features:
 - Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
 - New in version 0.7: Generate matrix representations of arbitrary linear differential operators
 - New in version 0.8: Solve partial differential equations with Dirichlet or Neumann boundary conditions
-
+- New in version 0.9: Generate differential operators for generic stencils
 """
 
-
-# flake8: noqa: F401
-from ._version import version as __version__
+__version__ = '0.9.0'
 
 from .coefs import coefficients
 from .operators import FinDiff, Coef, Identity, Coefficient

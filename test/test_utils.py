@@ -45,7 +45,7 @@ class TestUtils(unittest.TestCase):
 
     def test_interior_mask_2d(self):
         shape = 5, 5
-        expected = np.zeros(shape, dtype=np.bool)
+        expected = np.zeros(shape, dtype=bool)
         expected[1:-1, 1:-1] = True
 
         np.testing.assert_array_equal(expected, interior_mask_as_ndarray(shape))

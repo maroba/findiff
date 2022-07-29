@@ -405,9 +405,9 @@ class Diff(LinearMap):
             cd = coef_dicts[base_ind_short[self.axis]]
             cs, os = cd['coefficients'], cd['offsets']
             for c, o in zip(cs, os):
-                off_short = np.zeros(len(shape), dtype=np.int)
+                off_short = np.zeros(len(shape), dtype=int)
                 off_short[self.axis] = int(o)
-                off_ind_short = np.array(base_ind_short, dtype=np.int) + off_short
+                off_ind_short = np.array(base_ind_short, dtype=int) + off_short
                 off_long = long_inds[tuple(off_ind_short)]
 
                 mat[base_ind_long, off_long] += c

@@ -1,21 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from os.path import exists, dirname, realpath
-from setuptools import setup, find_packages
-import sys
+import os.path
+import re
 
+from setuptools import setup, find_packages
 
 name = 'findiff'
 
-sys.path.insert(0, realpath(dirname(__file__))+"/"+name)
-try:
-    from _version import version
-except BaseException:
-    version = "unknown"
+
+def get_version():
+    file_name = os.path.join(name, '__init__.py')
+    with open(file_name) as init_file:
+        content = init_file.readlines()
+    for line in content:
+        match = re.match('^ *__version__ *= *[\'"]([^\'"]+)', line)
+        if match:
+            return match.group(1)
+    raise Exception('Could not parse version string.')
+
 
 setup(
     name=name,
-    version=version,
+    version=get_version(),
     description='A Python package for finite difference derivatives in any number of dimensions.',
     long_description="""A Python package for finite difference derivatives in any number of dimensions.
 
@@ -37,7 +43,7 @@ setup(
     url='https://github.com/maroba/findiff',
 
     author='Matthias Baer',
-    author_email='mrbaer@t-online.de',
+    author_email='matthias.r.baer@googlemail.com',
 
     classifiers=[
         'Intended Audience :: Developers',
@@ -51,7 +57,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
     ],
-    keywords=['finite-differences',  'numerical-derivatives', 'scientific-computing'],
+    keywords=['finite-differences', 'numerical-derivatives', 'scientific-computing'],
     packages=find_packages(exclude=("tests",)),
     package_dir={name: name},
     include_package_data=True,

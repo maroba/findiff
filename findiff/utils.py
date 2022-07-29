@@ -4,7 +4,7 @@ import numpy as np
 
 def interior_mask_as_ndarray(shape):
     ndims = len(shape)
-    mask = np.zeros(shape, dtype=np.bool)
+    mask = np.zeros(shape, dtype=bool)
     mask[tuple([slice(1, -1)] * ndims)] = True
     return mask
 

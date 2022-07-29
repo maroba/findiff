@@ -1,5 +1,6 @@
 import math
 from itertools import product
+
 import numpy as np
 
 from .utils import to_long_index, to_index_tuple
@@ -124,8 +125,8 @@ class StencilSet(object):
             long_row_inds, long_col_inds = row.nonzero()
 
             for long_offset_ind in long_col_inds:
-                offset_ind_tuple = np.array(to_index_tuple(long_offset_ind, self.shape), dtype=np.int)
-                offset_ind_tuple -= np.array(index_tuple_for_char_pt, dtype=np.int)
+                offset_ind_tuple = np.array(to_index_tuple(long_offset_ind, self.shape), dtype=int)
+                offset_ind_tuple -= np.array(index_tuple_for_char_pt, dtype=int)
                 char_point_stencil[tuple(offset_ind_tuple)] = row[0, long_offset_ind]
 
     def _typical_index_tuple_for_char_point(self, pt):
@@ -149,10 +150,16 @@ class StencilSet(object):
 class Stencil:
 
     def __init__(self, offsets, partials, spacings=None):
-        self.offsets = offsets
+
         self.partials = partials
         self.max_order = 100
-        ndims = len(offsets[0])
+        if not hasattr(offsets[0], "__len__"):
+            ndims = 1
+            self.offsets = [(off,) for off in offsets]
+        else:
+            ndims = len(offsets[0])
+            self.offsets = offsets
+
         if spacings is None:
             spacings = [1] * ndims
         elif not hasattr(spacings, "__len__"):
@@ -161,6 +168,46 @@ class Stencil:
         self.spacings = spacings
         self.ndims = ndims
         self.sol, self.sol_as_dict = self._make_stencil()
+
+    def __call__(self, f, at=None, on=None):
+        if at is not None and on is None:
+            result = 0.
+            at = np.array(at)
+            for off, coeff in self.values.items():
+                off = np.array(off)
+                eval_at = at + off
+                if np.any(eval_at < 0) or not np.all(eval_at < f.shape):
+                    raise Exception('Cannot evaluate outside of grid.')
+                result += coeff * f[tuple(eval_at)]
+            return result
+        if at is None and on is not None:
+            result = np.zeros_like(f)
+            base_mslice = [self._canonic_slice(sl, f.shape[axis]) for axis, sl in enumerate(on)]
+
+            for off, coeff in self.values.items():
+                off_mslice = list(base_mslice)
+                for axis, off_ in enumerate(off):
+                    start = base_mslice[axis].start + off_
+                    stop = base_mslice[axis].stop + off_
+                    off_mslice[axis] = slice(start, stop)
+                result[tuple(base_mslice)] += coeff * f[tuple(off_mslice)]
+            return result
+
+        raise Exception('Cannot specify both *at* and *on* parameters.')
+
+    def _canonic_slice(self, sl, length):
+        start = sl.start
+        if start is None:
+            start = 0
+        if start < 0:
+            start = length - start
+        stop = sl.stop
+        if stop is None:
+            stop = 0
+        if stop < 0:
+            stop = length - start
+        return slice(start, stop)
+
 
     @property
     def values(self):
@@ -171,7 +218,7 @@ class Stencil:
         return self._calc_accuracy()
 
     def _calc_accuracy(self):
-        tol = 1.E-9
+        tol = 1.E-6
         deriv_order = 0
         for pows in self.partials.keys():
             order = sum(pows)
@@ -213,7 +260,7 @@ class Stencil:
                     used_taylor_terms.pop()
                 if len(rows) == len(self.offsets):
                     return np.array(rows), used_taylor_terms
-        raise Exception("Not enough terms. Try to increase max_order.")
+        raise Exception('Not enough terms. Try to increase max_order.')
 
     def _system_matrix_row(self, powers):
         row = []

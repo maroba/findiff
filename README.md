@@ -20,7 +20,7 @@ any number of dimensions.
 * Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
 * _New in version 0.7:_ Generate matrix representations of arbitrary linear differential operators
 * _New in version 0.8:_ Solve partial differential equations with Dirichlet or Neumann boundary conditions
-
+* _New in version 0.9:_ Generate differential operators for generic stencils
 
 ## Installation
 
