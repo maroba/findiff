@@ -1,5 +1,5 @@
-Some Theory
-===========
+Theory
+======
 
 As the name *findiff* suggests, the package uses finite difference
 schemes to approximate differential operators numerically. In this
@@ -56,12 +56,48 @@ values around :math:`x_k`.
 
 .. math::
 
-    \left(\frac{d^n f}{dx^n}\right)_k \approx \sum_{i \in A} c_{i} f_{k+i}
+    \left(\frac{d^n f}{dx^n}\right)_k = f^{(n)}_k \approx \sum_{j \in A} c_{j} f_{k+j}
 
+where *A* is a set of offsets, such that :math:`k+i` are
+indices of grid points neighboring :math:`x_k`. Specifically, let
+:math:`A=\{-p, -p+1, \ldots, q-1, q\}` for positive integers :math:`p, q \ge 0`.
 
+For :math:`f_{k+i}` we can insert the Taylor expansion around :math:`f_k`:
 
-The Rest
---------
+.. math::
 
-*FinDiff* objects make no assumption on the dimensionality of the
-space.
+    f_{k+j} = f_k + j \Delta x f^{(1)}_k + \frac{1}{2!} (j \Delta x)^2 f^{(2)}_k + \ldots = \sum_{\alpha=0}^\infty \frac{1}{\alpha !} (j \Delta x)^\alpha f^{(\alpha)}_k \quad.
+
+So we have
+
+.. math::
+    f^{(n)}_k \approx\sum_{\alpha=0}^\infty \underbrace{\left(\sum_{j=-p}^q c_{j} j^\alpha \
+    \right) \frac{\Delta x^\alpha}{\alpha !}}_{M_\alpha}  f^{(\alpha)}_k = \sum_{\alpha=0}^\infty M_\alpha  f^{(\alpha)}_k
+
+Now let us demand that :math:`M_\alpha \delta_{k\alpha}`, where :math:`\delta_{k\alpha}` is the
+Kronecker symbol. In other words, we have the equations (one for each :math:`\alpha \ne k`):
+
+.. math::
+
+    M_\alpha = 0 = \frac{\Delta x^\alpha}{\alpha !} \sum_{j=-p}^q c_{j} j^\alpha
+
+or
+
+.. math::
+
+    \sum_{j=-p}^q c_{j} j^\alpha = 0
+
+and one equation for :math:`\alpha = k`
+
+.. math::
+   M_\alpha = 1 = \frac{\Delta x^\alpha}{\alpha !} \sum_{j=-p}^q c_{j} j^\alpha
+
+or
+
+.. math::
+
+    \sum_{j=-p}^q c_{j} j^\alpha =  \frac{\alpha !}{\Delta x^\alpha}
+
+If we take enough terms (:math:`p, q` high enough), we can make more and more terms
+in the Taylor expansion vanish, thereby increasing the accuracy or our approximation.
+

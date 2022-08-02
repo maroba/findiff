@@ -27,6 +27,7 @@ Content
 
     source/getstarted
     source/examples
+    source/theory
     source/modules
 
 
