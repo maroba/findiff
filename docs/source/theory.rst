@@ -9,12 +9,17 @@ Notation
 --------
 
 In this section, we are talking about functions on equidistant grids.
-So in 1D, instead of a continuous variable :math:`x`, we have a set
+Consider the following figure.
+
+.. figure::
+    images/func_on_grid.png
+
+In 1D, instead of a continuous variable :math:`x`, we have a set
 of grid points
 
 .. math::
 
-    x_k = a + k \Delta x
+    x_i = a + i \Delta x
 
 for some real number :math:`a` and grid spacing :math:`\Delta x`. In many
 dimensions, say 3, we have
