@@ -19,6 +19,7 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -26,17 +27,15 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-#needs_sphinx = '1.4.3'
+# needs_sphinx = '1.4.3'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.imgmath', 'sphinx.ext.intersphinx',
               'IPython.sphinxext.ipython_console_highlighting',
-              'IPython.sphinxext.ipython_directive'
+              'IPython.sphinxext.ipython_directive',
               ]
-
-
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -82,7 +81,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -113,12 +111,10 @@ html_sidebars = {
     ]
 }
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'findiffdoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -148,7 +144,6 @@ latex_documents = [
      'Matthias Baer', 'manual'),
 ]
 
-
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
@@ -157,7 +152,6 @@ man_pages = [
     (master_doc, 'findiff', 'findiff Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -175,4 +169,4 @@ imgmath_dvipng_args = ['-gamma', '2.5', '-D', '350', '-bg', 'Transparent']
 imgmath_font_size = 14
 
 autoclass_content = 'both'
-#mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js'
+# mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js'
