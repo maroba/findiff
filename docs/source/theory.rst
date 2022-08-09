@@ -94,7 +94,7 @@ So we have
     f^{(n)}_k \approx\sum_{\alpha=0}^\infty \underbrace{\left(\sum_{j=-p}^q c_{j} j^\alpha \
     \right) \frac{\Delta x^\alpha}{\alpha !}}_{M_\alpha}  f^{(\alpha)}_k = \sum_{\alpha=0}^\infty M_\alpha  f^{(\alpha)}_k
 
-Now let us demand that :math:`M_\alpha \delta_{k\alpha}`, where :math:`\delta_{k\alpha}` is the
+Now let us demand that :math:`M_\alpha = \delta_{k\alpha}`, where :math:`\delta_{k\alpha}` is the
 Kronecker symbol. In other words, we have the equations (one for each :math:`\alpha \ne k`):
 
 .. math::
@@ -122,7 +122,30 @@ If we take enough terms (:math:`p, q` high enough), we can make more and more te
 in the Taylor expansion vanish, thereby increasing the accuracy or our approximation.
 
 For example, choosing a symmetric scheme with :math:`p=q=1` for
-the second derivative, we get the coefficients
+the second derivative, we get the equation system (with :math:`\Delta x = 1`)
+
+.. math::
+    \left(
+    \begin{matrix}
+     1 & 1 & 1 \\
+    -1 & 0 & 1 \\
+     1 & 0 & 1
+    \end{matrix}
+    \right)
+    \left(
+    \begin{matrix}
+    c_{-1} \\ c_0 \\ c_1
+    \end{matrix}
+    \right)
+    =
+    \left(
+    \begin{matrix}
+    0 \\ 0 \\ 2
+    \end{matrix}
+    \right)
+
+
+which has the solution
 
 .. math::
 
@@ -138,7 +161,7 @@ so that
 This expression has second order accuracy, i.e. the error
 is getting smaller as :math:`{\cal O}(\Delta x^2)`.
 
-We can also visualize this approximation compactly by
+We can visualize this approximation compactly by
 inserting the coefficients in the stencil plot:
 
 .. figure::
@@ -149,4 +172,28 @@ and writing only the offsets from :math:`x_k`:
 
 .. figure:: images/stencil_1d_center_compact.png
     :align: center
+
+Multiple Dimensions
+-------------------
+
+For functions of several variables, the same idea of approximating
+(now partial) derivatives as linear combination of neighboring grid points
+can be applied. It is just getting more cumbersome to write it all down, because
+a priori, in multiple dimensions, there is much more degree of freedom for
+choosing the shape of the stencil. However, it turns out that in most cases
+the "ideal" stencil is just the superposition of stencils in 1D. As an
+example, consider the 2D Laplacian
+
+.. math::
+    \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2}
+
+Our grid is now two-dimensional and we can reuse the stencil for the
+second derivative in 1D from the previous section:
+
+.. figure:: images/composite_stencil.png
+    :align: center
+
+It is not obvious that a superposition like this gives the
+"best" stencil in 2D with nearest neighbors only. However,
+it can be shown that this is indeed the case.
 
