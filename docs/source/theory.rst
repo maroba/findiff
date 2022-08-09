@@ -66,6 +66,21 @@ values around :math:`x_k`.
 where *A* is a set of offsets, such that :math:`k+i` are
 indices of grid points neighboring :math:`x_k`. Specifically, let
 :math:`A=\{-p, -p+1, \ldots, q-1, q\}` for positive integers :math:`p, q \ge 0`.
+For instance, for :math:`p=q=1`, we would use the following (blue)
+grid points when evaluating a derivative at :math:`x_k`:
+
+.. figure::
+    images/stencil_1d_center.png
+
+This is a symmetric stencil. Obviously, this does not work if :math:`x_k` is at the boundary
+of the grid, because there would be no other points either to the
+left or to the right. In that case, we can use one-sided stencil, like
+the following forward-stencil (here, :math:`p=0, q=3`), where we
+evaluate the derivative at :math:`x_0` with four points in total.
+
+.. figure::
+    images/stencil_1d_forward.png
+
 
 For :math:`f_{k+i}` we can insert the Taylor expansion around :math:`f_k`:
 
@@ -105,4 +120,33 @@ or
 
 If we take enough terms (:math:`p, q` high enough), we can make more and more terms
 in the Taylor expansion vanish, thereby increasing the accuracy or our approximation.
+
+For example, choosing a symmetric scheme with :math:`p=q=1` for
+the second derivative, we get the coefficients
+
+.. math::
+
+    c_{-1} = c_1 = 1, \quad c_0 = -2
+
+so that
+
+.. math::
+
+    \left(\frac{d^2 f}{dx^2}\right)_k \approx
+    \frac{f_{k-1} - 2f_k + f_{k+1}}{\Delta x^2}
+
+This expression has second order accuracy, i.e. the error
+is getting smaller as :math:`{\cal O}(\Delta x^2)`.
+
+We can also visualize this approximation compactly by
+inserting the coefficients in the stencil plot:
+
+.. figure::
+    images/stencil_1d_center_with_weights.png
+
+Or, even more compactly, dropping the unused grid points
+and writing only the offsets from :math:`x_k`:
+
+.. figure:: images/stencil_1d_center_compact.png
+    :align: center
 
