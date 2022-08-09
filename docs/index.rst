@@ -5,18 +5,25 @@
 A Python package for finite difference numerical derivatives
 and partial differential equations in any number of dimensions.
 
+
+.. image:: source/images/findiff_logo.png
+    :width: 300
+    :align: center
+
+
 Features
 --------
 
-- Differentiate arrays of any number of dimensions along any axis with any desired accuracy order
-- Accurate treatment of grid boundary
-- Includes standard operators from vector calculus like gradient, divergence and curl
-- Can handle uniform and non-uniform grids
-- Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
-- Fully vectorized for speed
-- Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
-- New in version 0.7: Generate matrix representations of arbitrary linear differential operators
-- New in version 0.8: Solve partial differential equations with Dirichlet or Neumann boundary conditions
+* Differentiate arrays of any number of dimensions along any axis with any desired accuracy order
+* Accurate treatment of grid boundary
+* Includes standard operators from vector calculus like gradient, divergence and curl
+* Can handle uniform and non-uniform grids
+* Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
+* Fully vectorized for speed
+* Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
+* _New in version 0.7:_ Generate matrix representations of arbitrary linear differential operators
+* _New in version 0.8:_ Solve partial differential equations with Dirichlet or Neumann boundary conditions
+* _New in version 0.9:_ Generate differential operators for arbitrary stencils
 
 
 Content
