@@ -187,7 +187,7 @@ The attribute `stencil.values` contains the coefficients
 {(0, 0): -4.0, (1, 0): 1.0, (-1, 0): 1.0, (0, 1): 1.0, (0, -1): 1.0}
 ```
 
-Now for some more exotic stencil. Consider this one:
+Now for a some more exotic stencil. Consider this one:
 
 <img src="docs/frontpage/laplace2d-x.png" width="400">
 
