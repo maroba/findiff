@@ -393,6 +393,9 @@ and Neumann boundary conditions
 <p align="center">
 <img src="docs/frontpage/img-79ec3ad29895a658.png" height="40"/>
 </p>
+<p>
+<img src="docs/frontpage/img-79ec3ad29895a659.png" height="40"/>
+</p>
 
 
 ```python
