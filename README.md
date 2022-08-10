@@ -34,7 +34,8 @@ pip install findiff
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
 want to differentiate a four-dimensional function given on a 4D array `f` with coordinates `x, y, z, u`.
 
-For <img src="docs/frontpage/d_dx.png" alt="d_dx" height="30"/>, where <i>x</i> denotes the 0-th axis, we can write
+For <img src="docs/frontpage/d_dx.png#gh-light-mode-only" alt="d_dx" height="30"/> <img src="docs/frontpage/d_dx-dark.png#gh-dark-mode-only" alt="d_dx" height="30"/>
+, where <i>x</i> denotes the 0-th axis, we can write
 
 ```python
 # define operator
@@ -390,7 +391,7 @@ with Dirichlet boundary condition
 and Neumann boundary conditions
 
 <p align="center">
-<img src="docs/frontpage/img-79ec3ad29895a658.png" height="80"/>
+<img src="docs/frontpage/img-79ec3ad29895a658.png" height="40"/>
 </p>
 
 
