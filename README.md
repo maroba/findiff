@@ -58,12 +58,12 @@ d2f_dx2 = d2_dx2(f)
 
 Similary, you can define partial derivative operators along different axes or of higher degree, for example:
 
-| Math                                                  | *findiff*                             |                                         |
-|-------------------------------------------------------|---------------------------------------|-----------------------------------------|
-| <img src="docs/frontpage/d_dy.png" height="50px">     | ```FinDiff(1, dy, 1)```               | same as ``` FinDiff(1, dy, 1)```        |
-| <img src="docs/frontpage/d4_dy4.png" height="50px">   | ```FinDiff(1, dy, 4)```               | any degree is possible                  |
+| Math                                                  | *findiff*                             |                                        |
+|-------------------------------------------------------|---------------------------------------|----------------------------------------|
+| <img src="docs/frontpage/d_dy.png" height="50px">     | ```FinDiff(1, dy, 1)```               | same as ``` FinDiff(1, dy)```          |
+| <img src="docs/frontpage/d4_dy4.png" height="50px">   | ```FinDiff(1, dy, 4)```               | any degree is possible                 |
 | <img src="docs/frontpage/d3_dx2dz.png" height="50px"> | ```FinDiff((0, dx, 2), (2, dz, 1))``` | mixed also possible, one tuple per axis |
-| <img src="docs/frontpage/d_dx_10.png" height="50px">  |  ```FinDiff(10, dx10, 1)```           | number of axes not limited              |
+| <img src="docs/frontpage/d_dx_10.png" height="50px">  |  ```FinDiff(10, dx10, 1)```           | number of axes not limited             |
 
 We can also take linear combinations of derivative operators, for example:
 
