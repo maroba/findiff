@@ -10,6 +10,15 @@
 A Python package for finite difference numerical derivatives and partial differential equations in
 any number of dimensions. 
 
+## Main Features
+
+* Differentiate arrays of any number of dimensions along any axis with any desired accuracy order
+* Accurate treatment of grid boundary
+* Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
+* Fully vectorized for speed
+* Matrix representations of arbitrary linear differential operators
+* Solve partial differential equations with Dirichlet or Neumann boundary conditions
+
 
 ## Installation
 
