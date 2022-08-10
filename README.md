@@ -50,10 +50,10 @@ x = np.linspace(0, 1, 100)
 f = np.sin(x)  # as an example
 
 # Define the derivative:
-d2_dx2 = FinDiff(0, dx, 1)
+d_dx = FinDiff(0, dx, 1)
 
 # Apply it:
-d2f_dx2 = d2_dx2(f) 
+df_dx = d_dx(f) 
 ```
 
 Similary, you can define partial derivative operators along different axes or of higher degree, for example:
