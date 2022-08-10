@@ -10,118 +10,89 @@
 A Python package for finite difference numerical derivatives and partial differential equations in
 any number of dimensions. 
 
-## Features ##
-
-* Differentiate arrays of any number of dimensions along any axis with any desired accuracy order
-* Accurate treatment of grid boundary
-* Includes standard operators from vector calculus like gradient, divergence and curl
-* Can handle uniform and non-uniform grids
-* Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
-* Fully vectorized for speed
-* Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
-* _New in version 0.7:_ Generate matrix representations of arbitrary linear differential operators
-* _New in version 0.8:_ Solve partial differential equations with Dirichlet or Neumann boundary conditions
-* _New in version 0.9:_ Generate differential operators for generic stencils
 
 ## Installation
 
 ```
-pip install findiff
+pip install --upgrade findiff
 ```
 
-## Derivatives
+## Documentation and Examples
 
-_findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
-want to differentiate a four-dimensional function given on a 4D array `f` with coordinates `x, y, z, u`.
+You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/latest/.
 
-For <img src="docs/frontpage/d_dx.png#gh-light-mode-only" alt="d_dx" height="30"/> <img src="docs/frontpage/d_dx-dark.png#gh-dark-mode-only" alt="d_dx" height="30"/>
-, where <i>x</i> denotes the 0-th axis, we can write
+
+## Taking Derivatives
+
+*findiff* allows to easily define derivative operators that you can apply to *numpy* arrays of any dimension.
+The syntax for a simple derivative operator is 
 
 ```python
-# define operator
-d_dx = FinDiff(0, dx)
-
-# apply operator
-df_dx = d_dx(f)
-# df_dx is now an array of the same shape as f containing the partial derivative
-```
-The partial derivative <img src="docs/frontpage/d_dz.png" alt="d_dz" height="30"/>, where <i>z</i> means the 2nd axis, is
-
-```python
-d_dz = FinDiff(2, dz)
-df_dz = d_dz(f)
+FinDiff(axis, spacing, degree)
 ```
 
-Higher derivatives like
-<img src="docs/frontpage/d2_dx2.png" alt="d2_dx2" height="30"/>  or <img src="docs/frontpage/d4_dy4.png" alt="d4_dy4" height="30"/>
-can be defined like this:
+where `spacing` is the separation of grid points between neighboring grid points. Consider the 1D case
+with a first derivative <img src="docs/frontpage/d_dx.png" height="24"> along the only axis (0):
 
-```python
-# the derivative order is the third argument
-d2_dx2 = FinDiff(0, dx, 2)
-d2f_dx2 = d2_dx2(f)
+```
+import numpy as np
 
-d4_dy4 = FinDiff(1, dy, 4)
-d4f_dy4 = d4_dy4(f)
+x = np.linspace(0, 1, 100)
+f = np.sin(x)  # as an example
+
+# Define the derivative:
+d2_dx2 = FinDiff(0, dx, 1)
+
+# Apply it:
+d2f_dx2 = d2_dx2(f) 
 ```
 
-Mixed partial derivatives like 
-<img src="docs/frontpage/d2_dxdz.png" alt="d2_dxdz" height="30"/> or 
-<img src="docs/frontpage/d3_dx2dz.png" alt="d3_dx2dz" height="30"/>
+Similary, you can define partial derivative operators along different axes or of higher degree, for example:
 
+| Math                                                  | *findiff*                             |                                         |
+|-------------------------------------------------------|---------------------------------------|-----------------------------------------|
+| <img src="docs/frontpage/d_dy.png" height="50px">     | ```FinDiff(1, dy, 1)```               | same as ``` FinDiff(1, dy, 1)```        |
+| <img src="docs/frontpage/d4_dy4.png" height="50px">   | ```FinDiff(1, dy, 4)```               | any degree is possible                  |
+| <img src="docs/frontpage/d3_dx2dz.png" height="50px"> | ```FinDiff((0, dx, 2), (2, dz, 1))``` | mixed also possible, one tuple per axis |
+| <img src="docs/frontpage/d_dx_10.png" height="50px">  |  ```FinDiff(10, dx10, 1)```           | number of axes not limited              |
 
-```python
-d2_dxdz = FinDiff((0, dx), (2, dz))
-d2_dxdz(f)
+We can also take linear combinations of derivative operators, for example:
 
-d3_dx2dz = FinDiff((0, dx, 2), (2, dz))
-```
-
-Linear combinations of differential operators like
-
-<p align="center">
 <img src="docs/frontpage/var_coef.png" alt="variableCoefficients" height="40"/>
-</p>
+
+is
+
+```python
+Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*sin(Y)*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
+```
+
+where `X, Y, Z` are *numpy* arrays with meshed grid points.
+
+Chaining differential operators is also possible, e.g.
+
+<img src="docs/frontpage/chaining.png" alt="chaining" height="40"/>
 
 can be written as
 
 ```python
-from numpy import meshgrid, sin
-X, Y, Z, U = meshgrid(x, y, z, u, indexing="ij")
-diff_op = Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*sin(Y)*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
+(FinDiff(0, dx) - FinDiff(1, dy)) * (FinDiff(0, dx) + FinDiff(1, dy))
 ```
 
-Chaining differential operators is also possible, e.g.
-
-<p align="center">
-<img src="docs/frontpage/chaining.png" alt="chaining" height="40"/>
-</p>
+and
 
 ```python
-diff_op = (FinDiff(0, dx) - FinDiff(1, dy)) * (FinDiff(0, dx) + FinDiff(1, dy))
-# is equivalent to
-diff_op2 = FinDiff(0, dx, 2) - FinDiff(1, dy, 2)
+FinDiff(0, dx, 2) - FinDiff(1, dy, 2)
 ```
 
-Standard operators from vector calculus like gradient, divergence and curl are also available, for example:
+Of course, standard operators from vector calculus like gradient, divergence and curl are also available
+as shortcuts.
 
-```python
-grad = Gradient(h=[dx, dy, dz, du])
-grad_f = grad(f)
-```
-
-More examples can be found [here](https://maroba.github.io/findiff-docs/source/examples.html) and in [this blog](https://computing-blog.com).
-
-
-### Derivatives in N dimensions
-
-The package can work with any number of dimensions, the generalization
-of usage is straight forward. The only limit is memory and CPU speed.
+More examples can be found [here](https://maroba.github.io/findiff-docs/source/examples.html) and in [this blog](https://medium.com/p/7e54132a73a3).
 
 ### Accuracy Control
 
 When constructing an instance of `FinDiff`, you can request the desired accuracy
-order by setting the keyword argument `acc`. 
+order by setting the keyword argument `acc`. For example:
 
 ```
 d2_dx2 = findiff.FinDiff(0, dy, 2, acc=4)
@@ -131,34 +102,11 @@ d2f_dx2 = d2_dx2(f)
 If not specified, second order accuracy will be taken by default.
 
 
-### Finite Difference Coefficients
+## Finite Difference Coefficients
 
 Sometimes you may want to have the raw finite difference coefficients.
 These can be obtained for __any__ derivative and accuracy order
 using `findiff.coefficients(deriv, acc)`. For instance,
-
-```python
-import findiff
-coefs = findiff.coefficients(deriv=2, acc=2)
-```
-
-gives
-
-```
-{ 'backward': {'coefficients': array([-1.,  4., -5.,  2.]),
-               'offsets': array([-3, -2, -1,  0])},
-  'center': {'coefficients': array([ 1., -2.,  1.]),
-             'offsets': array([-1,  0,  1])},
-  'forward': {'coefficients': array([ 2., -5.,  4., -1.]),
-              'offsets': array([0, 1, 2, 3])}
-              }
-```
-
-FinDiff operators will use central coefficients whenever possible and switch
-to backward or forward coefficients if not enough points are available on either side.
-
-If you need exact values instead of floating point numbers, you
-can request a symbolic solution, e.g.
 
 ```python
 import findiff
@@ -193,17 +141,14 @@ The resulting accuracy order is computed and part of the output:
  'accuracy': 5}
 ```
 
-### Matrix Representation
+## Matrix Representation
 
 For a given _FinDiff_ differential operator, you can get the matrix representation 
-using the `matrix(shape)` method, e.g.
+using the `matrix(shape)` method, e.g. for a small 1D grid of 10 points:
 
 ```python
-x = [np.linspace(0, 6, 7)]
-d2_dx2 = FinDiff(0, x[1]-x[0], 2)
-u = x**2
-
-mat = d2_dx2.matrix(u.shape)  # this method returns a scipy sparse matrix
+d2_dx2 = FinDiff(0, dx, 2)
+mat = d2_dx2.matrix((10,))  # this method returns a scipy sparse matrix
 print(mat.toarray())
 ``` 
 
@@ -219,104 +164,44 @@ has the output
  [ 0.  0.  0. -1.  4. -5.  2.]]
 ```
 
-The same works for differential operators in higher dimensions. Of course, you can
-use this matrix to perform the differentiation manually by matrix-vector multiplication:
 
-```python
-d2u_dx2 = mat.dot(u.reshape(-1))
-```
+## Stencils
 
-Examples using the matrix representation like solving the Schrödinger equation can be found
-in this [blog](https://computing-blog.com/2020/09/05/schroedinger-in-3-lines/).
+*findiff* uses standard stencils (patterns of grid points) to evaluate the derivative.
+However, you can design your own stencil. A picture says more than a thousand words, so
+look at the following example for a standard second order accurate stencil for the 
+2D Laplacian <img src="docs/frontpage/laplacian2d.png" height="30">:
 
-### Stencils and StencilSets
+<img src="docs/frontpage/laplace2d.png" width="400">
 
-You can also take a look at the finite difference stencils, e.g. for a 2D grid:
-
-```python
-import numpy as np
-from findiff import FinDiff
-
-x, y = np.linspace(0, 1, 100)
-X, Y = np.meshgrid(x, y, indexing='ij')
-u = X**3 + Y**3
-laplace_2d = FinDiff(0, x[1]-x[0], 2) + FinDiff(1, y[1]-y[0], 2)
-
-stencil = laplace_2d.stencil(u.shape)
-
-print(stencil)
-```
-
-yields the following output
+This can be reproduced by *findiff* writing
 
 ```
-('L', 'L'):	{(0, 0): 4.0, (1, 0): -5.0, (2, 0): 4.0, (3, 0): -1.0, (0, 1): -5.0, (0, 2): 4.0, (0, 3): -1.0}
-('L', 'C'):	{(0, 0): 0.0, (1, 0): -5.0, (2, 0): 4.0, (3, 0): -1.0, (0, -1): 1.0, (0, 1): 1.0}
-('L', 'H'):	{(0, 0): 4.0, (1, 0): -5.0, (2, 0): 4.0, (3, 0): -1.0, (0, -3): -1.0, (0, -2): 4.0, (0, -1): -5.0}
-('C', 'L'):	{(-1, 0): 1.0, (0, 0): 0.0, (1, 0): 1.0, (0, 1): -5.0, (0, 2): 4.0, (0, 3): -1.0}
-('C', 'C'):	{(-1, 0): 1.0, (0, 0): -4.0, (1, 0): 1.0, (0, -1): 1.0, (0, 1): 1.0}
-('C', 'H'):	{(-1, 0): 1.0, (0, 0): 0.0, (1, 0): 1.0, (0, -3): -1.0, (0, -2): 4.0, (0, -1): -5.0}
-('H', 'L'):	{(-3, 0): -1.0, (-2, 0): 4.0, (-1, 0): -5.0, (0, 0): 4.0, (0, 1): -5.0, (0, 2): 4.0, (0, 3): -1.0}
-('H', 'C'):	{(-3, 0): -1.0, (-2, 0): 4.0, (-1, 0): -5.0, (0, 0): 0.0, (0, -1): 1.0, (0, 1): 1.0}
-('H', 'H'):	{(-3, 0): -1.0, (-2, 0): 4.0, (-1, 0): -5.0, (0, 0): 4.0, (0, -3): -1.0, (0, -2): 4.0, (0, -1): -5.0}
+offsets = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]
+stencil = Stencil(offsets, partials={(2, 0): 1, (0, 2): 1}, spacings=(1, 1))
 ```
 
-This is a dictionary with the characteristic points as keys and the stencils as values. 
-The 2D grid has 3**2 = 9 "characteristic points", so it has 9 stencils.
-
-'L' stands for 'lowest index' (which is 0), 'H' for 'highest index' (which is the number of points on the given axis minus 1)
-and 'C' for 'center', i.e. a grid point not at the boundary of the axis.
-
-In 2D the characteristic points are center points ('C', 'C'), corner points: ('L', 'L'), ('L', 'H'), ('H', 'L'), ('H', 'H')
-and edge-points (all others). For N > 2 dimensions the characteristic points are 3**N analogous tuples with N indices each.
-
-Each stencil is a dictionary itself with the index offsets as keys and the finite difference coefficients as values.
-
-In order to apply the stencil manually, you can use
+The attribute `stencil.values` contains the coefficients
 
 ```
-lap_u = stencil.apply_all(u)
-``` 
+{(0, 0): -4.0, (1, 0): 1.0, (-1, 0): 1.0, (0, 1): 1.0, (0, -1): 1.0}
+```
 
-which iterates over all grid points, selects the right right stencil and applies it.
+Now for a some more exotic stencil. Consider this one:
 
-### Generic Stencils
+<img src="docs/frontpage/laplace2d-x.png" width="400">
 
-In contrast to generating stencils from given differential operators for fixed
-accuracy, it is also possible to do the reverse: create differential operators 
-on given stencils. The resulting accuracy will then be computed.
-For instance, suppose you want to create the 2D Laplacian using a given set
-of offset grid points, say, in X-shape instead of Plus-shape. You can do this
-as follows:
+With *findiff* you can get it easily:
 
 ```
-from findiff.stencils import Stencil
-
-# use grid points in X-shape:
 offsets = [(0, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
-diff_op = Stencil(offsets, partials={(2, 0): 1, (0, 2): 1}, spacings=(1, 1))
+stencil = Stencil(offsets, partials={(2, 0): 1, (0, 2): 1}, spacings=(1, 1))
+stencil.values
 ```
-
-This returns the coefficients
+which returns
 
 ```
 {(0, 0): -2.0, (1, 1): 0.5, (-1, -1): 0.5, (1, -1): 0.5, (-1, 1): 0.5}
-```
-
-Note the format of the `partials` argument. It is a dictionary, where each
-key is a tuple denoting a single partial derivative: `(2, 0)` means seconds
-partial derivative with respect to axis 0, no derivative with respect to axis 1.
-The length of the tuple denotes the number of space dimensions. The value 
-assigned to each key gives the weight of each partial derivative and all in all,
-we sum over all items. So `partials={(2, 0): 1, (0, 2): 1}` is the 2D Laplacian.
-
-The accuracy of a stencil for given differential operator can be obtained
-by the `accuracy` attribute:
-
-```
-> diff_op.accuracy
-
-2
 ```
 
 ## Partial Differential Equations
@@ -423,11 +308,6 @@ Result:
 <img src="docs/frontpage/heat.png"/>
 </p>
 
-
-## Documentation and Examples
-
-You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/latest/.
-
 ## Development
 
 ### Set up development environment
@@ -447,4 +327,7 @@ From the console:
 ```
 python -m unittest discover test
 ```
+
+
+
 
