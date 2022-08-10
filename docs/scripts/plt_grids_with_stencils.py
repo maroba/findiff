@@ -36,10 +36,10 @@ def tex(s):
     return "$ " + str(s) + " $"
 
 
-def plot_axes(ax, stencil, coeffs, grid_kernel=[-1, 0, 1], with_coefs=True, with_offsets=True):
+def plot_axes(ax, stencil, coeffs, grid_kernel=[-1, 0, 1], with_coefs=True, with_offsets=True, markersize=30):
     switch_off_xy_axis(ax)
-    plot_grid(ax, list(product(grid_kernel, repeat=2)), color="#C0C0C0")
-    plot_grid(ax, stencil, color="C0")
+    plot_grid(ax, list(product(grid_kernel, repeat=2)), color="#C0C0C0", markersize=markersize)
+    plot_grid(ax, stencil, color="C0", markersize=markersize)
     if with_offsets:
         plot_offsets(ax, stencil)
     if with_coefs:
