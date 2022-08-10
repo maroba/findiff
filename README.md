@@ -1,10 +1,11 @@
-# findiff
+# <img src="docs/frontpage/findiff_logo.png" width="100px"> findiff
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
 ![Build status](https://img.shields.io/github/workflow/status/maroba/findiff/Checks)
 ![Coverage](https://img.shields.io/codecov/c/github/maroba/findiff/master.svg)
 [![Doc Status](https://readthedocs.org/projects/findiff/badge/?version=latest)](https://findiff.readthedocs.io/en/latest/index.html)
 [![PyPI downloads](https://img.shields.io/pypi/dm/findiff.svg)]()
 [![Downloads](https://static.pepy.tech/personalized-badge/findiff?period=total&units=international_system&left_color=black&right_color=blue&left_text=Downloads)](https://pepy.tech/project/findiff)
+
 
 A Python package for finite difference numerical derivatives and partial differential equations in
 any number of dimensions. 
@@ -33,7 +34,8 @@ pip install findiff
 _findiff_ works in any number of dimensions. But for the sake of demonstration, suppose you
 want to differentiate a four-dimensional function given on a 4D array `f` with coordinates `x, y, z, u`.
 
-For <img src="docs/frontpage/d_dx.png" alt="d_dx" height="30"/>, where <i>x</i> denotes the 0-th axis, we can write
+For <img src="docs/frontpage/d_dx.png#gh-light-mode-only" alt="d_dx" height="30"/> <img src="docs/frontpage/d_dx-dark.png#gh-dark-mode-only" alt="d_dx" height="30"/>
+, where <i>x</i> denotes the 0-th axis, we can write
 
 ```python
 # define operator
@@ -389,7 +391,7 @@ with Dirichlet boundary condition
 and Neumann boundary conditions
 
 <p align="center">
-<img src="docs/frontpage/img-79ec3ad29895a658.png" height="80"/>
+<img src="docs/frontpage/img-79ec3ad29895a658.png" height="40"/>
 </p>
 
 
