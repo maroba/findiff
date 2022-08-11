@@ -75,8 +75,8 @@ class TestOldBugs(unittest.TestCase):
             stl = stencil1.data[char_pt]
             self.assert_dict_almost_equal(expected[char_pt], stl)
 
-        d1x = FinDiff(0, dx, 1)
-        stencil1 = d1x.stencil(shape, acc=4)
+        d1x = FinDiff(0, dx, 1, acc=4)
+        stencil1 = d1x.stencil(shape)
         for char_pt in stencil1.data:
             stl = stencil1.data[char_pt]
             self.assert_dict_almost_equal(expected[char_pt], stl)

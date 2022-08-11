@@ -137,7 +137,6 @@ class TestStencilOperations(unittest.TestCase):
         at = 8,
         actual = stencil(f, at)
         self.assertAlmostEqual(expected[at], actual, places=5)
-        print(stencil.values, stencil.accuracy)
 
     def tests_apply_stencil_on_multislice(self):
         x = y = np.linspace(0, 1, 21)

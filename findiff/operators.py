@@ -93,10 +93,8 @@ class FinDiff(LinearMap):
                 args = self.coords,
         return self.pds(rhs, *args, **kwargs)
 
-    def stencil(self, shape, acc=None):
-        if acc is None and self.acc is not None:
-            acc = self.acc
-        return StencilSet(self, shape, acc=acc)
+    def stencil(self, shape):
+        return StencilSet(self, shape)
 
     def matrix(self, shape, h=None, acc=None):
         if acc is None:
