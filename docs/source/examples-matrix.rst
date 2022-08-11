@@ -1,5 +1,5 @@
-Matrix Representations
-======================
+Schrödinger Equation
+====================
 
 The ``FinDiff`` objects are designed to easily and quickly apply partial derivatives
 to given *numpy* arrays. However, sometimes it is useful to represent
@@ -8,13 +8,13 @@ stationary Schrödinger equation in 3D:
 
 .. math::
 
-    \frac{\partial^2}{\partial x^2}\psi + \frac{\partial^2}{\partial y^2}\psi + \frac{\partial^2}{\partial z^2}\psi + V(x, y, z)\psi = E \psi
+    -\frac{1}{2}\left(\frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} + \frac{\partial^2}{\partial z^2}\right) \psi + V(x, y, z)\psi = E \psi
 
 This is an eigenvalue problem for the differential operator
 
 .. math::
 
-    H = \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} + \frac{\partial^2}{\partial z^2} + V(x, y, z)
+    H = -\frac{1}{2}\left(\frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} + \frac{\partial^2}{\partial z^2}\right) \psi + V(x, y, z)
 
 The Laplacian can be expressed as a ``FinDiff`` object, e.g. as
 
@@ -37,7 +37,7 @@ of ``scipy``:
 
 .. code::
 
-   >>> hamiltonian = laplace.matrix(shape) + V.reshape(-1)
+   >>> hamiltonian = - laplace.matrix(shape) + V.reshape(-1)
    >>> scipy.sparse.linalg.eigs(hamiltonian, k=6, which='SR')
 
 This returns the ``k=6`` eigenvalues and eigenfunctions of the Hamiltonian
