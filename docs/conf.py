@@ -24,6 +24,7 @@ from findiff import __version__
 
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.join(os.path.abspath('..'), 'findiff'))
 
 # -- General configuration ------------------------------------------------
 
