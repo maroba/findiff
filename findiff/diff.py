@@ -1,11 +1,12 @@
 import itertools
-import operator
 import numbers
+import operator
+
 import scipy.sparse as sparse
+
 from findiff.coefs import coefficients, coefficients_non_uni
 from .stencils import StencilSet
 from .utils import *
-from .grids import Grid
 
 DEFAULT_ACC = 2
 
