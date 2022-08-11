@@ -2,6 +2,6 @@
 Module *stencils*
 ==================
 
-.. autoclass:: findiff.stencils
+.. automodule:: findiff.stencils
     :members:
 
