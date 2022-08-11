@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 
+from findiff import Identity, FinDiff
 from findiff.stencils import Stencil
 
 
@@ -168,3 +169,24 @@ class TestStencilOperations(unittest.TestCase):
         mask[1:-1, 1:-1] = True
         actual = stencil(f, on=mask)
         np.testing.assert_array_almost_equal(expected[mask], actual[mask])
+
+    def test_helmholtz_stencil_issue_60(self):
+        # This is a regression test for issue #60.
+
+        H = Identity() - FinDiff(0, 1, 2)
+
+        stencil_set = H.stencil((10,))
+
+        expected = {('L',): {(0,): -1.0, (1,): 5.0, (2,): -4.0, (3,): 1.0}, ('C',): {(-1,): -1.0, (0,): 3.0, (1,): -1.0},
+         ('H',): {(-3,): 1.0, (-2,): -4.0, (-1,): 5.0, (0,): -1.0}}
+
+        actual = stencil_set.data
+        self.assertEqual(len(expected), len(actual))
+        self.assertEqual(expected.keys(), actual.keys())
+        for key, expected_stencil in expected.items():
+            actual_stencil = actual[key]
+
+            self.assertEqual(expected_stencil.keys(), actual_stencil.keys())
+            for offset, expected_coef in expected_stencil.items():
+                actual_coef = actual_stencil[offset]
+                self.assertAlmostEqual(expected_coef, actual_coef)

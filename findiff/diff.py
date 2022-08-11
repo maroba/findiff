@@ -28,8 +28,8 @@ class BinaryOperator(Operator):
     def __call__(self, rhs, *args, **kwargs):
         return self.apply(rhs, *args, **kwargs)
 
-    def stencil(self, shape, acc=None):
-        return StencilSet(self, shape, acc=acc)
+    def stencil(self, shape):
+        return StencilSet(self, shape)
 
 
 class Plus(BinaryOperator):

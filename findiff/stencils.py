@@ -11,7 +11,7 @@ class StencilSet(object):
     Represent the finite difference stencil for a given differential operator.
     """
 
-    def __init__(self, diff_op, shape, old_stl=None, acc=None):
+    def __init__(self, diff_op, shape, old_stl=None):
         """
         Constructor for Stencil objects.
 
@@ -27,21 +27,21 @@ class StencilSet(object):
         :param h: float
             The spacing of the (equidistant) grid
 
-        :param acc: (even) int > 0
-            The desired accuracy order of the finite difference scheme.
-
         """
 
         self.shape = shape
         self.diff_op = diff_op
         self.char_pts = self._det_characteristic_points()
-        self.acc = None
-        if acc is not None:
-            self.acc = acc
 
         self.data = {}
 
         self._create_stencil()
+
+    def __str__(self):
+        return str(self.data)
+
+    def __repr__(self):
+        return str(self.data)
 
     def apply(self, u, idx0):
         """ Applies the stencil to a point in an equidistant grid.
@@ -57,7 +57,7 @@ class StencilSet(object):
         """
 
         if not hasattr(idx0, '__len__'):
-            idx0 = (idx0, )
+            idx0 = (idx0,)
 
         typ = []
         for axis in range(len(self.shape)):
@@ -111,7 +111,7 @@ class StencilSet(object):
 
     def _create_stencil(self):
 
-        matrix = self.diff_op.matrix(self.shape, acc=self.acc)
+        matrix = self.diff_op.matrix(self.shape)
 
         for pt in self.char_pts:
 
@@ -143,7 +143,7 @@ class StencilSet(object):
     def _det_characteristic_points(self):
         shape = self.shape
         ndim = len(shape)
-        typ = [("L", "C", "H")]*ndim
+        typ = [("L", "C", "H")] * ndim
         return product(*typ)
 
 
@@ -178,6 +178,12 @@ class Stencil:
             else:
                 return self._apply_on_mask(f, on)
         raise Exception('Cannot specify both *at* and *on* parameters.')
+
+    def __str__(self):
+        return str(self.values)
+
+    def __repr__(self):
+        return str(self.values)
 
     def _apply_on_mask(self, f, mask):
         result = np.zeros_like(f)
@@ -227,9 +233,6 @@ class Stencil:
             mslice_base.append(sl_base)
         offset_mask[tuple(mslice_base)] = mask[tuple(mslice_off)]
         return offset_mask
-
-
-
 
     def _canonic_slice(self, sl, length):
         start = sl.start
@@ -315,4 +318,3 @@ class Stencil:
         """Checks the linear independence of the rows of a matrix."""
         matrix = np.array(matrix).astype(float)
         return np.linalg.matrix_rank(matrix) == len(matrix)
-
