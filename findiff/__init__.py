@@ -16,7 +16,7 @@ Features:
 - New in version 0.9: Generate differential operators for generic stencils
 """
 
-__version__ = '0.9.1'
+__version__ = '0.9.2'
 
 from .coefs import coefficients
 from .operators import FinDiff, Coef, Identity, Coefficient
