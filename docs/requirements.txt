@@ -1,4 +1,5 @@
 # requirement on rtd
+findiff
 numpy
 scipy
 # Remove sphinx from requirements b/c it lead to issues
