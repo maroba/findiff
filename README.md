@@ -41,7 +41,7 @@ FinDiff(axis, spacing, degree)
 where `spacing` is the separation of grid points between neighboring grid points. Consider the 1D case
 with a first derivative $\displaystyle \frac{\partial}{\partial x}$ along the only axis (0):
 
-```
+```python
 import numpy as np
 
 x = np.linspace(0, 1, 100)
@@ -107,7 +107,7 @@ More examples can be found [here](https://maroba.github.io/findiff-docs/source/e
 When constructing an instance of `FinDiff`, you can request the desired accuracy
 order by setting the keyword argument `acc`. For example:
 
-```
+```python
 d2_dx2 = findiff.FinDiff(0, dy, 2, acc=4)
 d2f_dx2 = d2_dx2(f)
 ```
@@ -181,13 +181,13 @@ has the output
 *findiff* uses standard stencils (patterns of grid points) to evaluate the derivative.
 However, you can design your own stencil. A picture says more than a thousand words, so
 look at the following example for a standard second order accurate stencil for the
-2D Laplacian $ \displaystyle \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} $ :
+2D Laplacian $\displaystyle \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2}$:
 
 <img src="docs/frontpage/laplace2d.png" width="400">
 
 This can be reproduced by *findiff* writing
 
-```
+```python
 offsets = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]
 stencil = Stencil(offsets, partials={(2, 0): 1, (0, 2): 1}, spacings=(1, 1))
 ```
@@ -204,7 +204,7 @@ Now for a some more exotic stencil. Consider this one:
 
 With *findiff* you can get it easily:
 
-```
+```python
 offsets = [(0, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 stencil = Stencil(offsets, partials={(2, 0): 1, (0, 2): 1}, spacings=(1, 1))
 stencil.values
