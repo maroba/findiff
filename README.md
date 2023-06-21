@@ -1,4 +1,4 @@
-# `<img src="docs/frontpage/findiff_logo.png" width="100px">` findiff
+# <img src="docs/frontpage/findiff_logo.png" width="100px"> findiff
 
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
 ![Build status](https://img.shields.io/github/workflow/status/maroba/findiff/Checks)
@@ -39,7 +39,7 @@ FinDiff(axis, spacing, degree)
 ```
 
 where `spacing` is the separation of grid points between neighboring grid points. Consider the 1D case
-with a first derivative `<img src="docs/frontpage/d_dx.png" height="24">` along the only axis (0):
+with a first derivative $\displaystyle \frac{\partial}{\partial x}$ along the only axis (0):
 
 ```
 import numpy as np
@@ -181,7 +181,7 @@ has the output
 *findiff* uses standard stencils (patterns of grid points) to evaluate the derivative.
 However, you can design your own stencil. A picture says more than a thousand words, so
 look at the following example for a standard second order accurate stencil for the
-2D Laplacian $\displaystyle \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} $ :
+2D Laplacian $ \displaystyle \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} $ :
 
 <img src="docs/frontpage/laplace2d.png" width="400">
 
