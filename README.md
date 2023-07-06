@@ -1,14 +1,14 @@
 # <img src="docs/frontpage/findiff_logo.png" width="100px"> findiff
+
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff)
-![Build status](https://img.shields.io/github/workflow/status/maroba/findiff/Checks)
+![build](https://github.com/maroba/findiff/actions/workflows/check.yml/badge.svg)
 ![Coverage](https://img.shields.io/codecov/c/github/maroba/findiff/master.svg)
 [![Doc Status](https://readthedocs.org/projects/findiff/badge/?version=latest)](https://findiff.readthedocs.io/en/latest/index.html)
 [![PyPI downloads](https://img.shields.io/pypi/dm/findiff.svg)]()
 [![Downloads](https://static.pepy.tech/personalized-badge/findiff?period=total&units=international_system&left_color=black&right_color=blue&left_text=Downloads)](https://pepy.tech/project/findiff)
 
-
 A Python package for finite difference numerical derivatives and partial differential equations in
-any number of dimensions. 
+any number of dimensions.
 
 ## Main Features
 
@@ -18,7 +18,6 @@ any number of dimensions.
 * Fully vectorized for speed
 * Matrix representations of arbitrary linear differential operators
 * Solve partial differential equations with Dirichlet or Neumann boundary conditions
-
 
 ## Installation
 
@@ -30,20 +29,19 @@ pip install --upgrade findiff
 
 You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/latest/.
 
-
 ## Taking Derivatives
 
 *findiff* allows to easily define derivative operators that you can apply to *numpy* arrays of any dimension.
-The syntax for a simple derivative operator is 
+The syntax for a simple derivative operator is
 
 ```python
 FinDiff(axis, spacing, degree)
 ```
 
 where `spacing` is the separation of grid points between neighboring grid points. Consider the 1D case
-with a first derivative <img src="docs/frontpage/d_dx.png" height="24"> along the only axis (0):
+with a first derivative $\displaystyle \frac{\partial}{\partial x}$ along the only axis (0):
 
-```
+```python
 import numpy as np
 
 x = np.linspace(0, 1, 100)
@@ -58,16 +56,18 @@ df_dx = d_dx(f)
 
 Similary, you can define partial derivative operators along different axes or of higher degree, for example:
 
-| Math                                                  | *findiff*                             |                                        |
-|-------------------------------------------------------|---------------------------------------|----------------------------------------|
-| <img src="docs/frontpage/d_dy.png" height="50px">     | ```FinDiff(1, dy, 1)```               | same as ``` FinDiff(1, dy)```          |
-| <img src="docs/frontpage/d4_dy4.png" height="50px">   | ```FinDiff(1, dy, 4)```               | any degree is possible                 |
-| <img src="docs/frontpage/d3_dx2dz.png" height="50px"> | ```FinDiff((0, dx, 2), (2, dz, 1))``` | mixed also possible, one tuple per axis |
-| <img src="docs/frontpage/d_dx_10.png" height="50px">  |  ```FinDiff(10, dx10, 1)```           | number of axes not limited             |
+|                            Math                            | *findiff*                         |                                         |
+| :---------------------------------------------------------: | ----------------------------------- | --------------------------------------- |
+|        $\displaystyle \frac{\partial}{\partial y}$        | ``FinDiff(1, dy, 1)``               | same as `` FinDiff(1, dy)``             |
+|      $\displaystyle \frac{\partial^4}{\partial y^4}$      | ``FinDiff(1, dy, 4)``               | any degree is possible                  |
+| $\displaystyle \frac{\partial^3}{\partial x^2\partial z}$ | ``FinDiff((0, dx, 2), (2, dz, 1))`` | mixed also possible, one tuple per axis |
+|     $\displaystyle \frac{\partial}{\partial x_{10}}$     | ``FinDiff(10, dx10, 1)``            | number of axes not limited              |
 
 We can also take linear combinations of derivative operators, for example:
 
-<img src="docs/frontpage/var_coef.png" alt="variableCoefficients" height="40"/>
+$$
+2x \frac{\partial^3}{\partial x^2 \partial z} + 3 \sin(y)z^2 \frac{\partial^3}{\partial x \partial y^2}
+$$
 
 is
 
@@ -79,7 +79,11 @@ where `X, Y, Z` are *numpy* arrays with meshed grid points.
 
 Chaining differential operators is also possible, e.g.
 
-<img src="docs/frontpage/chaining.png" alt="chaining" height="40"/>
+$$
+\left( \frac{\partial}{\partial x} - \frac{\partial}{\partial y} \right) 
+\cdot \left( \frac{\partial}{\partial x} + \frac{\partial}{\partial y} \right)
+= \frac{\partial^2}{\partial x^2} - \frac{\partial^2}{\partial y^2}
+$$
 
 can be written as
 
@@ -103,13 +107,12 @@ More examples can be found [here](https://maroba.github.io/findiff-docs/source/e
 When constructing an instance of `FinDiff`, you can request the desired accuracy
 order by setting the keyword argument `acc`. For example:
 
-```
+```python
 d2_dx2 = findiff.FinDiff(0, dy, 2, acc=4)
 d2f_dx2 = d2_dx2(f)
 ```
 
 If not specified, second order accuracy will be taken by default.
-
 
 ## Finite Difference Coefficients
 
@@ -152,14 +155,14 @@ The resulting accuracy order is computed and part of the output:
 
 ## Matrix Representation
 
-For a given _FinDiff_ differential operator, you can get the matrix representation 
+For a given _FinDiff_ differential operator, you can get the matrix representation
 using the `matrix(shape)` method, e.g. for a small 1D grid of 10 points:
 
 ```python
 d2_dx2 = FinDiff(0, dx, 2)
 mat = d2_dx2.matrix((10,))  # this method returns a scipy sparse matrix
 print(mat.toarray())
-``` 
+```
 
 has the output
 
@@ -173,19 +176,18 @@ has the output
  [ 0.  0.  0. -1.  4. -5.  2.]]
 ```
 
-
 ## Stencils
 
 *findiff* uses standard stencils (patterns of grid points) to evaluate the derivative.
 However, you can design your own stencil. A picture says more than a thousand words, so
-look at the following example for a standard second order accurate stencil for the 
-2D Laplacian <img src="docs/frontpage/laplacian2d.png" height="30">:
+look at the following example for a standard second order accurate stencil for the
+2D Laplacian $\displaystyle \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2}$:
 
 <img src="docs/frontpage/laplace2d.png" width="400">
 
 This can be reproduced by *findiff* writing
 
-```
+```python
 offsets = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]
 stencil = Stencil(offsets, partials={(2, 0): 1, (0, 2): 1}, spacings=(1, 1))
 ```
@@ -202,11 +204,12 @@ Now for a some more exotic stencil. Consider this one:
 
 With *findiff* you can get it easily:
 
-```
+```python
 offsets = [(0, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 stencil = Stencil(offsets, partials={(2, 0): 1, (0, 2): 1}, spacings=(1, 1))
 stencil.values
 ```
+
 which returns
 
 ```
@@ -217,12 +220,12 @@ which returns
 
 _findiff_ can be used to easily formulate and solve partial differential equation problems
 
-<p align="center">
-<img src="docs/frontpage/img-db2705be98d985e0.png" height="20"/>
-</p>
+$$
+\mathcal{L}u(\vec{x}) = f(\vec{x})
+$$
 
-where _L_ is a general linear differential operator.
- 
+where $\mathcal{L}$ is a general linear differential operator.
+
 In order to obtain a unique solution,  Dirichlet, Neumann or more general boundary conditions
 can be applied.
 
@@ -230,18 +233,17 @@ can be applied.
 
 #### Example 1: 1D forced harmonic oscillator with friction
 
-Find the solution of 
+Find the solution of
 
-<p align="center">
-<img src="docs/frontpage/img-66238f314ddd7bd8.png" alt="harmonicOscillator" height="40"/>
-</p>
+$$
+\left( \frac{d^2}{dt^2} - \alpha \frac{d}{dt} + \omega^2 \right)u(t) = \sin{(2t)}
+$$
 
 subject to the (Dirichlet) boundary conditions
 
-<p align="center">
-<img src="docs/frontpage/img-e840919a9f9079bd.png" alt="BCharmonicOscillator" height="20"/>
-</p>
-
+$$
+u(0) = 0, \hspace{1em} u(10) = 1
+$$
 
 ```python
 from findiff import FinDiff, Id, PDE
@@ -272,25 +274,27 @@ Result:
 A plate with temperature profile given on one edge and zero heat flux across the other
 edges, i.e.
 
-<p align="center">
-<img src="docs/frontpage/img-2b2de8b883ab262d.png" alt="heat2D" height="40"/>
-</p>
+$$
+\left( \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} \right) u(x,y) = f(x,y)
+$$
 
 with Dirichlet boundary condition
 
-<p align="center">
-<img src="docs/frontpage/img-a06bc52fe5a97f4a.png" height="40"/>
-</p>
+$$
+\begin{align*}
+u(x,0) &= 300 \\
+u(1,y) &= 300 - 200y
+\end{align*}
+$$
 
 and Neumann boundary conditions
 
-<p align="center">
-<img src="docs/frontpage/img-79ec3ad29895a658.png" height="40"/>
-</p>
-<p align="center">
-<img src="docs/frontpage/img-79ec3ad29895a659.png" height="40"/>
-</p>
-
+$$
+\begin{align*}
+\frac{\partial u}{\partial x} &= 0, & \text{ for } x = 0 \\
+\frac{\partial u}{\partial y} &= 0, & \text{ for } y = 0
+\end{align*}
+$$
 
 ```python
 shape = (100, 100)
@@ -355,7 +359,3 @@ From the console:
 ```
 python -m unittest discover test
 ```
-
-
-
-

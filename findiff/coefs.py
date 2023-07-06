@@ -9,13 +9,14 @@ coefficients(deriv, acc=None, offsets=None, symbolic=False)
 to calculate the finite difference coefficients for a given derivative
 order and given accuracy order to given offsets.
 """
+from itertools import combinations
 
 import math
 import numpy as np
 import sympy
 
 
-def coefficients(deriv, acc=None, offsets=None, symbolic=False):
+def coefficients(deriv, acc=None, offsets=None, symbolic=False, analytic_inv=False):
     """
     Calculates the finite difference coefficients for given derivative order and accuracy order.
 
@@ -46,11 +47,18 @@ def coefficients(deriv, acc=None, offsets=None, symbolic=False):
 
     _validate_deriv(deriv)
 
-    if acc and offsets:
+    if acc is not None and offsets:
         raise ValueError('acc and offsets cannot both be given')
 
     if offsets:
-        return calc_coefs(deriv, offsets, symbolic)
+        if deriv >= len(offsets):
+            raise ValueError(
+                f'can not compute derivative of order {deriv} using {len(offsets)} offsets.'
+            )
+        return calc_coefs(deriv, offsets, symbolic, analytic_inv)
+
+    if acc is None:
+        raise ValueError('either acc or offsets has to be given')
 
     _validate_acc(acc)
     ret = {}
@@ -61,7 +69,7 @@ def coefficients(deriv, acc=None, offsets=None, symbolic=False):
     num_side = num_central // 2
     offsets = list(range(-num_side, num_side+1))
 
-    ret["center"] = calc_coefs(deriv, offsets, symbolic)
+    ret["center"] = calc_coefs(deriv, offsets, symbolic, analytic_inv)
 
     # Determine forward coefficients
 
@@ -71,40 +79,88 @@ def coefficients(deriv, acc=None, offsets=None, symbolic=False):
         num_coef = num_central
 
     offsets = list(range(num_coef))
-    ret["forward"] = calc_coefs(deriv, offsets, symbolic)
+    ret["forward"] = calc_coefs(deriv, offsets, symbolic, analytic_inv)
 
     # Determine backward coefficients
 
     offsets = list(range(-num_coef+1, 1))
-    ret["backward"] = calc_coefs(deriv, offsets, symbolic)
+    ret["backward"] = calc_coefs(deriv, offsets, symbolic, analytic_inv)
 
     return ret
 
 
-def calc_coefs(deriv, offsets, symbolic=False):
+def compute_inverse_Vandermonde(column, offsets, symbolic):
+    """Computes a given column of the inverse of the Vandermonde matrix that
+    belongs to given offsets, multiplied by the factorial of the column index.
 
-    matrix = _build_matrix(offsets, symbolic)
-    rhs = _build_rhs(offsets, deriv, symbolic)
+    This code implements the first equation for b_kj under "Proof 1" in
+    https://proofwiki.org/wiki/Inverse_of_Vandermonde_Matrix
+    Note that the result has to be transposed because the original Vandermonde
+    matrix is defined transposed as compared to _build_matrix.
+
+    Also, we have 0-based indexing here, whereas the formulae in the wiki entry
+    are 1-based.
+    """
     if symbolic:
-        coefs = sympy.linsolve((matrix, rhs))
-        coefs = list(tuple(coefs)[0])
-        acc = _calc_accuracy(offsets, coefs, deriv, symbolic)
-        return {
-            "coefficients": coefs,
-            "offsets": offsets,
-            "accuracy": acc
-        }
-
+        take = lambda arr, ids: [arr[idx] for idx in ids]
+        prod = sympy.prod
+        minus = lambda x, arr: [x - val for val in arr]
     else:
-        coefs = np.linalg.solve(matrix, rhs)
-        acc = _calc_accuracy(offsets, coefs, deriv, symbolic)
+        take = lambda arr, ids: arr[ids]
+        prod = np.prod
+        offsets = np.array(offsets)
+        minus = lambda x, arr: x - arr
 
-        return {
-            "coefficients": coefs,
-            "offsets": np.array(offsets),
-            "accuracy": acc
-        }
+    n = len(offsets)
+    k = column + 1
+    inv_vandermonde_column = []
+    if k==n:
+        # If the number of offsets matches the derivative order + 1, there is a special
+        # case, compare the lower part of the bracket in the equation in proofwiki.
+        for j in range(n):
+            denom = prod(minus(offsets[j], offsets[:j])) * prod(minus(offsets[j], offsets[j+1:]))
+            inv_vandermonde_column.append(1 / denom)
+    else:
+        # This is the "regular" part of the bracket. First compute the sign that is the 
+        # same for all entries in the column that we compute
+        sign = (-1) ** (n-k)
+        for j in range(n):
+            # All indices except j
+            range_wo_j = list(range(j)) + list(range(j+1, n))
+            # Get all combinations of n-k indices that are ascending and do not contain j
+            index_set = combinations(range_wo_j, r=n-k)
+            enumerator = sum((prod(take(offsets, list(m))) for m in index_set))
+            denominator = prod(minus(offsets[j], take(offsets, range_wo_j)))
+            inv_vandermonde_column.append(sign * enumerator / denominator)
 
+    if symbolic:
+        fact = math.factorial(column)
+        return [val * fact for val in inv_vandermonde_column]
+
+    return np.array(inv_vandermonde_column) * math.factorial(column)
+
+def calc_coefs(deriv, offsets, symbolic=False, analytic_inv=False):
+    if analytic_inv:
+        coefs = compute_inverse_Vandermonde(deriv, offsets, symbolic)
+    else:
+        matrix = _build_matrix(offsets, symbolic)
+        rhs = _build_rhs(offsets, deriv, symbolic)
+        if symbolic:
+            coefs = sympy.linsolve((matrix, rhs))
+            coefs = list(tuple(coefs)[0])
+        else:
+            coefs = np.linalg.solve(matrix, rhs)
+
+    acc = _calc_accuracy(offsets, coefs, deriv, symbolic)
+
+    if not symbolic:
+        offsets = np.array(offsets)
+
+    return {
+        "coefficients": coefs,
+        "offsets": offsets,
+        "accuracy": acc
+    }
 
 def coefficients_non_uni(deriv, acc, coords, idx):
     """
