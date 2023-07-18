@@ -18,6 +18,7 @@ any number of dimensions.
 * Fully vectorized for speed
 * Matrix representations of arbitrary linear differential operators
 * Solve partial differential equations with Dirichlet or Neumann boundary conditions
+* **New in version 0.10**: Symbolic representation of finite difference schemes
 
 ## Installation
 
@@ -215,6 +216,30 @@ which returns
 ```
 {(0, 0): -2.0, (1, 1): 0.5, (-1, -1): 0.5, (1, -1): 0.5, (-1, 1): 0.5}
 ```
+
+## Symbolic Representations
+
+As of version 0.10, findiff can also provide a symbolic representation of finite difference schemes suitable for using in conjunction with sympy. The main use case is to facilitate deriving your own iteration schemes.
+
+```python
+from findiff import SymbolicMesh, SymbolicDiff
+
+mesh = SymbolicMesh("x, y")
+d2_dx2, d2_dy2 = [SymbolicDiff(mesh, axis=k, degree=2) for k in range(2)]
+
+(
+    d2_dx2(u, at=(m, n), offsets=(-1, 0, 1)) + 
+    d2_dy2(u, at=(m, n), offsets=(-1, 0, 1))
+)
+```
+
+Outputs:
+
+$$
+\frac{{u}_{m,n + 1} + {u}_{m,n - 1} - 2 {u}_{m,n}}{\Delta y^{2}} + \frac{{u}_{m + 1,n} + {u}_{m - 1,n} - 2 {u}_{m,n}}{\Delta x^{2}}
+$$
+
+Also see the [example notebook](examples/symbolic.ipynb).
 
 ## Partial Differential Equations
 
