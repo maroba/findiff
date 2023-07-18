@@ -236,7 +236,7 @@ d2_dx2, d2_dy2 = [SymbolicDiff(mesh, axis=k, degree=2) for k in range(2)]
 Outputs:
 
 $$
-\frac{{u}_{m,n + 1} + {u}_{m,n - 1} - 2 {u}_{m,n}}{\Delta y^{2}} + \frac{{u}_{m + 1,n} + {u}_{m - 1,n} - 2 {u}_{m,n}}{\Delta x^{2}}
+\frac{u_{m,n + 1} + u_{m,n - 1} - 2 u_{m,n}}{\Delta y^2}  + \frac{u_{m + 1,n} + u_{m - 1,n} - 2 u_{m,n}}{\Delta x^2}
 $$
 
 Also see the [example notebook](examples/symbolic.ipynb).
