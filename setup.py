@@ -39,7 +39,7 @@ setup(
         * _New in version 0.7:_ Generate matrix representations of arbitrary linear differential operators
         * _New in version 0.8:_ Solve partial differential equations with Dirichlet or Neumann boundary conditions
         * _New in version 0.9:_ Generate differential operators for generic stencils
-
+        * _New in version 0.10:_ Create symbolic representations of finite difference schemes
     """,
 
     license='MIT',

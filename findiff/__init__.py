@@ -14,11 +14,13 @@ Features:
 - New in version 0.7: Generate matrix representations of arbitrary linear differential operators
 - New in version 0.8: Solve partial differential equations with Dirichlet or Neumann boundary conditions
 - New in version 0.9: Generate differential operators for generic stencils
+- New in version 0.10: Create symbolic representations of finite difference schemes
 """
 
-__version__ = '0.9.2'
+__version__ = '0.10.0'
 
 from .coefs import coefficients
 from .operators import FinDiff, Coef, Identity, Coefficient
 from .vector import Gradient, Divergence, Curl, Laplacian
 from .pde import PDE, BoundaryConditions
+from .symbolic import SymbolicMesh, SymbolicDiff
