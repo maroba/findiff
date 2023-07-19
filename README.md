@@ -225,6 +225,7 @@ As of version 0.10, findiff can also provide a symbolic representation of finite
 from findiff import SymbolicMesh, SymbolicDiff
 
 mesh = SymbolicMesh("x, y")
+u = mesh.create_symbol("u")
 d2_dx2, d2_dy2 = [SymbolicDiff(mesh, axis=k, degree=2) for k in range(2)]
 
 (
