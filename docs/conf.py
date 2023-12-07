@@ -35,9 +35,9 @@ sys.path.insert(0, os.path.join(os.path.abspath('..'), 'findiff'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.imgmath', 'sphinx.ext.intersphinx',
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
               'IPython.sphinxext.ipython_console_highlighting',
-              'IPython.sphinxext.ipython_directive',
+              'IPython.sphinxext.ipython_directive', 'sphinx.ext.mathjax'
               ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -167,9 +167,10 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-imgmath_image_format = 'svg'
-imgmath_dvipng_args = ['-gamma', '2.5', '-D', '350', '-bg', 'Transparent']
-imgmath_font_size = 14
+#imgmath_image_format = 'svg'
+#imgmath_dvipng_args = ['-gamma', '2.5', '-D', '350', '-bg', 'Transparent']
+#imgmath_font_size = 14
 
 autoclass_content = 'both'
-# mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js'
+
+#mathjax_path = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js'
