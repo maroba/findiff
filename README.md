@@ -101,7 +101,7 @@ FinDiff(0, dx, 2) - FinDiff(1, dy, 2)
 Of course, standard operators from vector calculus like gradient, divergence and curl are also available
 as shortcuts.
 
-More examples can be found [here](https://maroba.github.io/findiff-docs/source/examples.html) and in [this blog](https://medium.com/p/7e54132a73a3).
+More examples can be found [here](https://findiff.readthedocs.io/en/latest/source/examples.html) and in [this blog](https://medium.com/p/7e54132a73a3).
 
 ### Accuracy Control
 
