@@ -17,10 +17,10 @@ Features:
 - New in version 0.10: Create symbolic representations of finite difference schemes
 """
 
-__version__ = '0.10.0'
+__version__ = '0.10.1'
 
 from .coefs import coefficients
 from .operators import FinDiff, Coef, Identity, Coefficient
-from .vector import Gradient, Divergence, Curl, Laplacian
 from .pde import PDE, BoundaryConditions
 from .symbolic import SymbolicMesh, SymbolicDiff
+from .vector import Gradient, Divergence, Curl, Laplacian
