@@ -4,7 +4,7 @@ from .stencils import StencilSet
 
 
 class FinDiff(LinearMap):
-    """ A representation of a general linear differential operator expressed in finite differences.
+    r""" A representation of a general linear differential operator expressed in finite differences.
 
             FinDiff objects can be added with other FinDiff objects. They can be multiplied by
             objects of type Coefficient.
