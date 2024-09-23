@@ -30,8 +30,9 @@ jobs:
         pip freeze
     - name: Test with pytest
       run: |
-        coverage run --source=findiff setup.py test
-    - name: Submit code coverage
-      run: |
-        coverage report -m
-        codecov
+        pytest
+        #coverage run --source=findiff setup.py test
+#    - name: Submit code coverage
+#      run: |
+#        coverage report -m
+#        codecov
