@@ -23,7 +23,7 @@ jobs:
       run: |
         # prerequisites
         python -m pip install --upgrade pip wheel
-        python -m pip install codecov coverage pytest
+        python -m pip install codecov coverage pytest setuptools
         # install dependencies
         pip install -e .[all]
         # show installed packages
