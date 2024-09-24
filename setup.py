@@ -1,28 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-import os.path
-import re
-
 from setuptools import setup, find_packages
-
-name = 'findiff'
-
-
-def get_version():
-    file_name = os.path.join(name, '__init__.py')
-    with open(file_name) as init_file:
-        content = init_file.readlines()
-    for line in content:
-        match = re.match('^ *__version__ *= *[\'"]([^\'"]+)', line)
-        if match:
-            return match.group(1)
-    raise Exception('Could not parse version string.')
 
 
 setup(
-    name=name,
-    version=get_version(),
-    description='A Python package for finite difference derivatives in any number of dimensions.',
+    name="findiff",
+    packages=find_packages(where=".", include=["findiff*"]),
     long_description="""A Python package for finite difference derivatives in any number of dimensions.
 
     Features:
@@ -41,31 +22,4 @@ setup(
         * _New in version 0.9:_ Generate differential operators for generic stencils
         * _New in version 0.10:_ Create symbolic representations of finite difference schemes
     """,
-
-    license='MIT',
-    url='https://github.com/maroba/findiff',
-
-    author='Matthias Baer',
-    author_email='matthias.r.baer@googlemail.com',
-
-    classifiers=[
-        'Intended Audience :: Developers',
-        'Topic :: Scientific/Engineering :: Mathematics',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.12',
-    ],
-    keywords=['finite-differences', 'numerical-derivatives', 'scientific-computing'],
-    packages=find_packages(exclude=("tests",)),
-    package_dir={name: name},
-    include_package_data=True,
-    install_requires=['numpy', 'scipy', 'sympy'],
-    setup_requires=["pytest-runner"],
-    python_requires=">=3.8",
-    tests_require=["pytest"],
-    platforms=['ALL'],
 )

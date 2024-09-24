@@ -17,7 +17,7 @@ Features:
 - New in version 0.10: Create symbolic representations of finite difference schemes
 """
 
-__version__ = '0.10.1'
+__version__ = "0.10.2"
 
 from .coefs import coefficients
 from .operators import FinDiff, Coef, Identity, Coefficient
