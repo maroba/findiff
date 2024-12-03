@@ -44,12 +44,13 @@ with a first derivative $\displaystyle \frac{\partial}{\partial x}$ along the on
 
 ```python
 import numpy as np
+from findiff import FinDiff
 
 x = np.linspace(0, 1, 100)
 f = np.sin(x)  # as an example
 
 # Define the derivative:
-d_dx = FinDiff(0, dx, 1)
+d_dx = FinDiff(0, x, 1)
 
 # Apply it:
 df_dx = d_dx(f) 
