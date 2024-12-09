@@ -2,7 +2,8 @@ import unittest
 
 import numpy as np
 
-from findiff import Identity, FinDiff
+from findiff.legacy import Identity, FinDiff
+
 from findiff.legacy.stencils import Stencil
 
 

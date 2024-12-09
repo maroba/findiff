@@ -15,12 +15,10 @@ Features:
 - New in version 0.8: Solve partial differential equations with Dirichlet or Neumann boundary conditions
 - New in version 0.9: Generate differential operators for generic stencils
 - New in version 0.10: Create symbolic representations of finite difference schemes
+- Version 1.0: Completely remodeled API (backward compatibility is maintained, though)
 """
 
-__version__ = "0.10.2"
+__version__ = "1.0.0.dev"
 
-from .legacy.coefs import coefficients
-from .legacy.operators import FinDiff, Coef, Identity, Coefficient
-from .legacy.pde import PDE, BoundaryConditions
-from .legacy.symbolic import SymbolicMesh, SymbolicDiff
-from .legacy.vector import Gradient, Divergence, Curl, Laplacian
+
+from .current import Diff, Identity

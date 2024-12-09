@@ -3,7 +3,7 @@ import sys
 sys.path.insert(1, "..")
 
 import unittest
-from findiff import coefficients
+from findiff.legacy import coefficients
 from findiff.legacy.coefs import coefficients_non_uni
 from findiff.legacy.coefs import calc_coefs
 

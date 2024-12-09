@@ -387,5 +387,5 @@ python setup.py develop
 From the console:
 
 ```
-python -m unittest discover test
+python -m unittest discover tests
 ```
