@@ -19,8 +19,8 @@ Features:
 
 __version__ = "0.10.2"
 
-from .coefs import coefficients
-from .operators import FinDiff, Coef, Identity, Coefficient
-from .pde import PDE, BoundaryConditions
-from .symbolic import SymbolicMesh, SymbolicDiff
-from .vector import Gradient, Divergence, Curl, Laplacian
+from .legacy.coefs import coefficients
+from .legacy.operators import FinDiff, Coef, Identity, Coefficient
+from .legacy.pde import PDE, BoundaryConditions
+from .legacy.symbolic import SymbolicMesh, SymbolicDiff
+from .legacy.vector import Gradient, Divergence, Curl, Laplacian

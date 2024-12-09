@@ -1,8 +1,8 @@
 import unittest
 
-from sympy import IndexedBase, Symbol, Expr, Eq, symbols, latex
+from sympy import IndexedBase, Symbol, symbols, latex
 
-from findiff.symbolic import SymbolicMesh, SymbolicDiff
+from findiff.legacy.symbolic import SymbolicMesh, SymbolicDiff
 
 
 class TestSymbolicMesh(unittest.TestCase):

@@ -1,10 +1,10 @@
 import sys
-sys.path.insert(1, '..')
+
+sys.path.insert(1, "..")
 
 import unittest
-import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal
-from findiff.utils import *
+from findiff.legacy.utils import *
+
 
 class TestUtils(unittest.TestCase):
 

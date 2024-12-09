@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from findiff.grids import UniformGrid
+from findiff.legacy.grids import UniformGrid
 
 
 class TestUniformGrid(unittest.TestCase):

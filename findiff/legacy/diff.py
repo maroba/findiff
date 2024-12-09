@@ -4,7 +4,7 @@ import operator
 
 import scipy.sparse as sparse
 
-from findiff.coefs import coefficients, coefficients_non_uni
+from .coefs import coefficients, coefficients_non_uni
 from .stencils import StencilSet
 from .utils import *
 
@@ -12,12 +12,13 @@ DEFAULT_ACC = 2
 
 
 class Operator(object):
-    """ Base class for all operator classes """
+    """Base class for all operator classes"""
+
     pass
 
 
 class BinaryOperator(Operator):
-    """ Base class for all binary operators (like addition) that allow to combine or chain differential operators """
+    """Base class for all binary operators (like addition) that allow to combine or chain differential operators"""
 
     def __init__(self, left, right):
         self.left = left
@@ -34,7 +35,7 @@ class BinaryOperator(Operator):
 
 
 class Plus(BinaryOperator):
-    """ A class to add two differential operators """
+    """A class to add two differential operators"""
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -81,7 +82,7 @@ class Plus(BinaryOperator):
 
 
 class Minus(BinaryOperator):
-    """ A class to subtract two differential operators from each other """
+    """A class to subtract two differential operators from each other"""
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -128,7 +129,7 @@ class Minus(BinaryOperator):
 
 
 class Mul(BinaryOperator):
-    """ A class to multiply (chain) two differential operators """
+    """A class to multiply (chain) two differential operators"""
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -167,7 +168,7 @@ class Mul(BinaryOperator):
         return result
 
     def matrix(self, shape, *args, **kwargs):
-        """ Matrix representation of given operator product on an equidistant grid of given shape.
+        """Matrix representation of given operator product on an equidistant grid of given shape.
 
         :param shape: tuple with the shape of the grid
         :return: scipy sparse matrix representing the operator product
@@ -182,7 +183,9 @@ class Mul(BinaryOperator):
 
         if isinstance(self.right, np.ndarray):
             right = sparse.diags(self.right.reshape(-1), 0)
-        elif isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
+        elif isinstance(self.right, LinearMap) or isinstance(
+            self.right, BinaryOperator
+        ):
             right = self.right.matrix(shape, *args, **kwargs)
         else:
             right = self.right * sparse.diags(np.ones(shape).reshape(-1), 0)
@@ -218,21 +221,21 @@ class LinearMap(Operator):
 
 
 class Diff(LinearMap):
-    """ Representation of a single partial derivative based on finite differences.
+    """Representation of a single partial derivative based on finite differences.
 
-            This class is usually not used directly by the user, but is wrapped in
-            a FinDiff object.
+    This class is usually not used directly by the user, but is wrapped in
+    a FinDiff object.
 
-            :param axis: the numpy axis along which to apply the derivative
+    :param axis: the numpy axis along which to apply the derivative
 
-            :param order: the order of the derivative
+    :param order: the order of the derivative
 
-            :param kwargs: optional keyword arguments
+    :param kwargs: optional keyword arguments
 
-                Allowed keywords:
+        Allowed keywords:
 
-                    `acc`:  even integer
-                            The desired accuracy order.
+            `acc`:  even integer
+                    The desired accuracy order.
     """
 
     def __init__(self, axis, order, **kwargs):
@@ -243,11 +246,11 @@ class Diff(LinearMap):
         self.axis = axis
         self.order = order
         self.acc = None
-        if 'acc' in kwargs:
-            self.acc = kwargs['acc']
+        if "acc" in kwargs:
+            self.acc = kwargs["acc"]
 
     def apply(self, u, *args, **kwargs):
-        """ Applies the partial derivative to a numpy array."""
+        """Applies the partial derivative to a numpy array."""
 
         h = None
         acc = DEFAULT_ACC
@@ -260,15 +263,15 @@ class Diff(LinearMap):
             return h
 
         for key, value in kwargs.items():
-            if key == 'h' or key == 'grid':
+            if key == "h" or key == "grid":
                 h = get_h(value)
                 break
 
         if h is None:
             h = get_h(args[0])
 
-        if 'acc' in kwargs:
-            acc = kwargs['acc']
+        if "acc" in kwargs:
+            acc = kwargs["acc"]
 
         if isinstance(h, np.ndarray):
             return self.diff_non_uni(u, h, **kwargs)
@@ -278,10 +281,10 @@ class Diff(LinearMap):
     def diff(self, y, h, acc):
         """The core function to take a partial derivative on a uniform grid.
 
-            Central coefficients will be used whenever possible. Backward or forward
-            coefficients will be used if not enough points are available on either side,
-            i.e. forward coefficients for the low index boundary and backward coefficients
-            for the high index boundary.
+        Central coefficients will be used whenever possible. Backward or forward
+        coefficients will be used if not enough points are available on either side,
+        i.e. forward coefficients for the low index boundary and backward coefficients
+        for the high index boundary.
         """
 
         dim = self.axis
@@ -292,7 +295,8 @@ class Diff(LinearMap):
             npts = y.shape[dim]
         except AttributeError as err:
             raise ValueError(
-                "FinDiff objects can only be applied to arrays or evaluated(!) functions returning arrays") from err
+                "FinDiff objects can only be applied to arrays or evaluated(!) functions returning arrays"
+            ) from err
 
         scheme = "center"
         weights = coefs[scheme]["coefficients"]
@@ -300,7 +304,9 @@ class Diff(LinearMap):
 
         num_bndry_points = len(weights) // 2
         ref_slice = slice(num_bndry_points, npts - num_bndry_points, 1)
-        off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
+        off_slices = [
+            self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
+        ]
 
         yd = np.zeros_like(y)
 
@@ -311,7 +317,9 @@ class Diff(LinearMap):
         offsets = coefs[scheme]["offsets"]
 
         ref_slice = slice(0, num_bndry_points, 1)
-        off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
+        off_slices = [
+            self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
+        ]
 
         self._apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
 
@@ -320,11 +328,13 @@ class Diff(LinearMap):
         offsets = coefs[scheme]["offsets"]
 
         ref_slice = slice(npts - num_bndry_points, npts, 1)
-        off_slices = [self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))]
+        off_slices = [
+            self._shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
+        ]
 
         self._apply_to_array(yd, y, weights, off_slices, ref_slice, dim)
 
-        h_inv = 1. / h ** deriv
+        h_inv = 1.0 / h**deriv
         return yd * h_inv
 
     def diff_non_uni(self, y, coords, **kwargs):
@@ -362,22 +372,24 @@ class Diff(LinearMap):
 
         return yd
 
-    def matrix(self, shape, h=None, acc=None, coords=None, sparse_type=sparse.csr_matrix):
-        """ Matrix representation of the partial derivative.
+    def matrix(
+        self, shape, h=None, acc=None, coords=None, sparse_type=sparse.csr_matrix
+    ):
+        """Matrix representation of the partial derivative.
 
-                :param shape: Tuple with the shape of the grid (number of grid points in each dimension)
+        :param shape: Tuple with the shape of the grid (number of grid points in each dimension)
 
-                :param h: The grid spacing for the axis of the partial derivative
-                            (only used for uniform grids)
+        :param h: The grid spacing for the axis of the partial derivative
+                    (only used for uniform grids)
 
-                :param coords: The coordinate values of the grid on the axis of the partial derivative
-                            (only used for non-uniform grids)
+        :param coords: The coordinate values of the grid on the axis of the partial derivative
+                    (only used for non-uniform grids)
 
-                :param acc: The accuracy order of the derivative (even int)
+        :param acc: The accuracy order of the derivative (even int)
 
-                :param sparse_type: The scipy sparse matrix type used for the matrix representation.
+        :param sparse_type: The scipy sparse matrix type used for the matrix representation.
 
-                :returns matrix representation (scipy sparse matrix)
+        :returns matrix representation (scipy sparse matrix)
         """
 
         if h is not None:
@@ -385,7 +397,7 @@ class Diff(LinearMap):
         elif coords is not None:
             return sparse_type(self._matrix_nonuniform(shape, coords, acc))
         else:
-            raise ValueError('Neither spacing nor coordinates given.')
+            raise ValueError("Neither spacing nor coordinates given.")
 
     def _matrix_nonuniform(self, shape, coords, acc):
 
@@ -404,7 +416,7 @@ class Diff(LinearMap):
 
         for base_ind_long, base_ind_short in enumerate(short_inds):
             cd = coef_dicts[base_ind_short[self.axis]]
-            cs, os = cd['coefficients'], cd['offsets']
+            cs, os = cd["coefficients"], cd["offsets"]
             for c, o in zip(cs, os):
                 off_short = np.zeros(len(shape), dtype=int)
                 off_short[self.axis] = int(o)
@@ -430,10 +442,10 @@ class Diff(LinearMap):
         mat = sparse.lil_matrix((siz, siz))
         coeff_dict = coefficients(order, acc)
 
-        for scheme in ['center', 'forward', 'backward']:
+        for scheme in ["center", "forward", "backward"]:
 
-            offsets_1d = coeff_dict[scheme]['offsets']
-            coeffs = coeff_dict[scheme]['coefficients']
+            offsets_1d = coeff_dict[scheme]["offsets"]
+            coeffs = coeff_dict[scheme]["coefficients"]
 
             # translate offsets of given scheme to long format
             offsets_long = []
@@ -444,12 +456,12 @@ class Diff(LinearMap):
                 offsets_long.append(o_long)
 
             # determine points where to evaluate current scheme in long format
-            nside = len(coeff_dict['center']['coefficients']) // 2
-            if scheme == 'center':
+            nside = len(coeff_dict["center"]["coefficients"]) // 2
+            if scheme == "center":
                 multi_slice = [slice(None, None)] * ndims
                 multi_slice[axis] = slice(nside, -nside)
                 Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
-            elif scheme == 'forward':
+            elif scheme == "forward":
                 multi_slice = [slice(None, None)] * ndims
                 multi_slice[axis] = slice(0, nside)
                 Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
@@ -459,7 +471,7 @@ class Diff(LinearMap):
                 Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
 
             for o, c in zip(offsets_long, coeffs):
-                v = c / h ** order
+                v = c / h**order
                 mat[Is, Is + o] = v
 
         return mat
@@ -489,7 +501,7 @@ class Diff(LinearMap):
         for w, s in zip(weights, off_slices):
             off_multi_slice = [all] * ndims
             off_multi_slice[dim] = s
-            if abs(1 - w) < 1.E-14:
+            if abs(1 - w) < 1.0e-14:
                 yd[tuple(ref_multi_slice)] += y[tuple(off_multi_slice)]
             else:
                 yd[tuple(ref_multi_slice)] += w * y[tuple(off_multi_slice)]
@@ -503,7 +515,7 @@ class Diff(LinearMap):
 
 
 class Id(LinearMap):
-    """ The identity operator. When applied to an array, returns the same array (not a copy) """
+    """The identity operator. When applied to an array, returns the same array (not a copy)"""
 
     def __init__(self):
         self.value = 1
@@ -512,7 +524,7 @@ class Id(LinearMap):
         return rhs
 
     def matrix(self, shape):
-        """ Matrix representation of the identity operator, i.e. identity matrix of given shape.
+        """Matrix representation of the identity operator, i.e. identity matrix of given shape.
 
         :param shape: Shape of the arrays to which Id shall be applied
         :type shape: tuple of ints

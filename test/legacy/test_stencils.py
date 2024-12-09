@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 from findiff import Identity, FinDiff
-from findiff.stencils import Stencil
+from findiff.legacy.stencils import Stencil
 
 
 class TestStencilOperations(unittest.TestCase):
@@ -13,23 +13,36 @@ class TestStencilOperations(unittest.TestCase):
 
         stencil = Stencil(offsets, {(2, 0): 1, (0, 2): 1})
 
-        expected = {
-            (0, 0): -4,
-            (-1, 0): 1, (1, 0): 1, (0, 1): 1, (0, -1): 1
-        }
+        expected = {(0, 0): -4, (-1, 0): 1, (1, 0): 1, (0, 1): 1, (0, -1): 1}
 
         self.assertEqual(expected, stencil.values)
         self.assertEqual(2, stencil.accuracy)
 
     def test_solve_laplace_2d_with_9_points(self):
-        offsets = [(-1, 0), (0, 0), (1, 0), (0, 1), (0, -1), (-2, 0), (2, 0), (0, -2), (0, 2)]
+        offsets = [
+            (-1, 0),
+            (0, 0),
+            (1, 0),
+            (0, 1),
+            (0, -1),
+            (-2, 0),
+            (2, 0),
+            (0, -2),
+            (0, 2),
+        ]
 
         stencil = Stencil(offsets, {(2, 0): 1, (0, 2): 1})
 
         expected = {
             (0, 0): -5,
-            (-1, 0): 4 / 3., (1, 0): 4 / 3., (0, 1): 4 / 3., (0, -1): 4 / 3.,
-            (-2, 0): -1 / 12., (2, 0): -1 / 12., (0, -2): -1 / 12., (0, 2): -1 / 12.
+            (-1, 0): 4 / 3.0,
+            (1, 0): 4 / 3.0,
+            (0, 1): 4 / 3.0,
+            (0, -1): 4 / 3.0,
+            (-2, 0): -1 / 12.0,
+            (2, 0): -1 / 12.0,
+            (0, -2): -1 / 12.0,
+            (0, 2): -1 / 12.0,
         }
 
         self.assertEqual(4, stencil.accuracy)
@@ -42,10 +55,7 @@ class TestStencilOperations(unittest.TestCase):
 
         stencil = Stencil(offsets, {(2, 0): 2, (0, 2): 2})
 
-        expected = {
-            (0, 0): -8,
-            (-1, 0): 2, (1, 0): 2, (0, 1): 2, (0, -1): 2
-        }
+        expected = {(0, 0): -8, (-1, 0): 2, (1, 0): 2, (0, 1): 2, (0, -1): 2}
 
         self.assertEqual(expected, stencil.values)
         self.assertEqual(2, stencil.accuracy)
@@ -55,10 +65,7 @@ class TestStencilOperations(unittest.TestCase):
 
         stencil = Stencil(offsets, {(2, 0): 2, (0, 2): 2}, spacings=(0.1, 0.1))
 
-        expected = {
-            (0, 0): -800,
-            (-1, 0): 200, (1, 0): 200, (0, 1): 200, (0, -1): 200
-        }
+        expected = {(0, 0): -800, (-1, 0): 200, (1, 0): 200, (0, 1): 200, (0, -1): 200}
 
         self.assertEqual(len(expected), len(stencil.values))
         for off, coeff in stencil.values.items():
@@ -69,10 +76,10 @@ class TestStencilOperations(unittest.TestCase):
 
         x = y = np.linspace(0, 1, 21)
         dx = dy = x[1] - x[0]
-        X, Y = np.meshgrid(x, y, indexing='ij')
+        X, Y = np.meshgrid(x, y, indexing="ij")
 
         f = X**3 + Y**3
-        expected =  6*X + 6*Y
+        expected = 6 * X + 6 * Y
 
         offsets = [(-1, 0), (0, 0), (1, 0), (0, 1), (0, -1)]
         stencil = Stencil(offsets, {(2, 0): 1, (0, 2): 1}, spacings=(dx, dy))
@@ -84,10 +91,10 @@ class TestStencilOperations(unittest.TestCase):
 
         x = y = np.linspace(0, 1, 21)
         dx = dy = x[1] - x[0]
-        X, Y = np.meshgrid(x, y, indexing='ij')
+        X, Y = np.meshgrid(x, y, indexing="ij")
 
         f = X**3 + Y**3
-        expected =  6*X + 6*Y
+        expected = 6 * X + 6 * Y
 
         offsets = [(0, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
         stencil = Stencil(offsets, {(2, 0): 1, (0, 2): 1}, spacings=(dx, dy))
@@ -99,7 +106,7 @@ class TestStencilOperations(unittest.TestCase):
 
         x = y = np.linspace(0, 1, 21)
         dx = dy = x[1] - x[0]
-        X, Y = np.meshgrid(x, y, indexing='ij')
+        X, Y = np.meshgrid(x, y, indexing="ij")
 
         f = X**3 + Y**3
 
@@ -117,10 +124,10 @@ class TestStencilOperations(unittest.TestCase):
 
         x = y = np.linspace(0, 1, 101)
         dx = dy = x[1] - x[0]
-        X, Y = np.meshgrid(x, y, indexing='ij')
+        X, Y = np.meshgrid(x, y, indexing="ij")
 
-        f = np.exp(-X**2-Y**2)
-        expected =  4*X*Y*f
+        f = np.exp(-(X**2) - Y**2)
+        expected = 4 * X * Y * f
 
         offsets = [(0, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
         stencil = Stencil(offsets, partials={(1, 1): 1}, spacings=(dx, dy))
@@ -131,20 +138,20 @@ class TestStencilOperations(unittest.TestCase):
     def test_laplace_1d_9points(self):
         x = np.linspace(0, 1, 101)
         f = x**3
-        expected = 6*x
+        expected = 6 * x
         offsets = list(range(-4, 5))
-        stencil = Stencil(offsets, partials={(2,): 1}, spacings=(x[1]-x[0],))
-        at = 8,
+        stencil = Stencil(offsets, partials={(2,): 1}, spacings=(x[1] - x[0],))
+        at = (8,)
         actual = stencil(f, at)
         self.assertAlmostEqual(expected[at], actual, places=5)
 
     def tests_apply_stencil_on_multislice(self):
         x = y = np.linspace(0, 1, 21)
         dx = dy = x[1] - x[0]
-        X, Y = np.meshgrid(x, y, indexing='ij')
+        X, Y = np.meshgrid(x, y, indexing="ij")
 
-        f = X ** 3 + Y ** 3
-        expected = 6*X + 6*Y
+        f = X**3 + Y**3
+        expected = 6 * X + 6 * Y
 
         offsets = [(-1, 0), (0, 0), (1, 0), (0, 1), (0, -1)]
         stencil = Stencil(offsets, {(2, 0): 1, (0, 2): 1}, spacings=(dx, dy))
@@ -156,10 +163,10 @@ class TestStencilOperations(unittest.TestCase):
     def tests_apply_stencil_on_mask(self):
         x = y = np.linspace(0, 1, 21)
         dx = dy = x[1] - x[0]
-        X, Y = np.meshgrid(x, y, indexing='ij')
+        X, Y = np.meshgrid(x, y, indexing="ij")
 
-        f = X ** 3 + Y ** 3
-        expected = 6*X + 6*Y
+        f = X**3 + Y**3
+        expected = 6 * X + 6 * Y
 
         offsets = [(-1, 0), (0, 0), (1, 0), (0, 1), (0, -1)]
         stencil = Stencil(offsets, {(2, 0): 1, (0, 2): 1}, spacings=(dx, dy))
@@ -176,8 +183,11 @@ class TestStencilOperations(unittest.TestCase):
 
         stencil_set = H.stencil((10,))
 
-        expected = {('L',): {(0,): -1.0, (1,): 5.0, (2,): -4.0, (3,): 1.0}, ('C',): {(-1,): -1.0, (0,): 3.0, (1,): -1.0},
-         ('H',): {(-3,): 1.0, (-2,): -4.0, (-1,): 5.0, (0,): -1.0}}
+        expected = {
+            ("L",): {(0,): -1.0, (1,): 5.0, (2,): -4.0, (3,): 1.0},
+            ("C",): {(-1,): -1.0, (0,): 3.0, (1,): -1.0},
+            ("H",): {(-3,): 1.0, (-2,): -4.0, (-1,): 5.0, (0,): -1.0},
+        }
 
         actual = stencil_set.data
         self.assertEqual(len(expected), len(actual))

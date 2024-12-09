@@ -1,20 +1,19 @@
 import sys
-sys.path.insert(1, '..')
+
+sys.path.insert(1, "..")
 
 import unittest
-import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal
-from findiff.diff import *
-#import matplotlib.pyplot as plt
-import findiff
+from numpy.testing import assert_array_almost_equal
+from findiff.legacy.diff import *
+
+# import matplotlib.pyplot as plt
 from numpy import cos, sin
-from findiff.grids import UniformGrid
 
 
 class DiffTest(unittest.TestCase):
 
     def test_partial_d_dx(self):
-        shape = 101,
+        shape = (101,)
         x, dx = make_grid(shape, (0, 1))
 
         u = x**2
@@ -26,10 +25,10 @@ class DiffTest(unittest.TestCase):
         assert_array_almost_equal(expected, actual)
 
     def test_partial_d2_dx2(self):
-        shape = 101,
+        shape = (101,)
         x, dx = make_grid(shape, (0, 1))
 
-        u = x ** 2
+        u = x**2
         expected = 2
 
         fd = Diff(0, 2)
@@ -38,15 +37,17 @@ class DiffTest(unittest.TestCase):
         assert_array_almost_equal(expected, actual)
 
     def test_partial_d_dx_acc(self):
-        shape = 11,
+        shape = (11,)
         x, dx = make_grid(shape, (0, 1))
 
-        u = x ** 3
-        expected = 3*x**2
+        u = x**3
+        expected = 3 * x**2
 
         fd = Diff(0, 1)
         actual = fd(u, dx)
-        np.testing.assert_raises(AssertionError, assert_array_almost_equal, expected, actual)
+        np.testing.assert_raises(
+            AssertionError, assert_array_almost_equal, expected, actual
+        )
 
         actual = fd(u, dx, acc=4)
         assert_array_almost_equal(expected, actual)
@@ -124,7 +125,7 @@ class DiffTest(unittest.TestCase):
         fd = Coef(3 * X * Y) * Diff(0, 2)
         actual = fd(u, dy, acc=4)
 
-        expected = - 3*X *Y* np.sin(X) * np.sin(Y)
+        expected = -3 * X * Y * np.sin(X) * np.sin(Y)
         assert_array_almost_equal(expected, actual)
 
     def test_identity(self):
@@ -144,10 +145,10 @@ class DiffTest(unittest.TestCase):
         (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
         u = np.sin(X) * np.sin(Y)
 
-        fd = Coef(3*X)*Diff(0, 2) - Coef(Y) * (Diff(1, 2) + Diff(0, 1))
-        actual = fd(u, h={0: dx, 1:dy}, acc=4)
+        fd = Coef(3 * X) * Diff(0, 2) - Coef(Y) * (Diff(1, 2) + Diff(0, 1))
+        actual = fd(u, h={0: dx, 1: dy}, acc=4)
 
-        expected = -3*X*u - Y * (-sin(X)*sin(Y) + cos(X)*sin(Y))
+        expected = -3 * X * u - Y * (-sin(X) * sin(Y) + cos(X) * sin(Y))
         assert_array_almost_equal(expected, actual)
 
     def test_apply_base_binary_operator_raises_exception(self):
@@ -161,10 +162,12 @@ def make_grid(shape, edges):
 
     if len(shape) == 1:
         x = np.linspace(*edges, shape[0])
-        dx = x[1]-x[0]
+        dx = x[1] - x[0]
         return x, dx
 
-    axes = tuple([np.linspace(edges[k][0], edges[k][1], shape[k]) for k in range(len(shape))])
-    coords = np.meshgrid(*axes, indexing='ij')
-    spacings = [axes[k][1]-axes[k][0] for k in range(len(shape))]
+    axes = tuple(
+        [np.linspace(edges[k][0], edges[k][1], shape[k]) for k in range(len(shape))]
+    )
+    coords = np.meshgrid(*axes, indexing="ij")
+    spacings = [axes[k][1] - axes[k][0] for k in range(len(shape))]
     return axes, spacings, coords

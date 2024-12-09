@@ -1,10 +1,11 @@
 import sys
-sys.path.insert(1, '..')
+
+sys.path.insert(1, "..")
 
 import unittest
 from numpy.testing import assert_array_almost_equal
 import numpy as np
-from findiff.vector import Gradient, Divergence, Curl, Laplacian
+from findiff.legacy.vector import Gradient, Divergence, Curl, Laplacian
 
 
 class TestGradient(unittest.TestCase):
@@ -12,11 +13,13 @@ class TestGradient(unittest.TestCase):
     def test_3d_gradient_on_scalar_func(self):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.sin(X) * np.sin(Y) * np.sin(Z)
-        grad_f_ex = np.array([
-          np.cos(X) * np.sin(Y) * np.sin(Z),
-          np.sin(X) * np.cos(Y) * np.sin(Z),
-          np.sin(X) * np.sin(Y) * np.cos(Z),
-        ])
+        grad_f_ex = np.array(
+            [
+                np.cos(X) * np.sin(Y) * np.sin(Z),
+                np.sin(X) * np.cos(Y) * np.sin(Z),
+                np.sin(X) * np.sin(Y) * np.cos(Z),
+            ]
+        )
         grad = Gradient(spac=h, acc=4)
         grad_f = grad(f)
         assert_array_almost_equal(grad_f, grad_f_ex)
@@ -24,11 +27,13 @@ class TestGradient(unittest.TestCase):
     def test_spacing_with_h(self):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.sin(X) * np.sin(Y) * np.sin(Z)
-        grad_f_ex = np.array([
-            np.cos(X) * np.sin(Y) * np.sin(Z),
-            np.sin(X) * np.cos(Y) * np.sin(Z),
-            np.sin(X) * np.sin(Y) * np.cos(Z),
-        ])
+        grad_f_ex = np.array(
+            [
+                np.cos(X) * np.sin(Y) * np.sin(Z),
+                np.sin(X) * np.cos(Y) * np.sin(Z),
+                np.sin(X) * np.sin(Y) * np.cos(Z),
+            ]
+        )
         grad = Gradient(h=h, acc=4)
         grad_f = grad(f)
         assert_array_almost_equal(grad_f, grad_f_ex)
@@ -36,22 +41,25 @@ class TestGradient(unittest.TestCase):
     def test_3d_gradient_on_scalar_func_non_uni(self):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.sin(X) * np.sin(Y) * np.sin(Z)
-        grad_f_ex = np.array([
-          np.cos(X) * np.sin(Y) * np.sin(Z),
-          np.sin(X) * np.cos(Y) * np.sin(Z),
-          np.sin(X) * np.sin(Y) * np.cos(Z),
-        ])
+        grad_f_ex = np.array(
+            [
+                np.cos(X) * np.sin(Y) * np.sin(Z),
+                np.sin(X) * np.cos(Y) * np.sin(Z),
+                np.sin(X) * np.sin(Y) * np.cos(Z),
+            ]
+        )
         grad = Gradient(coords=axes, acc=4)
         grad_f = grad(f)
         assert_array_almost_equal(grad_f, grad_f_ex)
 
     def test_3d_gradient_on_vector_func_should_fail(self):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
-        f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z),
-                      np.sin(X) * np.sin(Y) * np.sin(Z)
-                     ])
+        f = np.array(
+            [np.sin(X) * np.sin(Y) * np.sin(Z), np.sin(X) * np.sin(Y) * np.sin(Z)]
+        )
         grad = Gradient(spac=h, acc=4)
         self.assertRaises(ValueError, grad, f)
+
 
 class TestDivergence(unittest.TestCase):
 
@@ -59,10 +67,11 @@ class TestDivergence(unittest.TestCase):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z)] * 3)
         assert f.shape == (3, 50, 50, 50)
-        div_f_ex = \
-          np.cos(X) * np.sin(Y) * np.sin(Z) +\
-          np.sin(X) * np.cos(Y) * np.sin(Z) +\
-          np.sin(X) * np.sin(Y) * np.cos(Z)
+        div_f_ex = (
+            np.cos(X) * np.sin(Y) * np.sin(Z)
+            + np.sin(X) * np.cos(Y) * np.sin(Z)
+            + np.sin(X) * np.sin(Y) * np.cos(Z)
+        )
 
         div = Divergence(spac=h, acc=4)
         div_f = div(f)
@@ -82,11 +91,13 @@ class TestCurl(unittest.TestCase):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z)] * 3)
         assert f.shape == (3, 50, 50, 50)
-        curl_f_ex = np.array([
-          np.sin(X) * np.cos(Y) * np.sin(Z) - np.sin(X) * np.sin(Y) * np.cos(Z),
-          np.sin(X) * np.sin(Y) * np.cos(Z) - np.cos(X) * np.sin(Y) * np.sin(Z),
-          np.cos(X) * np.sin(Y) * np.sin(Z) - np.sin(X) * np.cos(Y) * np.sin(Z),
-            ])
+        curl_f_ex = np.array(
+            [
+                np.sin(X) * np.cos(Y) * np.sin(Z) - np.sin(X) * np.sin(Y) * np.cos(Z),
+                np.sin(X) * np.sin(Y) * np.cos(Z) - np.cos(X) * np.sin(Y) * np.sin(Z),
+                np.cos(X) * np.sin(Y) * np.sin(Z) - np.sin(X) * np.cos(Y) * np.sin(Z),
+            ]
+        )
         curl = Curl(spac=h, acc=4)
         curl_f = curl(f)
         assert_array_almost_equal(curl_f, curl_f_ex)
@@ -117,5 +128,5 @@ def init_mesh(ndims, npoints):
     return axes, h, mesh
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
