@@ -1,6 +1,7 @@
 """Provides an interface to obsolete classes for backward compatibility."""
 
 from findiff import Diff
+from findiff.legacy.operators import _FinDiff
 from findiff.operators import FieldOperator, Identity
 
 
@@ -27,6 +28,9 @@ def FinDiff(*args, **kwargs):
         return fd
 
     return diff_from_tuple(args)
+
+
+FinDiff.__doc__ = _FinDiff.__doc__
 
 
 # Define aliasses for backward compatibility

@@ -9,7 +9,7 @@ from ..utils import *
 DEFAULT_ACC = 2
 
 
-class Diff:
+class _Diff:
     """Representation of a single partial derivative based on finite differences.
 
     This class is usually not used directly by the user, but is wrapped in

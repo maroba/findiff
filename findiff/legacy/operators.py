@@ -1,10 +1,10 @@
-from findiff.legacy.diff import Diff
+from findiff.legacy.diff import _Diff
 from findiff.stencils import StencilSet
 
 DEFAULT_ACC = 2
 
 
-class FinDiff:
+class _FinDiff:
     r"""A representation of a general linear differential operator expressed in finite differences.
 
         FinDiff objects can be added with other FinDiff objects. They can be multiplied by
@@ -51,20 +51,20 @@ class FinDiff:
        To create :math:`\\frac{\\partial f}{\\partial x}` on a uniform grid with spacing dx, dy
        along the 0th axis or 1st axis, respectively, instantiate a FinDiff object and call it:
 
-       >>> d_dx = FinDiff(0, dx)
-       >>> d_dy = FinDiff(1, dx)
+       >>> d_dx = _FinDiff(0, dx)
+       >>> d_dy = _FinDiff(1, dx)
        >>> result = d_dx(f)
 
        For :math:`\\frac{\\partial^2 f}{\\partial x^2}` or :math:`\\frac{\\partial^2 f}{\\partial y^2}`:
 
-       >>> d2_dx2 = FinDiff(0, dx, 2)
-       >>> d2_dy2 = FinDiff(1, dy, 2)
+       >>> d2_dx2 = _FinDiff(0, dx, 2)
+       >>> d2_dy2 = _FinDiff(1, dy, 2)
        >>> result_2 = d2_dx2(f)
        >>> result_3 = d2_dy2(f)
 
        For :math:`\\frac{\\partial^4 f}{\partial x \\partial^2 y \\partial z}`, do:
 
-       >>> op = FinDiff((0, dx), (1, dy, 2), (2, dz))
+       >>> op = _FinDiff((0, dx), (1, dy, 2), (2, dz))
        >>> result_4 = op(f)
 
 
@@ -132,9 +132,9 @@ class FinDiff:
                     raise ValueError("Format: (axis, spacing, order=1)")
                 spac[axis] = h
                 if pds is None:
-                    pds = Diff(axis, order)
+                    pds = _Diff(axis, order)
                 else:
-                    pd = Diff(axis, order)
+                    pd = _Diff(axis, order)
                     pds = pds * pd
         else:
             if len(args) == 3:
@@ -144,7 +144,7 @@ class FinDiff:
                 order = 1
             else:
                 raise ValueError("Format: (axis, spacing, order=1)")
-            pds = Diff(axis, order)
+            pds = _Diff(axis, order)
 
             spac[axis] = h
 
