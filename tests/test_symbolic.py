@@ -1,6 +1,6 @@
 import unittest
 
-from sympy import IndexedBase, Symbol, Expr, Eq, symbols, latex
+from sympy import IndexedBase, Symbol, symbols, latex
 
 from findiff.symbolic import SymbolicMesh, SymbolicDiff
 
@@ -10,8 +10,8 @@ class TestSymbolicMesh(unittest.TestCase):
     def test_parse_symbolic_mesh(self):
         # 1D
         mesh = SymbolicMesh(coord="x", equidistant=True)
-        x, = mesh.coord
-        dx, = mesh.spacing
+        (x,) = mesh.coord
+        (dx,) = mesh.spacing
 
         self.assertEqual(IndexedBase, type(x))
         self.assertEqual(Symbol, type(dx))
@@ -44,17 +44,17 @@ class TestSymbolicMesh(unittest.TestCase):
         mesh = SymbolicMesh(coord="x,y", equidistant=True)
         n, m = symbols("n, m")
         actual = latex(mesh.create_symbol("u")[n, m])
-        #expected = "u{}_{n}{}_{m}"
+        # expected = "u{}_{n}{}_{m}"
         expected = "{u}_{n,m}"
         self.assertEqual(latex(actual), latex(expected))
 
         # both indices up
-        #mesh = SymbolicMesh(coord="x,y", equidistant=True)
-        #n, m = symbols("n, m")
-        #u = mesh.create_symbol("u", pos="u,u")
-        #actual = latex(u[n, m])
-        #expected = "u{}^{n}{}^{m}"
-        #self.assertEqual(actual, expected)
+        # mesh = SymbolicMesh(coord="x,y", equidistant=True)
+        # n, m = symbols("n, m")
+        # u = mesh.create_symbol("u", pos="u,u")
+        # actual = latex(u[n, m])
+        # expected = "u{}^{n}{}^{m}"
+        # self.assertEqual(actual, expected)
 
 
 class TestDiff(unittest.TestCase):
@@ -78,9 +78,7 @@ class TestDiff(unittest.TestCase):
 
         expected = (u[n + 1] - u[n - 1]) / (2 * mesh.spacing[0])
 
-        self.assertEqual(
-            0, (expected - actual).simplify()
-        )
+        self.assertEqual(0, (expected - actual).simplify())
 
         # 2D
         mesh = SymbolicMesh("x, y")
@@ -92,10 +90,8 @@ class TestDiff(unittest.TestCase):
 
         expected = (u[n, m + 1] - u[n, m - 1]) / (2 * mesh.spacing[1])
 
-        self.assertEqual(
-            0, (expected - actual).simplify()
-        )
+        self.assertEqual(0, (expected - actual).simplify())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

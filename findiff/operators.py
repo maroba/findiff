@@ -1,177 +1,204 @@
-from .utils import *
-from .diff import Coef, Id, Diff, Plus, Minus, Mul, DEFAULT_ACC, LinearMap
-from .stencils import StencilSet
+import numbers
+from abc import ABC, abstractmethod
+
+import numpy as np
+from scipy import sparse
+
+from findiff.grids import EquidistantGrid, Grid, TensorProductGrid
+from findiff.stencils import StencilSet
 
 
-class FinDiff(LinearMap):
-    r""" A representation of a general linear differential operator expressed in finite differences.
-
-            FinDiff objects can be added with other FinDiff objects. They can be multiplied by
-            objects of type Coefficient.
-
-            FinDiff is callable, i.e. to apply the derivative, just call the object on the array to
-            differentiate.
-
-            :param args: variable number of tuples. Defines what derivative to take.
-                If only one tuple is given, you can leave away the tuple parentheses.
-
-            Each tuple has the form
-
-                   `(axis, spacing, count)`     for uniform grids
-
-                   `(axis, count)`              for non-uniform grids.
-
-                 `axis` is the dimension along which to take derivative.
-
-                 `spacing` is the grid spacing of the uniform grid along that axis.
-
-                 `count` is the order of the derivative, which is optional an defaults to 1.
-
-
-            :param kwargs:  variable number of keyword arguments
-
-                Allowed keywords:
-
-                `acc`:    even integer
-                      The desired accuracy order. Default is acc=2.
-
-            This class is actually deprecated and will be replaced by the Diff class in the future.
-
-        **Example**:
-
-
-           For this example, we want to operate on some 3D array f:
-
-           >>> import numpy as np
-           >>> x, y, z = [np.linspace(-1, 1, 100) for _ in range(3)]
-           >>> X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-           >>> f = X**2 + Y**2 + Z**2
-
-           To create :math:`\\frac{\\partial f}{\\partial x}` on a uniform grid with spacing dx, dy
-           along the 0th axis or 1st axis, respectively, instantiate a FinDiff object and call it:
-
-           >>> d_dx = FinDiff(0, dx)
-           >>> d_dy = FinDiff(1, dx)
-           >>> result = d_dx(f)
-
-           For :math:`\\frac{\\partial^2 f}{\\partial x^2}` or :math:`\\frac{\\partial^2 f}{\\partial y^2}`:
-
-           >>> d2_dx2 = FinDiff(0, dx, 2)
-           >>> d2_dy2 = FinDiff(1, dy, 2)
-           >>> result_2 = d2_dx2(f)
-           >>> result_3 = d2_dy2(f)
-
-           For :math:`\\frac{\\partial^4 f}{\partial x \\partial^2 y \\partial z}`, do:
-
-           >>> op = FinDiff((0, dx), (1, dy, 2), (2, dz))
-           >>> result_4 = op(f)
-
-
-    """
-
+class Node(ABC):
+    __array_priority__ = 100  # Makes sure custom multiplication is called over numpy's
 
     def __init__(self, *args, **kwargs):
-        self.acc = None
-        self.spac = None
-        self.pds = self._eval_args(args, kwargs)
+        self.children = []
 
-    def __call__(self, rhs, *args, **kwargs):
-        return self.apply(rhs, *args, **kwargs)
+    @abstractmethod
+    def __call__(self, f, *args, **kwargs):
+        pass
 
-    def apply(self, rhs, *args, **kwargs):
-        if 'acc' not in kwargs:
-            if self.acc is None:
-                acc = DEFAULT_ACC
-            else:
-                acc = self.acc
-            kwargs['acc'] = acc
-
-        if len(args) == 0 and 'h' not in kwargs:
-            if self.uniform:
-                args = self.spac,
-            else:
-                args = self.coords,
-        return self.pds(rhs, *args, **kwargs)
+    @abstractmethod
+    def matrix(self, shape):
+        pass
 
     def stencil(self, shape):
         return StencilSet(self, shape)
 
-    def matrix(self, shape, h=None, acc=None):
-        if acc is None:
-            if self.acc is None:
-                acc = DEFAULT_ACC
-            else:
-                acc = self.acc
-
-        if self.uniform:
-            if h is None and self.spac is not None:
-                h = self.spac
-            return self.pds.matrix(shape, h=h, acc=acc)
-        else:
-            return self.pds.matrix(shape, coords=self.coords, acc=acc)
-
-    def set_accuracy(self, acc):
-        self.pds.set_accuracy(acc)
-
     def __add__(self, other):
-        return Plus(self, other)
+        return Add(self, other)
+
+    def __radd__(self, other):
+        return Add(self, other)
 
     def __sub__(self, other):
-        return Minus(self, other)
+        return Add(ScalarOperator(-1) * other, self)
+
+    def __rsub__(self, other):
+        return Add(ScalarOperator(-1) * other, self)
 
     def __mul__(self, other):
         return Mul(self, other)
 
-    def _eval_args(self, args, kwargs):
-        spac = {}
+    def __rmul__(self, other):
+        return Mul(other, self)
 
-        if 'acc' in kwargs:
-            self.acc = kwargs['acc']
+    @property
+    def grid(self):
+        return getattr(self, "_grid", None)
 
-        if isinstance(args[0], tuple): # mixed partial derivative
-            pds = None
-
-            for arg in args:
-                if len(arg) == 3:
-                    axis, h, order = arg
-                elif len(arg) == 2:
-                    axis, h = arg
-                    order = 1
-                else:
-                    raise ValueError('Format: (axis, spacing, order=1)')
-                spac[axis] = h
-                if pds is None:
-                    pds = Diff(axis, order)
-                else:
-                    pd = Diff(axis, order)
-                    pds = pds * pd
+    def set_grid(self, grid):
+        if isinstance(grid, dict):
+            self._grid = EquidistantGrid(grid)
+            for child in self.children:
+                child.set_grid(self._grid)
         else:
-            if len(args) == 3:
-                axis, h, order = args
-            elif len(args) == 2:
-                axis, h = args
-                order = 1
-            else:
-                raise ValueError('Format: (axis, spacing, order=1)')
-            pds = Diff(axis, order)
+            # Grid may be set lazily
+            self._grid = grid
+            for child in self.children:
+                child.set_grid(self._grid)
 
-            spac[axis] = h
-
-        # Check if spac is really the spacing and not the coordinates (nonuniform case)
-        for a, s in spac.items():
-            if hasattr(s, '__len__'):
-                self.coords = spac
-                self.uniform = False
-                break
-            else:
-                self.spac = spac
-                self.uniform = True
-                break
-
-        return pds
+    def set_accuracy(self, acc):
+        self.acc = acc
+        for child in self.children:
+            child.set_accuracy(acc)
 
 
-# Alias for backward compatibility
-Coefficient = Coef
-Identity = Id
+class FieldOperator(Node):
+    """An operator that multiplies an array pointwise."""
 
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+    def __call__(self, f, *args, **kwargs):
+        if isinstance(f, (numbers.Number, np.ndarray)):
+            return self.value * f
+        return self.value * super().__call__(f, *args, **kwargs)
+
+    def matrix(self, shape):
+        if isinstance(self.value, np.ndarray):
+            diag_values = self.value.reshape(-1)
+            return sparse.diags(diag_values)
+        elif isinstance(self.value, numbers.Number):
+            siz = np.prod(shape)
+            return sparse.diags(self.value * np.ones(siz))
+
+
+class ScalarOperator(FieldOperator):
+    def __init__(self, value):
+        if not isinstance(value, numbers.Number):
+            raise ValueError("Expected number, got " + str(type(value)))
+        super().__init__(value)
+
+    def matrix(self, shape):
+        siz = np.prod(shape)
+        mat = sparse.lil_matrix((siz, siz))
+        diag = list(range(siz))
+        mat[diag, diag] = self.value
+        return sparse.csr_matrix(mat)
+
+
+class Identity(ScalarOperator):
+    def __init__(self):
+        super().__init__(1)
+
+
+class BinaryOperation(Node):
+
+    @property
+    def left(self):
+        return self.children[0]
+
+    @property
+    def right(self):
+        return self.children[1]
+
+
+class Add(BinaryOperation):
+    def __init__(self, left, right):
+        if isinstance(left, (numbers.Number, np.ndarray)):
+            left = FieldOperator(left)
+        if isinstance(right, (numbers.Number, np.ndarray)):
+            right = FieldOperator(right)
+        super().__init__()
+        self.children = [left, right]
+
+    def __call__(self, f, *args, **kwargs):
+        return self.left(f, *args, **kwargs) + self.right(f, *args, **kwargs)
+
+    def matrix(self, shape):
+        return self.left.matrix(shape) + self.right.matrix(shape)
+
+
+class Mul(BinaryOperation):
+    def __init__(self, left, right):
+        if isinstance(left, (numbers.Number, np.ndarray)):
+            left = FieldOperator(left)
+        if isinstance(right, (numbers.Number, np.ndarray)):
+            right = FieldOperator(right)
+        super().__init__()
+        self.children = [left, right]
+
+    def __call__(self, f, *args, **kwargs):
+        return self.left(self.right(f, *args, **kwargs), *args, **kwargs)
+
+    def matrix(self, shape):
+        return self.left.matrix(shape) * self.right.matrix(shape)
+
+
+class Diff(Node):
+
+    DEFAULT_ACC = 2
+
+    def __init__(self, axis=0, grid=None, acc=DEFAULT_ACC):
+        super().__init__()
+
+        if isinstance(grid, numbers.Number):
+            grid = {axis: grid}
+        elif hasattr(grid, "shape") and hasattr(grid, "__len__"):
+            grid = TensorProductGrid({axis: grid})
+
+        self.set_grid(grid)
+
+        self.axis = axis
+        self.order = 1
+        self.acc = acc
+
+        self._fd = None
+
+    def __call__(self, f, *args, **kwargs):
+
+        if "acc" in kwargs:
+            # allow to pass down new accuracy deep in expression tree
+            new_acc = kwargs["acc"]
+            if new_acc != self.acc:
+                self._fd = None
+                self.set_accuracy(new_acc)
+
+        if self._fd is None:
+            self._build_differentiator()
+
+        if isinstance(f, Node):
+            f = f(*args, **kwargs)
+        return self._fd(f)
+
+    def _build_differentiator(self):
+        from findiff.legacy.operators import FinDiff
+
+        if isinstance(self.grid, EquidistantGrid):
+            spacing = self.grid.spacing[self.axis]
+            self._fd = FinDiff(self.axis, spacing, self.order, acc=self.acc)
+        elif isinstance(self.grid, TensorProductGrid):
+            coords = self.grid.coords[self.axis]
+            self._fd = FinDiff(self.axis, coords, self.order, acc=self.acc)
+
+    def matrix(self, shape):
+        if not self._fd:
+            self._build_differentiator()
+        return self._fd.matrix(shape)
+
+    def __pow__(self, power):
+        new_diff = Diff(self.axis, acc=self.acc, grid=self.grid)
+        new_diff.order *= power
+        return new_diff

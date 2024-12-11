@@ -1,31 +1,29 @@
-import numpy as np
+from abc import ABC
 
 
-class Grid(object):
+class Grid(ABC):
     pass
 
 
-class UniformGrid(Grid):
+class EquidistantGrid(Grid):
 
-    def __init__(self, shape, spac, center=None):
+    def __init__(self, spacing: dict):
+        for axis, h in spacing.items():
+            if h <= 0:
+                raise ValueError("spacing must be greater than zero")
 
-        if not hasattr(shape, '__len__'):
-            self.shape = shape,
-            self.ndims = 1
-        else:
-            self.shape = shape
-            self.ndims = len(shape)
+        # key -> value == axis -> spacing for axis
+        self.spacing = spacing
 
-        if not hasattr(spac, '__len__'):
-            self.spac = spac,
-        else:
-            self.spac = spac
 
-        if center is None:
-            self.center = np.zeros(self.ndims)
-        else:
-            assert len(center) == self.ndims
-            self.center = np.array(center)
+class TensorProductGrid(Grid):
 
-    def spacing(self, axis):
-        return self.spac[axis]
+    def __init__(self, axes_coords: dict):
+        if len(axes_coords) == 0:
+            raise ValueError("axes_coords cannot be empty")
+        for axis, c in axes_coords.items():
+            if len(c.shape) != 1:
+                raise ValueError(
+                    "each item in axes_coords must have only one dimension"
+                )
+        self.coords = axes_coords

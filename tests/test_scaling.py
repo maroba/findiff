@@ -1,15 +1,17 @@
 import sys
-sys.path.insert(1, '..')
+
+sys.path.insert(1, "..")
 
 from math import log
 import unittest
 import numpy as np
-from findiff.operators import FinDiff
+from findiff import FinDiff
+
 
 class TestScaling(unittest.TestCase):
 
     def fit_1d(self, acc):
-        nx_list = 10 ** np.linspace(1.75, 2., 10)
+        nx_list = 10 ** np.linspace(1.75, 2.0, 10)
         Lx = np.pi
 
         log_err_list = []
@@ -17,7 +19,7 @@ class TestScaling(unittest.TestCase):
 
         for nx in nx_list:
             nx = int(nx)
-            x = np.linspace(0., Lx, nx)
+            x = np.linspace(0.0, Lx, nx)
             dx = x[1] - x[0]
             f = np.sin(x)
             d_dx = FinDiff(0, dx)
@@ -42,7 +44,7 @@ class TestScaling(unittest.TestCase):
             x = np.linspace(0, Lx, nx)
             y = np.linspace(0, Ly, ny)
             dx, dy = x[1] - x[0], y[1] - y[0]
-            X, Y = np.meshgrid(x, y, indexing='ij')
+            X, Y = np.meshgrid(x, y, indexing="ij")
             f = np.sin(X) * np.sin(Y)
             d_dx = FinDiff(0, dx)
             fx = d_dx(f, acc=acc)
@@ -55,20 +57,20 @@ class TestScaling(unittest.TestCase):
         return fit[0]
 
     def test_1d_acc2(self):
-        self.assertAlmostEqual(2., self.fit_1d(acc=2), 1)
+        self.assertAlmostEqual(2.0, self.fit_1d(acc=2), 1)
 
     def test_1d_acc4(self):
-        self.assertAlmostEqual(4., self.fit_1d(acc=4), 1)
+        self.assertAlmostEqual(4.0, self.fit_1d(acc=4), 1)
 
     def test_1d_acc6(self):
-        self.assertAlmostEqual(6., self.fit_1d(acc=6), 1)
+        self.assertAlmostEqual(6.0, self.fit_1d(acc=6), 1)
 
     def test_2d_acc2(self):
-        self.assertAlmostEqual(2., self.fit_2d(acc=2), 1)
+        self.assertAlmostEqual(2.0, self.fit_2d(acc=2), 1)
 
     def test_2d_acc4(self):
-        self.assertAlmostEqual(4., self.fit_2d(acc=4), 1)
+        self.assertAlmostEqual(4.0, self.fit_2d(acc=4), 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -32,75 +32,66 @@ You can find the documentation of the code including examples of application at 
 
 ## Taking Derivatives
 
-*findiff* allows to easily define derivative operators that you can apply to *numpy* arrays of any dimension.
-The syntax for a simple derivative operator is
+*findiff* allows to easily define derivative operators that you can apply to *numpy* arrays of 
+any dimension. 
 
-```python
-FinDiff(axis, spacing, degree)
-```
-
-where `spacing` is the separation of grid points between neighboring grid points. Consider the 1D case
+Consider the simple 1D case of a equidistant grid
 with a first derivative $\displaystyle \frac{\partial}{\partial x}$ along the only axis (0):
 
 ```python
 import numpy as np
-from findiff import FinDiff
+from findiff import Diff
 
+# define the grid:
 x = np.linspace(0, 1, 100)
+
+# the array to differentiate:
 f = np.sin(x)  # as an example
 
-# time step dx
-dx = x[1] - x[0]
-
 # Define the derivative:
-d_dx = FinDiff(0, dx, 1)
+d_dx = Diff(0, x[1] - x[0])
 
 # Apply it:
 df_dx = d_dx(f) 
 ```
 
-Similary, you can define partial derivative operators along different axes or of higher degree, for example:
+Similarly, you can define partial derivatives along other axes, for example, if $z$ is the 2-axis, we can write
+$\frac{\partial}{\partial z}$ as:
 
-|                            Math                            | *findiff*                         |                                         |
-| :---------------------------------------------------------: | ----------------------------------- | --------------------------------------- |
-|        $\displaystyle \frac{\partial}{\partial y}$        | ``FinDiff(1, dy, 1)``               | same as `` FinDiff(1, dy)``             |
-|      $\displaystyle \frac{\partial^4}{\partial y^4}$      | ``FinDiff(1, dy, 4)``               | any degree is possible                  |
-| $\displaystyle \frac{\partial^3}{\partial x^2\partial z}$ | ``FinDiff((0, dx, 2), (2, dz, 1))`` | mixed also possible, one tuple per axis |
-|     $\displaystyle \frac{\partial}{\partial x_{10}}$     | ``FinDiff(10, dx10, 1)``            | number of axes not limited              |
+```python
+Diff(2, dz)
+```
 
-We can also take linear combinations of derivative operators, for example:
+`Diff` always creates a first derivative. For higher derivatives, you simply exponentiate them, for example for $\frac{\partial^2}{\partial_x^2}$
+
+```
+d2_dx2 = Diff(0, dx)**2
+```
+
+and apply it as before.
+
+You can also define more general differential operators intuitively, like
 
 $$
 2x \frac{\partial^3}{\partial x^2 \partial z} + 3 \sin(y)z^2 \frac{\partial^3}{\partial x \partial y^2}
 $$
 
-is
+
+which can be written as
 
 ```python
-Coef(2*X) * FinDiff((0, dz, 2), (2, dz, 1)) + Coef(3*sin(Y)*Z**2) * FinDiff((0, dx, 1), (1, dy, 2))
+# define the operator
+diff_op = 2 * X * Diff(0)**2 * Diff(2) + 3 * sin(Y) * Z**2 * Diff(0) * Diff(1) 
+
+# set the grid you use (equidistant here)
+diff_op.set_grid({0: dx, 1: dy, 2: dz})
+
+# apply the operator
+result = diff_op(f)
 ```
 
-where `X, Y, Z` are *numpy* arrays with meshed grid points.
-
-Chaining differential operators is also possible, e.g.
-
-$$
-\left( \frac{\partial}{\partial x} - \frac{\partial}{\partial y} \right) 
-\cdot \left( \frac{\partial}{\partial x} + \frac{\partial}{\partial y} \right)
-= \frac{\partial^2}{\partial x^2} - \frac{\partial^2}{\partial y^2}
-$$
-
-can be written as
-
-```python
-(FinDiff(0, dx) - FinDiff(1, dy)) * (FinDiff(0, dx) + FinDiff(1, dy))
-```
-
-and
-
-```python
-FinDiff(0, dx, 2) - FinDiff(1, dy, 2)
-```
+where `X, Y, Z` are *numpy* arrays with meshed grid points. Here you see that you can also define your grid
+lazily.
 
 Of course, standard operators from vector calculus like gradient, divergence and curl are also available
 as shortcuts.
@@ -113,9 +104,20 @@ When constructing an instance of `FinDiff`, you can request the desired accuracy
 order by setting the keyword argument `acc`. For example:
 
 ```python
-d2_dx2 = findiff.FinDiff(0, dy, 2, acc=4)
-d2f_dx2 = d2_dx2(f)
+d_dx = Diff(0, dy, acc=4)
+df_dx = d2_dx2(f)
 ```
+
+Alternatively, you can also split operator definition and configuration:
+
+```python
+d_dx = Diff(0, dx)
+d_dx.set_accuracy(2)
+df_dx = d2_dx2(f)
+```
+
+which comes in handy if you have a complicated expression of differential operators, because then you
+can specify it on the whole expression and it will be passed down to all basic operators.
 
 If not specified, second order accuracy will be taken by default.
 
@@ -164,7 +166,7 @@ For a given _FinDiff_ differential operator, you can get the matrix representati
 using the `matrix(shape)` method, e.g. for a small 1D grid of 10 points:
 
 ```python
-d2_dx2 = FinDiff(0, dx, 2)
+d2_dx2 = Diff(0, dx)**2
 mat = d2_dx2.matrix((10,))  # this method returns a scipy sparse matrix
 print(mat.toarray())
 ```
@@ -276,13 +278,13 @@ u(0) = 0, \hspace{1em} u(10) = 1
 $$
 
 ```python
-from findiff import FinDiff, Id, PDE
+from findiff import Diff, Id, PDE
 
 shape = (300, )
 t = numpy.linspace(0, 10, shape[0])
 dt = t[1]-t[0]
 
-L = FinDiff(0, dt, 2) - FinDiff(0, dt, 1) + Coef(5) * Id()
+L = Diff(0, dt)**2 - Diff(0, dt) + 5 * Id()
 f = numpy.cos(2*t)
 
 bc = BoundaryConditions(shape)
@@ -387,5 +389,5 @@ python setup.py develop
 From the console:
 
 ```
-python -m unittest discover test
+python -m unittest discover tests
 ```
