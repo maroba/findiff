@@ -1,226 +1,15 @@
 import itertools
 import numbers
-import operator
 
 import scipy.sparse as sparse
 
 from ..coefs import coefficients, coefficients_non_uni
-from ..stencils import StencilSet
 from ..utils import *
 
 DEFAULT_ACC = 2
 
 
-class Operator(object):
-    """Base class for all operator classes"""
-
-    pass
-
-
-class BinaryOperator(Operator):
-    """Base class for all binary operators (like addition) that allow to combine or chain differential operators"""
-
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def apply(self, rhs, *args, **kwargs):
-        raise NotImplementedError
-
-    def __call__(self, rhs, *args, **kwargs):
-        return self.apply(rhs, *args, **kwargs)
-
-    def stencil(self, shape):
-        return StencilSet(self, shape)
-
-
-class Plus(BinaryOperator):
-    """A class to add two differential operators"""
-
-    def __init__(self, left, right):
-        super().__init__(left, right)
-
-    def __add__(self, other):
-        return Plus(self, other)
-
-    def __radd__(self, other):
-        return Plus(self, other)
-
-    def __sub__(self, other):
-        return Minus(self, other)
-
-    def __rsub__(self, other):
-        return Minus(self, other)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(self, other)
-
-    def apply(self, rhs, *args, **kwargs):
-
-        if isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
-            right = self.right.apply(rhs, *args, **kwargs)
-        else:
-            right = self.right
-
-        if isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
-            left = self.left.apply(rhs, *args, **kwargs)
-        else:
-            left = self.left * rhs
-
-        return left + right
-
-    def matrix(self, shape, *args, **kwargs):
-        left, right = self.left, self.right
-        if isinstance(self.left, Operator):
-            left = self.left.matrix(shape, *args, **kwargs)
-        if isinstance(self.right, Operator):
-            right = self.right.matrix(shape, *args, **kwargs)
-        return left + right
-
-
-class Minus(BinaryOperator):
-    """A class to subtract two differential operators from each other"""
-
-    def __init__(self, left, right):
-        super().__init__(left, right)
-
-    def __add__(self, other):
-        return Plus(self, other)
-
-    def __radd__(self, other):
-        return Plus(self, other)
-
-    def __sub__(self, other):
-        return Minus(self, other)
-
-    def __rsub__(self, other):
-        return Minus(self, other)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(self, other)
-
-    def apply(self, rhs, *args, **kwargs):
-
-        if isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
-            right = self.right.apply(rhs, *args, **kwargs)
-        else:
-            right = self.right
-
-        if isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
-            left = self.left.apply(rhs, *args, **kwargs)
-        else:
-            left = self.left * rhs
-
-        return left - right
-
-    def matrix(self, shape, *args, **kwargs):
-        left, right = self.left, self.right
-        if isinstance(self.left, Operator):
-            left = self.left.matrix(shape, *args, **kwargs)
-        if isinstance(self.right, Operator):
-            right = self.right.matrix(shape, *args, **kwargs)
-        return left - right
-
-
-class Mul(BinaryOperator):
-    """A class to multiply (chain) two differential operators"""
-
-    def __init__(self, left, right):
-        super().__init__(left, right)
-        self.oper = operator.mul
-
-    def __add__(self, other):
-        return Plus(self, other)
-
-    def __radd__(self, other):
-        return Plus(self, other)
-
-    def __sub__(self, other):
-        return Minus(self, other)
-
-    def __rsub__(self, other):
-        return Minus(self, other)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(self, other)
-
-    def apply(self, rhs, *args, **kwargs):
-
-        if isinstance(self.right, LinearMap) or isinstance(self.right, BinaryOperator):
-            result = self.right.apply(rhs, *args, **kwargs)
-        else:
-            result = self.right * rhs
-
-        if isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
-            result = self.left.apply(result, *args, **kwargs)
-        else:
-            result = self.left * result
-
-        return result
-
-    def matrix(self, shape, *args, **kwargs):
-        """Matrix representation of given operator product on an equidistant grid of given shape.
-
-        :param shape: tuple with the shape of the grid
-        :return: scipy sparse matrix representing the operator product
-        """
-
-        if isinstance(self.left, np.ndarray):
-            left = sparse.diags(self.left.reshape(-1), 0)
-        elif isinstance(self.left, LinearMap) or isinstance(self.left, BinaryOperator):
-            left = self.left.matrix(shape, *args, **kwargs)
-        else:
-            left = self.left * sparse.diags(np.ones(shape).reshape(-1), 0)
-
-        if isinstance(self.right, np.ndarray):
-            right = sparse.diags(self.right.reshape(-1), 0)
-        elif isinstance(self.right, LinearMap) or isinstance(
-            self.right, BinaryOperator
-        ):
-            right = self.right.matrix(shape, *args, **kwargs)
-        else:
-            right = self.right * sparse.diags(np.ones(shape).reshape(-1), 0)
-
-        return left.dot(right)
-
-
-class LinearMap(Operator):
-
-    def __init__(self, value):
-        self.value = value
-
-    def __add__(self, other):
-        return Plus(self, other)
-
-    def __radd__(self, other):
-        return Plus(self, other)
-
-    def __sub__(self, other):
-        return Minus(self, other)
-
-    def __rsub__(self, other):
-        return Minus(self, other)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
-    def __rmul__(self, other):
-        return Mul(self, other)
-
-    def __call__(self, rhs, *args, **kwargs):
-        return self.apply(rhs, *args, **kwargs)
-
-
-class Diff(LinearMap):
+class Diff:
     """Representation of a single partial derivative based on finite differences.
 
     This class is usually not used directly by the user, but is wrapped in
@@ -248,6 +37,9 @@ class Diff(LinearMap):
         self.acc = None
         if "acc" in kwargs:
             self.acc = kwargs["acc"]
+
+    def __call__(self, rhs, *args, **kwargs):
+        return self.apply(rhs, *args, **kwargs)
 
     def apply(self, u, *args, **kwargs):
         """Applies the partial derivative to a numpy array."""
@@ -512,52 +304,3 @@ class Diff(LinearMap):
             raise IndexError("Shift slice out of bounds")
 
         return slice(sl.start + off, sl.stop + off, sl.step)
-
-
-class Id(LinearMap):
-    """The identity operator. When applied to an array, returns the same array (not a copy)"""
-
-    def __init__(self):
-        self.value = 1
-
-    def apply(self, rhs, *args, **kwargs):
-        return rhs
-
-    def matrix(self, shape):
-        """Matrix representation of the identity operator, i.e. identity matrix of given shape.
-
-        :param shape: Shape of the arrays to which Id shall be applied
-        :type shape: tuple of ints
-        :return: Sparse identity matrix.
-        :rtype: scipy.sparse.csr_matrix
-        """
-
-        siz = np.prod(shape)
-        mat = sparse.lil_matrix((siz, siz))
-        diag = list(range(siz))
-        mat[diag, diag] = 1
-        return sparse.csr_matrix(mat)
-
-
-class Coef(object):
-    """
-    Encapsulates a constant (number) or variable (N-dimensional coordinate array) value to multiply with a linear operator
-
-    :param value: a number or an numpy.ndarray with meshed coordinates
-
-    **Example**:
-
-    The following example defines the differential operator
-
-    .. math:: 2x\\frac{\\partial^3}{\\partial x^2\\partial z}
-
-    >>> X, Y, Z, U = numpy.meshgrid(x, y, z, u, indexing="ij")
-    >>> diff_op = Coef(2*X) * FinDiff((0, dx, 2), (2, dz, 1))
-
-    """
-
-    def __init__(self, value):
-        self.value = value
-
-    def __mul__(self, other):
-        return Mul(self.value, other)

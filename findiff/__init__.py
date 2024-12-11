@@ -18,7 +18,7 @@ Features:
 - Version 1.0: Completely remodeled API (backward compatibility is maintained, though)
 """
 
-__version__ = "1.0.0.dev"
+__version__ = "0.11.0"
 
 
 from .legacy import *

@@ -1,10 +1,11 @@
 import sys
 
+import numpy as np
+
 sys.path.insert(1, "..")
 
 import unittest
-from findiff.legacy.operators import FinDiff, Identity, Coef
-from findiff.pde import *
+from findiff import *
 
 # import matplotlib.pyplot as plt
 # from mpl_toolkits import mplot3d

@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.11.x
+
+- More comfortable API. (Old API still available)
+
 ## Version 0.10.x
 
 - Create symbolic representations of finite difference schemes

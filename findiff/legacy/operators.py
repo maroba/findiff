@@ -1,9 +1,10 @@
-from ..utils import *
-from .diff import Coef, Id, Diff, Plus, Minus, Mul, DEFAULT_ACC, LinearMap
-from ..stencils import StencilSet
+from findiff.legacy.diff import Diff
+from findiff.stencils import StencilSet
+
+DEFAULT_ACC = 2
 
 
-class FinDiff(LinearMap):
+class FinDiff:
     r"""A representation of a general linear differential operator expressed in finite differences.
 
         FinDiff objects can be added with other FinDiff objects. They can be multiplied by
@@ -112,15 +113,6 @@ class FinDiff(LinearMap):
     def set_accuracy(self, acc):
         self.pds.set_accuracy(acc)
 
-    def __add__(self, other):
-        return Plus(self, other)
-
-    def __sub__(self, other):
-        return Minus(self, other)
-
-    def __mul__(self, other):
-        return Mul(self, other)
-
     def _eval_args(self, args, kwargs):
         spac = {}
 
@@ -168,8 +160,3 @@ class FinDiff(LinearMap):
                 break
 
         return pds
-
-
-# Alias for backward compatibility
-Coefficient = Coef
-Identity = Id
