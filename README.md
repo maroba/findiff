@@ -44,13 +44,12 @@ from findiff import Diff
 
 # define the grid:
 x = np.linspace(0, 1, 100)
-dx = x[1] - x[0] # the grid spacing
 
 # the array to differentiate:
 f = np.sin(x)  # as an example
 
 # Define the derivative:
-d_dx = Diff(0, dx)
+d_dx = Diff(0, x[1] - x[0])
 
 # Apply it:
 df_dx = d_dx(f) 
