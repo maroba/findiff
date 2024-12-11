@@ -101,7 +101,7 @@ More examples can be found [here](https://findiff.readthedocs.io/en/latest/sourc
 
 ### Accuracy Control
 
-When constructing an instance of `FinDiff`, you can request the desired accuracy
+When constructing an instance of `Diff`, you can request the desired accuracy
 order by setting the keyword argument `acc`. For example:
 
 ```python
@@ -163,7 +163,7 @@ The resulting accuracy order is computed and part of the output:
 
 ## Matrix Representation
 
-For a given _FinDiff_ differential operator, you can get the matrix representation
+For a given differential operator, you can get the matrix representation
 using the `matrix(shape)` method, e.g. for a small 1D grid of 10 points:
 
 ```python
