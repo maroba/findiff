@@ -1,17 +1,25 @@
-# pyproject.toml
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "findiff"
 authors = [
-    { name = "Matthias Baer", email = "matthias.r.baer@googlemail.com" },
+    {name = "Matthias Baer"},
+]
+maintainers = [
+    {name = "Matthias Baer", email="matthias.r.baer@googlemail.com"},
 ]
 description = "A Python package for finite difference derivatives in any number of dimensions."
-dynamic = ["version"]
 readme = "README.md"
+license = {text = "MIT"}
 dependencies = [
     "numpy",
     "scipy",
     "sympy"
 ]
+dynamic = ["version"]
+
 requires-python = ">=3.8"
 keywords = ["finite-differences", "numerical-derivatives", "scientific-computing"]
 classifiers = [
@@ -27,13 +35,14 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project.urls]
 Homepage = "https://github.com/maroba/findiff"
+source = "https://github.com/maroba/findiff"
 Issues = "https://github.com/maroba/findiff/issues"
+tracker = "https://github.com/maroba/findiff/issues"
+
+[tool.setuptools.packages.find]
+include = ["findiff"]
 
 [tool.setuptools.dynamic]
 version = { attr = "findiff.__version__" }

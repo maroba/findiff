@@ -57,7 +57,7 @@ df_dx = d_dx(f)
 ```
 
 Similarly, you can define partial derivatives along other axes, for example, if $z$ is the 2-axis, we can write
-$\frac{partial}{\partial z}$ as:
+$\frac{\partial}{\partial z}$ as:
 
 ```python
 Diff(2, dz)

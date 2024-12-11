@@ -1,6 +1,0 @@
-numpy>=1.26.4
-scipy>=1.12.0
-Sphinx>=7.2.6
-sympy
-
-
