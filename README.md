@@ -29,7 +29,7 @@ pip install --upgrade findiff
 
 ## Documentation and Examples
 
-You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/latest/.
+You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/stable/.
 
 ## Taking Derivatives
 
