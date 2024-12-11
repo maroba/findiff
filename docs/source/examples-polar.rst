@@ -10,7 +10,7 @@ for using polar coordinates in 2D.
 .. code:: ipython3
 
     import numpy as np
-    from findiff import FinDiff, Coefficient, Laplacian
+    from findiff import Diff, Laplacian
 
 Sample Problem
 --------------
@@ -132,7 +132,7 @@ or in *findiff*:
 
 .. code:: ipython3
 
-    laplace_polar = FinDiff(0, dr, 2) + Coefficient(1/R) * FinDiff(0, dr) + Coefficient(1/R**2) * FinDiff(1, dphi, 2)
+    laplace_polar = Diff(0, dr)**2 + (1/R) * Diff(0, dr) + (1/R**2) * Diff(1, dphi)**2
     result = laplace_polar(f_polar)
 
 And we get the same result

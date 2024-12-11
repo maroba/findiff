@@ -21,9 +21,10 @@ Features
 - Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 - Fully vectorized for speed
 - Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
-- _New in version 0.7:_ Generate matrix representations of arbitrary linear differential operators
-- _New in version 0.8:_ Solve partial differential equations with Dirichlet or Neumann boundary conditions
-- _New in version 0.9:_ Generate differential operators for arbitrary stencils
+- Generate matrix representations of arbitrary linear differential operators
+- Solve partial differential equations with Dirichlet or Neumann boundary conditions
+- Generate differential operators for arbitrary stencils
+- _New in version 0.10:_ Symbolic representation of finite difference schemes
 
 
 Content

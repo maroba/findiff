@@ -16,13 +16,13 @@ This is an eigenvalue problem for the differential operator
 
     H = -\frac{1}{2}\left(\frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} + \frac{\partial^2}{\partial z^2}\right) \psi + V(x, y, z)
 
-The Laplacian can be expressed as a ``FinDiff`` object, e.g. as
+The Laplacian can be expressed as a ``Diff`` object, e.g. as
 
 .. code::
 
-   >>> laplace = FinDiff(0, dx, 2) + FinDiff(1, dy, 2) + FinDiff(2, dz, 2)
+   >>> laplace = Diff(0, dx)**2 + Diff(1, dy)**2 + Diff(2, dz)**2
 
-Then we can convert the resulting ``FinDiff`` object into a matrix
+Then we can convert the resulting ``Diff`` object into a matrix
 representation by calling its ``matrix`` method:
 
 .. code::

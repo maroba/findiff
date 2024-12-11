@@ -21,7 +21,6 @@ Features:
 __version__ = "0.11.1"
 
 
-from .legacy import *
 from .operators import Diff, Identity
 from .pde import PDE, BoundaryConditions
 from .compatible import Coef, Coefficient, FinDiff, Id

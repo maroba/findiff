@@ -6,7 +6,7 @@ Non-Uniform Grids
 
     %matplotlib inline
     import numpy as np
-    from findiff import FinDiff
+    from findiff import Diff
     import matplotlib.pyplot as plt
 
 We define a function of one variable and its first derivative for this
@@ -84,8 +84,8 @@ calculate the first derivative for both grids.
     dx1 = x1[1] - x1[0]
     dx2 = x2[1] - x2[0]
     
-    d_dx1 = FinDiff(0, dx1, acc=2)
-    d_dx2 = FinDiff(0, dx2)
+    d_dx1 = Diff(0, dx1, acc=2)
+    d_dx2 = Diff(0, dx2)
     
     df_dx1 = d_dx1(f1)
     df_dx2 = d_dx2(f2)
@@ -149,7 +149,7 @@ the derivative with the non-uniform grid.
 
 .. code:: ipython3
 
-    d_dx = FinDiff(0, x_nu, acc=2)
+    d_dx = Diff(0, x_nu, acc=2)
     df_dx_nu = d_dx(f_nu)
     
     plt.plot(x_fine, df_dx_exact)

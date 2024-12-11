@@ -1,5 +1,5 @@
 ==============
-Module *coefs*
+Finite Difference Coefficients
 ==============
 
 .. automodule:: findiff.coefs

@@ -26,9 +26,9 @@ can be defined by
 
 .. code-block:: ipython
 
-    from findiff import FinDiff
+    from findiff import Diff
 
-    d_dx = FinDiff(0, dx)
+    d_dx = Diff(0, dx)
 
 The first argument is the **axis** along which to take the partial derivative.
 The second argument is the **spacing** of the (equidistant) grid along that axis.
@@ -41,7 +41,7 @@ is
 
 .. code-block:: ipython
 
-    FinDiff(k, dx_k)
+    Diff(k, dx_k)
 
 Let's initialize a one-dimensional array ``f`` with some values, for example:
 
@@ -54,13 +54,13 @@ Let's initialize a one-dimensional array ``f`` with some values, for example:
 
 and calculate the first derivative with respect of the zeroth axis.
 
-``FinDiff`` objects behave like operators, so in order to apply them, you can
+``Diff`` objects behave like operators, so in order to apply them, you can
 simply call them on a *numpy* ``ndarray`` of any shape:
 
 
 .. code-block:: ipython
 
-    d_dx = FinDiff(0, dx)
+    d_dx = Diff(0, dx)
     df_dx = d_dx(f)
 
 Now ``df_dx`` is a new `numpy` array with the same shape as ``f`` containing the
@@ -76,32 +76,27 @@ The `n`-th partial derivatives, say with respect to :math:`x_k`,
 
 .. math:: \frac{\partial^n}{\partial x_k^n}
 
-is
+can be written by exponentation:
 
 .. code-block:: ipython
 
-    FinDiff(k, dx_k, n)
-
-where the last argument stands for the degree of the derivative.
+    Diff(k, dx_k) ** n
 
 A **mixed partial derivatives** like
 
 .. math:: \frac{\partial^3}{\partial x^2 \partial y}
 
-is defined by
+can be written by "multiplication":
 
 .. code-block:: ipython
 
-    FinDiff((0, dx, 2), (1, dy, 1))
-
-where for each partial derivative, there is a tuple of the form
-``(axis, spacing, degree)`` in the argument list.
+    Diff(0, dx)**2 * Diff(1, dy)
 
 
 General Differential Operators
 ------------------------------
 
-``FinDiff`` objects can be combined to describe general differential
+``Diff`` objects can be combined to describe general differential
 operators. For example, the wave operator
 
 .. math::
@@ -112,20 +107,11 @@ can be written as
 
 .. code-block:: ipython
 
-    1 / c**2 * FinDiff(0, dt, 2) - FinDiff(1, dx, 2)
+    1 / c**2 * Diff(0, dt)**2 - Diff(1, dx)**2
 
 if the 0-axis represents the `t`-axis and the 1-axis the `x`-axis.
 
-Non-constant coefficients must be wrapped as ``Coef`` objects. For instance,
-
-.. math:: x^2 \frac{\partial^2}{\partial x^2}
-
-is written as
-
-.. code-block:: ipython
-
-    x = np.linspace(-1, 1, 21)
-    Coef(x) * FinDiff(0, dx, 2)
+This works both for constant and variable coefficients.
 
 Finally, multiplication of two ``FinDiff`` objects means chaining differential
 operators, for example
@@ -140,8 +126,8 @@ or in `findiff`:
 
 .. code-block:: ipython
 
-    d_dx = FinDiff(0, dx, 1)
-    d_dy = FinDiff(1, dx, 1)
+    d_dx = Diff(0, dx)
+    d_dy = Diff(1, dy)
 
     (d_dx - d_dy) * (d_dx + d_dy)
 
@@ -155,7 +141,7 @@ by setting the keyword argument ``acc``, e.g.
 
 .. code-block:: ipython
 
-    FinDiff(0, dx, 2, acc=4)
+    Diff(0, dx, acc=4)
 
 for fourth order accuracy.
 
@@ -196,7 +182,7 @@ representation using the matrix(shape) method, e.g.
 .. code-block:: ipython
 
     x = [np.linspace(0, 6, 7)]
-    d2_dx2 = FinDiff(0, x[1]-x[0], 2)
+    d2_dx2 = Diff(0, x[1]-x[0]) ** 2
     u = x**2
 
     mat = d2_dx2.matrix(u.shape)  # this method returns a scipy sparse matrix
@@ -234,7 +220,7 @@ which can be defined (in second order accuracy here) as
 
 .. code-block:: ipython
 
-    laplacian = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
+    laplacian = Diff(0, dx) ** 2 + Diff(1, dy) ** 2
 
 When you then apply the Laplacian to an array, *findiff* applies it to
 all grid points. So depending on the grid point point, *findiff* chooses

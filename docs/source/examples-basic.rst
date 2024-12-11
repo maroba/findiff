@@ -15,7 +15,7 @@ Our imports:
 .. code:: ipython3
 
     import numpy as np
-    from findiff import FinDiff, coefficients, Coefficient
+    from findiff import Diff, coefficients
 
 Simple 1D Cases
 ---------------
@@ -50,13 +50,18 @@ differential operator :math:`\frac{d^2}{dx^2}`:
 
 .. code:: ipython3
 
-    d2_dx2 = FinDiff(0, dx, 2)
+    d_dx = Diff(0, dx)
 
 The first parameter is the axis along which to take the derivative.
 Since we want to apply it to the one and only axis of the 1D array, this
-is a 0. The second parameter is the grid spacing, the third parameter
-the derivative order you want, in our case 2. If you want a first
-derivative, you can skip the third argument as it defaults to 1.
+is a 0. The second parameter describes the grid to be used. In our case,
+we have an equidistant grid point, so a single number (the grid spacing along
+the desired axis) suffices. `Diff` always returns a first derivative. If
+you need higher order derivatives, use exponentiation:
+
+.. code:: ipython3
+
+    d2_dx2 = Diff(0, dx) ** 2
 
 Then we apply the operator to f and g, respectively:
 
@@ -72,14 +77,12 @@ derivatives.
 Finite Difference Coefficients
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default the ``FinDiff`` class uses second order accuracy. For the
+By default the ``Diff`` class uses second order accuracy. For the
 second derivative, it uses the following finite difference coefficients:
 
 .. code:: ipython3
 
     coefficients(deriv=2, acc=2)
-
-
 
 
 .. parsed-literal::
@@ -92,8 +95,7 @@ second derivative, it uses the following finite difference coefficients:
       'offsets': array([0, 1, 2, 3])}}
 
 
-
-But ``FinDiff`` can handle any accuracy order. For instance, have you
+But ``Diff`` can handle any accuracy order. For instance, have you
 ever wondered, what the 10th order accurate coefficients look like? Here
 they are:
 
@@ -125,11 +127,11 @@ Accuracy order
 ^^^^^^^^^^^^^^
 
 If you want to use for example 10th order accuracy, just tell the
-``FinDiff`` constructor to use it:
+``Diff`` constructor to use it:
 
 .. code:: ipython3
 
-    d2_dx2 = FinDiff(0, dx, 2, acc=10)
+    d2_dx2 = Diff(0, dx, acc=10) ** 2
     result = d2_dx2(f)
 
 Simple 3D Cases
@@ -154,25 +156,25 @@ The partial derivatives :math:`\frac{\partial f}{\partial x}` or
 
 .. code:: ipython3
 
-    d_dx = FinDiff(0, dx)
-    d_dz = FinDiff(2, dz)
+    d_dx = Diff(0, dx)
+    d_dz = Diff(2, dz)
 
-The x-axis is the 0th axis, y, the first, z the 2nd, etc. The third
+The x-axis is the 0th axis, y, the first, z the 2nd, etc. The
 mixed partial derivative
-:math:`\frac{\partial^3 f}{\partial x^2 \partial y}` is specified by two
-tuples as arguments, one for each partial derivative:
+:math:`\frac{\partial^2 f}{\partial x \partial y}` is specified by multiplying
+the two first order partial derivatives:
 
 .. code:: ipython3
 
-    d3_dx2dy = FinDiff((0, dx, 2), (1, dy))
-    result = d3_dx2dy(f)
+    d2_dxdy = Diff(0, dx) * Diff(1, dy)
+    result = d2_dxdy(f)
 
 Of course, the accuracy order can be specified the same way as for 1D.
 
 General Linear Differential Operators
 -------------------------------------
 
-``FinDiff`` objects can bei added and easily multiplied by numbers. For
+``Diff`` objects can bei added and easily multiplied by numbers. For
 example, to express
 
 .. math::
@@ -185,13 +187,10 @@ we can say
 
 .. code:: ipython3
 
-    linear_op = FinDiff(0, dx, 2) + 2 * FinDiff((0, dx), (1, dy)) + FinDiff(1, dy, 2)
+    linear_op = Diff(0, dx)**2 + 2 * Diff(0, dx) * Diff(1, dy) + Diff(1, dy)**2
 
-Variable Coefficients
-^^^^^^^^^^^^^^^^^^^^^
-
-If you want to multiply by variables instead of plain numbers, you have
-to encapsulate the variable in a ``Coefficient`` object. For example,
+If you want to multiply by variables instead of plain numbers, it works the same way.
+For example,
 
 .. math::
 
@@ -202,7 +201,7 @@ is
 
 .. code:: ipython3
 
-    linear_op = Coefficient(X) * FinDiff(0, dx) + Coefficient(Y**2) * FinDiff(1, dy)
+    linear_op = X * Diff(0, dx) + Y**2 * Diff(1, dy)
 
 Applying those general operators works the same way as for the simple
 derivatives:

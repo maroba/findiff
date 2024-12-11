@@ -1,5 +1,5 @@
 =============
-Module *pde*
+Partial Differential Equations
 =============
 
 .. automodule:: findiff.pde
