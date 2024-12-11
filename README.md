@@ -390,5 +390,6 @@ python setup.py develop
 From the console:
 
 ```
-python -m unittest discover tests
+pip install pytest
+pytest tests
 ```
