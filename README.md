@@ -82,7 +82,7 @@ which can be written as
 
 ```python
 # define the operator
-diff_op = 2 * X * Diff(0)**2 * Diff(2) + 3 * sin(Y) * Z**2 * Diff(0) * Diff(1) 
+diff_op = 2 * X * Diff(0)**2 * Diff(2) + 3 * sin(Y) * Z**2 * Diff(0) * Diff(1)**2
 
 # set the grid you use (equidistant here)
 diff_op.set_grid({0: dx, 1: dy, 2: dz})
