@@ -94,7 +94,7 @@ So we have
     f^{(n)}_k \approx\sum_{\alpha=0}^\infty \underbrace{\left(\sum_{j=-p}^q c_{j} j^\alpha \
     \right) \frac{\Delta x^\alpha}{\alpha !}}_{M_\alpha}  f^{(\alpha)}_k = \sum_{\alpha=0}^\infty M_\alpha  f^{(\alpha)}_k
 
-Now let us demand that :math:`M_\alpha = \delta_{k\alpha}`, where :math:`\delta_{k\alpha}` is the
+Now let us demand that :math:`M_\alpha = \delta_{n\alpha}`, where :math:`\delta_{n\alpha}` is the
 Kronecker symbol. In other words, we have the equations (one for each :math:`\alpha \ne k`):
 
 .. math::
