@@ -18,7 +18,8 @@ any number of dimensions.
 * Fully vectorized for speed
 * Matrix representations of arbitrary linear differential operators
 * Solve partial differential equations with Dirichlet or Neumann boundary conditions
-* **New in version 0.10**: Symbolic representation of finite difference schemes
+* Symbolic representation of finite difference schemes
+* **New in version 0.11**: More comfortable API (keeping the old API available)
 
 ## Installation
 
