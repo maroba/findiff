@@ -44,9 +44,13 @@ with a first derivative $\displaystyle \frac{\partial}{\partial x}$ along the on
 
 ```python
 import numpy as np
+from findiff import FinDiff
 
 x = np.linspace(0, 1, 100)
 f = np.sin(x)  # as an example
+
+# time step dx
+dx = x[1] - x[0]
 
 # Define the derivative:
 d_dx = FinDiff(0, dx, 1)
