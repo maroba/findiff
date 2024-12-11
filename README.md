@@ -382,7 +382,7 @@ BibTeX entry:
 - Install in development mode:
 
 ```
-python setup.py develop
+pip install -e .
 ```
 
 ### Running tests
