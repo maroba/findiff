@@ -1,9 +1,6 @@
-import sys
-
-sys.path.insert(1, "..")
-
 import unittest
-from findiff.legacy.utils import *
+
+from findiff.utils import *
 
 
 class TestUtils(unittest.TestCase):

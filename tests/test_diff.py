@@ -14,7 +14,7 @@ def test_partial_d_dx():
     u = x**2
     expected = 2 * x
 
-    fd = Diff(dx, 1, 0)
+    fd = Diff(0, dx)
     actual = fd(u)
 
     assert_array_almost_equal(expected, actual)
@@ -27,11 +27,8 @@ def test_partial_d2_dx2():
     u = x**2
     expected = 2
 
-    fd = Diff(
-        dx,
-        2,
-        0,
-    )
+    fd = Diff(0, dx) ** 2
+
     actual = fd(u, dx)
 
     assert_array_almost_equal(expected, actual)
@@ -44,8 +41,8 @@ def test_partial_d_dx_acc():
     u = x**3
     expected = 3 * x**2
 
-    fd = Diff(dx, 1, 0)
-    actual = fd(u, dx)
+    fd = Diff(0, dx)
+    actual = fd(u)
     np.testing.assert_raises(
         AssertionError, assert_array_almost_equal, expected, actual
     )
@@ -60,14 +57,11 @@ def test_partial_d2_dxdy():
     (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
     u = np.sin(X) * np.sin(Y)
 
-    fd = Diff(dx, 1, 0) * Diff(dy, 1, 1)
-    actual = fd(u, h={0: dx, 1: dy})
+    fd = Diff(0) * Diff(1)
+    fd.set_grid({0: dx, 1: dy})
+    actual = fd(u)
 
     expected = np.cos(X) * np.cos(Y)
-    assert_array_almost_equal(expected, actual, decimal=3)
-
-    fd = Diff(dy, 1, 1) * Diff(dy, 1, 0)
-    actual = fd(u)
     assert_array_almost_equal(expected, actual, decimal=3)
 
 
@@ -77,7 +71,7 @@ def test_partial_d_dx_on_2d_array():
     (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
     u = np.sin(X) * np.sin(Y)
 
-    fd = Diff(dy, 1, 1)
+    fd = Diff(1, dy)
     actual = fd(u)
 
     expected = np.sin(X) * np.cos(Y)
@@ -90,7 +84,7 @@ def test_add_two_diffs():
     (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
     u = np.sin(X) * np.sin(Y)
 
-    fd = Diff(dx, 2, 0) + Diff(dy, 2, 1)
+    fd = Diff(0, dx) ** 2 + Diff(1, dy) ** 2
     actual = fd(u)
 
     expected = -2 * np.sin(X) * np.sin(Y)
@@ -103,7 +97,7 @@ def test_sub_two_diffs():
     (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
     u = np.sin(X) * np.sin(Y)
 
-    fd = Diff(dx, 2, 0) - Diff(dy, 2, 1)
+    fd = Diff(0, dx) ** 2 - Diff(1, dy) ** 2
     actual = fd(u)
 
     expected = np.zeros(shape)
@@ -116,7 +110,7 @@ def test_multiply_with_scalar():
     (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
     u = np.sin(X) * np.sin(Y)
 
-    fd = 3 * Diff(dx, 2, 0)
+    fd = 3 * Diff(0, dx) ** 2
     actual = fd(u, acc=4)
 
     expected = -3 * np.sin(X) * np.sin(Y)
@@ -129,7 +123,7 @@ def test_multiply_with_variable_from_left():
     (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
     u = np.sin(X) * np.sin(Y)
 
-    fd = 3 * X * Y * Diff(dx, 2, 0)
+    fd = 3 * X * Y * Diff(0, dx) ** 2
     actual = fd(u, acc=4)
 
     expected = -3 * X * Y * np.sin(X) * np.sin(Y)
@@ -142,7 +136,7 @@ def test_identity():
     (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
     u = np.sin(X) * np.sin(Y)
 
-    fd = Diff(dx, 2, 0) + Identity()
+    fd = Diff(0, dx) ** 2 + Identity()
     actual = fd(u, acc=4)
 
     expected = np.zeros_like(u)
@@ -154,7 +148,7 @@ def test_linear_comb():
     (x, y), (dx, dy), (X, Y) = make_grid(shape, ((0, 1), (0, 1)))
     u = np.sin(X) * np.sin(Y)
 
-    fd = 3 * X * Diff(dx, 2, 0) - Y * (Diff(dy, 2, 1) + Diff(dx, 1, 0))
+    fd = 3 * X * Diff(0, dx) ** 2 - Y * (Diff(1, dy) ** 2 + Diff(0, dx))
     actual = fd(u, acc=4)
 
     expected = -3 * X * u - Y * (-sin(X) * sin(Y) + cos(X) * sin(Y))
@@ -174,3 +168,36 @@ def make_grid(shape, edges):
     coords = np.meshgrid(*axes, indexing="ij")
     spacings = [axes[k][1] - axes[k][0] for k in range(len(shape))]
     return axes, spacings, coords
+
+
+def test_nonuniform_1d_different_accs():
+    x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+    f = np.exp(-(x**2))
+
+    d_dx = Diff(0, x, acc=4)
+    f_x = d_dx(f)
+    assert_array_almost_equal(-2 * x * np.exp(-(x**2)), f_x, decimal=4)
+
+    # same, but this time with default acc
+    x = np.linspace(0, 1, 100)
+    f = np.exp(-(x**2))
+    d_dx = Diff(0, x)
+    f_x = d_dx(f)
+    assert_array_almost_equal(-2 * x * np.exp(-(x**2)), f_x, decimal=4)
+
+
+def test_3d_different_accs():
+    x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+    y = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
+    z = np.r_[np.arange(0, 4.5, 0.05), np.arange(4.5, 10, 1)]
+    X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
+    f = np.exp(-(X**2) - Y**2 - Z**2)
+
+    d_dy = Diff(1, y, acc=4)
+    fy = d_dy(f)
+    fye = -2 * Y * np.exp(-(X**2) - Y**2 - Z**2)
+    assert_array_almost_equal(fy, fye, decimal=4)
+
+    d_dy = Diff(1, y, acc=6)
+    fy = d_dy(f)
+    assert_array_almost_equal(fy, fye, decimal=4)

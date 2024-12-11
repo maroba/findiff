@@ -2,9 +2,9 @@ import unittest
 
 import numpy as np
 
-from findiff.legacy import Identity, FinDiff
+from findiff import Identity, FinDiff
 
-from findiff.legacy.stencils import Stencil
+from findiff.stencils import Stencil
 
 
 class TestStencilOperations(unittest.TestCase):

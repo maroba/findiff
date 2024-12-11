@@ -21,4 +21,9 @@ Features:
 __version__ = "1.0.0.dev"
 
 
-from .current import Diff, Identity
+from .legacy import *
+from .operators import Diff, Identity
+from .pde import PDE, BoundaryConditions
+from .compatible import Coef, Coefficient, FinDiff, Id
+from .coefs import coefficients
+from .vector import Gradient, Divergence, Curl, Laplacian

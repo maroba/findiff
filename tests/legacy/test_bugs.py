@@ -1,12 +1,9 @@
-import sys
-
-sys.path.insert(1, "..")
-
 import unittest
+
 import numpy as np
 
-from findiff.legacy import FinDiff
-import findiff.legacy as findiff
+import findiff
+from findiff import FinDiff
 
 
 class TestOldBugs(unittest.TestCase):

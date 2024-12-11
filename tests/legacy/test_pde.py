@@ -4,7 +4,7 @@ sys.path.insert(1, "..")
 
 import unittest
 from findiff.legacy.operators import FinDiff, Identity, Coef
-from findiff.legacy.pde import *
+from findiff.pde import *
 
 # import matplotlib.pyplot as plt
 # from mpl_toolkits import mplot3d

@@ -4,9 +4,9 @@ import operator
 
 import scipy.sparse as sparse
 
-from .coefs import coefficients, coefficients_non_uni
-from .stencils import StencilSet
-from .utils import *
+from ..coefs import coefficients, coefficients_non_uni
+from ..stencils import StencilSet
+from ..utils import *
 
 DEFAULT_ACC = 2
 

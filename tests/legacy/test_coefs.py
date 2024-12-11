@@ -1,14 +1,11 @@
-import sys
-
-sys.path.insert(1, "..")
-
 import unittest
-from findiff.legacy import coefficients
-from findiff.legacy.coefs import coefficients_non_uni
-from findiff.legacy.coefs import calc_coefs
 
 import numpy as np
 from sympy import Rational
+
+from findiff import coefficients
+from findiff.coefs import calc_coefs
+from findiff.coefs import coefficients_non_uni
 
 
 class TestCoefs(unittest.TestCase):
