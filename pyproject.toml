@@ -58,3 +58,16 @@ report.exclude_lines = [
     "@overload",
     "@unittest.skip",
 ]
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["3.13", "3.12", "3.11", "3.10", "3.9", "3.8"]
+
+[tool.tox.env_run_base]
+wheel_build_env = ".pkg"
+deps = [
+    "pytest",
+]
+commands = [
+    ["pytest"],
+]
