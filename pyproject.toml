@@ -42,7 +42,7 @@ Issues = "https://github.com/maroba/findiff/issues"
 tracker = "https://github.com/maroba/findiff/issues"
 
 [tool.setuptools.packages.find]
-include = ["findiff"]
+include = ["findiff", "findiff.*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "findiff.__version__" }
