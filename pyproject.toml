@@ -46,3 +46,15 @@ include = ["findiff"]
 
 [tool.setuptools.dynamic]
 version = { attr = "findiff.__version__" }
+
+[tool.coverage]
+run.source_pkgs = ["findiff", "tests"]
+run.branch = true
+run.parallel = true
+report.exclude_lines = [
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@overload",
+    "@unittest.skip",
+]
