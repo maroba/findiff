@@ -1,6 +1,6 @@
 # <img src="docs/frontpage/findiff_logo.png" width="100px"> findiff
 
-[![PyPI version](https://badge.fury.io/py/findiff.svg)](https://badge.fury.io/py/findiff?branch=master&cache-control=no-cache)
+[![PyPI version](https://badge.fury.io/py/findiff.svg)](https://img.shields.io/pypi/v/findiff.png?style=flat-square&color=brightgreen)
 ![build](https://github.com/maroba/findiff/actions/workflows/check.yml/badge.svg)
 ![Coverage](https://img.shields.io/codecov/c/github/maroba/findiff/master.svg)
 [![Doc Status](https://readthedocs.org/projects/findiff/badge/?version=latest)](https://findiff.readthedocs.io/en/latest/index.html)
