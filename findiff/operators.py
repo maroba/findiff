@@ -261,6 +261,10 @@ class Diff(Node):
 
         self._fd = None
 
+    def set_grid(self, grid):
+        super().set_grid(grid)
+        self._fd = None
+
     @property
     def order(self):
         """Returns the order of the derivative."""
@@ -303,3 +307,10 @@ class Diff(Node):
         new_diff = Diff(self.axis, acc=self.acc, grid=self.grid)
         new_diff._order *= power
         return new_diff
+
+    def __mul__(self, other):
+        if isinstance(other, Diff) and self.axis == other.axis:
+            new_diff = Diff(self.axis, acc=self.acc, grid=self.grid)
+            new_diff._order += other.order
+            return new_diff
+        return super().__mul__(other)

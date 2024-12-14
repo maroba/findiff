@@ -2,6 +2,7 @@ name: Checks
 
 on:
   push:
+  pull_request:
 
 jobs:
   build:
@@ -9,29 +10,29 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
-        os: [ubuntu-latest]
+        python-version: [ '3.11', '3.12' ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        # prerequisites
-        python -m pip install --upgrade pip wheel
-        python -m pip install codecov coverage pytest
-        # install dependencies
-        pip install -e .[all]
-        # show installed packages
-        pip freeze
-    - name: Test with pytest
-      run: |
-        pytest
-        #coverage run --source=findiff setup.py test
-#    - name: Submit code coverage
-#      run: |
-#        coverage report -m
-#        codecov
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          # prerequisites
+          python -m pip install --upgrade pip wheel
+          python -m pip install codecov coverage pytest pytest-cov
+          # install dependencies
+          pip install -e .[all]
+          # show installed packages
+          pip freeze
+      - name: Test with pytest
+        run: |
+          pytest
+      - name: Submit code coverage
+        run: |
+          pytest --cov=findiff --cov-report=html tests        
+          codecov -t ${{ secrets.CODECOV_TOKEN }}
+

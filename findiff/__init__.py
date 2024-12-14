@@ -18,7 +18,7 @@ Features:
 - Version 0.11.*: Completely remodeled API (backward compatibility is maintained, though)
 """
 
-__version__ = "0.11.2"
+__version__ = "0.11.3"
 
 
 from .operators import Diff, Identity
