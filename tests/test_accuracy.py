@@ -1,5 +1,3 @@
-from pprint import pprint
-
 import numpy as np
 
 from findiff import Diff
@@ -10,7 +8,7 @@ def test_iterative_accuracy():
     ns = np.logspace(2, 3, 10)
 
     def compute_errs(acc, plot=False):
-        import matplotlib.pyplot as plt
+        # import matplotlib.pyplot as plt
 
         errs_a = []
         errs_b = []
@@ -38,12 +36,12 @@ def test_iterative_accuracy():
             errs_b.append(err_b)
             errs_c.append(err_c)
 
-        if plot:
-            plt.loglog(ns, errs_a, "-x", label="D^2f")
-            plt.loglog(ns, errs_b, "-", label="D(D(f))")
-            plt.loglog(ns, errs_c, "-", label="D*D*f")
-            plt.grid()
-            plt.show()
+        # if plot:
+        #     plt.loglog(ns, errs_a, "-x", label="D^2f")
+        #     plt.loglog(ns, errs_b, "-", label="D(D(f))")
+        #     plt.loglog(ns, errs_c, "-", label="D*D*f")
+        #     plt.grid()
+        #     plt.show()
 
         slope_a = abs(loglog_slope(ns, errs_a))
         slope_b = abs(loglog_slope(ns, errs_b))
