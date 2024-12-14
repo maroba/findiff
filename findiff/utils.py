@@ -1,5 +1,7 @@
 from itertools import product
 import numpy as np
+import warnings
+from functools import wraps
 
 
 def interior_mask_as_ndarray(shape):
@@ -23,8 +25,8 @@ def to_long_index(idx, shape):
     long_idx = 0
     siz = 1
     for axis in range(ndims):
-        long_idx += idx[ndims-1-axis] * siz
-        siz *= shape[ndims-1-axis]
+        long_idx += idx[ndims - 1 - axis] * siz
+        siz *= shape[ndims - 1 - axis]
     return long_idx
 
 
@@ -32,12 +34,40 @@ def to_index_tuple(long_idx, shape):
     ndims = len(shape)
     idx = np.zeros(ndims)
     for k in range(ndims):
-        s = np.prod(shape[k+1:])
+        s = np.prod(shape[k + 1 :])
         idx[k] = long_idx // s
         long_idx = long_idx - s * idx[k]
 
     return tuple(idx)
 
 
+def deprecated(reason="This feature is deprecated."):
+    def decorator(func_or_class):
+        if isinstance(func_or_class, type):  # Handle classes
+            original_init = func_or_class.__init__
 
+            @wraps(original_init)
+            def new_init(self, *args, **kwargs):
+                warnings.warn(
+                    f"{func_or_class.__name__} is deprecated and will be removed in future versions: {reason}",
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                original_init(self, *args, **kwargs)
 
+            func_or_class.__init__ = new_init
+            return func_or_class
+
+        # Handle functions
+        @wraps(func_or_class)
+        def wrapped(*args, **kwargs):
+            warnings.warn(
+                f"{func_or_class.__name__} is deprecated: {reason}",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            return func_or_class(*args, **kwargs)
+
+        return wrapped
+
+    return decorator

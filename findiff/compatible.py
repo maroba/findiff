@@ -5,6 +5,7 @@ from findiff.legacy.operators import _FinDiff
 from findiff.operators import FieldOperator, Identity
 
 
+# @deprecated(reason="Use findiff.Diff instead.")
 def FinDiff(*args, **kwargs):
 
     if len(args) > 3:
@@ -33,6 +34,15 @@ def FinDiff(*args, **kwargs):
 FinDiff.__doc__ = _FinDiff.__doc__
 
 
-# Define aliasses for backward compatibility
-Coefficient = Coef = FieldOperator
+"""
+Define aliasses for backward compatibility:
+"""
+
+
+# @deprecated(reason="No need to wrap array in Coefficient object any more.")
+class Coefficient(FieldOperator):
+    pass
+
+
+Coef = Coefficient
 Id = Identity

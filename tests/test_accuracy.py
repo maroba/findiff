@@ -51,12 +51,13 @@ def test_iterative_accuracy():
     slope_a, slope_b, slope_c = compute_errs(2, plot=False)
 
     assert abs(slope_a - 2) < 0.2
+    # applying operators iteratively should reduce the order by one at a time:
     assert abs(slope_b - 1) < 0.2
     assert abs(slope_c - 2) < 0.2
 
     slope_a, slope_b, slope_c = compute_errs(4, plot=False)
-    # print(slope_a, slope_b, slope_c)
     assert abs(slope_a - 4) < 0.2
+    # applying operators iteratively should reduce the order by one at a time:
     assert abs(slope_b - 3) < 0.4
     assert abs(slope_c - 4) < 0.2
 

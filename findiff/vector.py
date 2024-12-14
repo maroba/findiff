@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from .legacy.operators import _FinDiff
+from .compatible import FinDiff
 
 
 class VectorOperator(object):
@@ -39,13 +39,13 @@ class VectorOperator(object):
                 kw = "h"
             self.h = kwargs.pop(kw)
             self.ndims = len(self.h)
-            self.components = [_FinDiff(k, self.h[k], 1) for k in range(self.ndims)]
+            self.components = [FinDiff(k, self.h[k], 1) for k in range(self.ndims)]
 
         if "coords" in kwargs:
             coords = kwargs.pop("coords")
             self.ndims = self.__get_dimension(coords)
             self.components = [
-                _FinDiff((k, coords[k], 1), **kwargs) for k in range(self.ndims)
+                FinDiff((k, coords[k], 1), **kwargs) for k in range(self.ndims)
             ]
 
     def __get_dimension(self, coords):
@@ -258,7 +258,7 @@ class Laplacian(object):
     def __init__(self, h=[1.0], acc=2):
         h = wrap_in_ndarray(h)
 
-        self._parts = [_FinDiff((k, h[k], 2), acc=acc) for k in range(len(h))]
+        self._parts = [FinDiff((k, h[k], 2), acc=acc) for k in range(len(h))]
 
     def __call__(self, f):
         """
