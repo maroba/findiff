@@ -119,13 +119,8 @@ class _FinDiff:
         if "acc" in kwargs:
             self.acc = kwargs["acc"]
 
-        if len(args) == 3:
-            axis, h, order = args
-        elif len(args) == 2:
-            axis, h = args
-            order = 1
-        else:
-            raise ValueError("Format: (axis, spacing, order=1)")
+        axis, h, order = args
+
         pds = _Diff(axis, order)
 
         spac[axis] = h
