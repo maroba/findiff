@@ -41,33 +41,36 @@ def to_index_tuple(long_idx, shape):
     return tuple(idx)
 
 
-def deprecated(reason="This feature is deprecated."):
-    def decorator(func_or_class):
-        if isinstance(func_or_class, type):  # Handle classes
-            original_init = func_or_class.__init__
-
-            @wraps(original_init)
-            def new_init(self, *args, **kwargs):
-                warnings.warn(
-                    f"{func_or_class.__name__} is deprecated and will be removed in future versions: {reason}",
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
-                original_init(self, *args, **kwargs)
-
-            func_or_class.__init__ = new_init
-            return func_or_class
-
-        # Handle functions
-        @wraps(func_or_class)
-        def wrapped(*args, **kwargs):
-            warnings.warn(
-                f"{func_or_class.__name__} is deprecated: {reason}",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return func_or_class(*args, **kwargs)
-
-        return wrapped
-
-    return decorator
+#
+# The following is working, but unused yet. Commented because there are no tests yet.
+#
+# def deprecated(reason="This feature is deprecated."):
+#     def decorator(func_or_class):
+#         if isinstance(func_or_class, type):  # Handle classes
+#             original_init = func_or_class.__init__
+#
+#             @wraps(original_init)
+#             def new_init(self, *args, **kwargs):
+#                 warnings.warn(
+#                     f"{func_or_class.__name__} is deprecated and will be removed in future versions: {reason}",
+#                     category=DeprecationWarning,
+#                     stacklevel=2,
+#                 )
+#                 original_init(self, *args, **kwargs)
+#
+#             func_or_class.__init__ = new_init
+#             return func_or_class
+#
+#         # Handle functions
+#         @wraps(func_or_class)
+#         def wrapped(*args, **kwargs):
+#             warnings.warn(
+#                 f"{func_or_class.__name__} is deprecated: {reason}",
+#                 category=DeprecationWarning,
+#                 stacklevel=2,
+#             )
+#             return func_or_class(*args, **kwargs)
+#
+#         return wrapped
+#
+#     return decorator

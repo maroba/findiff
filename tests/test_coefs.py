@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+import pytest
 from sympy import Rational
 
 from findiff import coefficients
@@ -168,6 +169,10 @@ class TestCoefs(unittest.TestCase):
                 np.testing.assert_array_almost_equal(
                     coefs["coefficients"], [-1.0 / 4, 0, 1.0 / 4]
                 )
+
+    def test_calc_coefs_from_offsets_not_enough_points(self):
+        with pytest.raises(ValueError):
+            coefficients(2, offsets=[-2, 2], analytic_inv=False)
 
     def test_calc_coefs_symbolic(self):
         for analytic_inv in [True, False]:

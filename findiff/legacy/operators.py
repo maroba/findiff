@@ -119,34 +119,16 @@ class _FinDiff:
         if "acc" in kwargs:
             self.acc = kwargs["acc"]
 
-        if isinstance(args[0], tuple):  # mixed partial derivative
-            pds = None
-
-            for arg in args:
-                if len(arg) == 3:
-                    axis, h, order = arg
-                elif len(arg) == 2:
-                    axis, h = arg
-                    order = 1
-                else:
-                    raise ValueError("Format: (axis, spacing, order=1)")
-                spac[axis] = h
-                if pds is None:
-                    pds = _Diff(axis, order)
-                else:
-                    pd = _Diff(axis, order)
-                    pds = pds * pd
+        if len(args) == 3:
+            axis, h, order = args
+        elif len(args) == 2:
+            axis, h = args
+            order = 1
         else:
-            if len(args) == 3:
-                axis, h, order = args
-            elif len(args) == 2:
-                axis, h = args
-                order = 1
-            else:
-                raise ValueError("Format: (axis, spacing, order=1)")
-            pds = _Diff(axis, order)
+            raise ValueError("Format: (axis, spacing, order=1)")
+        pds = _Diff(axis, order)
 
-            spac[axis] = h
+        spac[axis] = h
 
         # Check if spac is really the spacing and not the coordinates (nonuniform case)
         for a, s in spac.items():
