@@ -64,6 +64,24 @@ def test_partial_d2_dx2_matrix_periodic_2d():
     assert_array_almost_equal(expected, actual)
 
 
+def test_diff_2d_periodic_in_one_axis():
+    x = np.linspace(0, 2 * np.pi, 100, endpoint=False)
+    y = np.linspace(0, 1, 100)
+
+    X, Y = np.meshgrid(x, y, indexing="ij")
+    f = np.sin(X) ** 2 * np.sin(Y) ** 2
+
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+
+    d_dx = Diff(0, acc=6)
+
+    d_dx.set_grid({0: {"h": dx, "periodic": True}, 1: dy})
+    expected = 2 * np.sin(X) * np.cos(X) * np.sin(Y) ** 2
+    actual = d_dx(f)
+    assert_array_almost_equal(expected, actual)
+
+
 def test_partial_d2_dx2():
     shape = (101,)
     x, dx = make_grid(shape, (0, 1))

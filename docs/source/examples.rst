@@ -10,4 +10,6 @@ Examples
     examples-polar
     examples-non-uniform-grids
     examples-matrix
+    examples-periodic
+
 
