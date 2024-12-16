@@ -98,6 +98,17 @@ lazily.
 Of course, standard operators from vector calculus like gradient, divergence and curl are also available
 as shortcuts.
 
+If one or more axis of your grid are periodic, you can specify that when defining the derivative or later
+when setting the grid. For example:
+
+```python
+d_dx = Diff(0, dx, periodic=True)
+
+# or later
+d_dx = Diff(0)
+d_dx.set_grid({0: {"h": dx, "periodic": True}})
+```
+
 More examples can be found [here](https://findiff.readthedocs.io/en/latest/source/examples.html) and in [this blog](https://medium.com/p/7e54132a73a3).
 
 ### Accuracy Control
