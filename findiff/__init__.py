@@ -16,9 +16,10 @@ Features:
 - Generate differential operators for generic stencils
 - Create symbolic representations of finite difference schemes
 - Version 0.11.*: Completely remodeled API (backward compatibility is maintained, though)
+- Version 0.12.*: Periodic boundary conditions for differential operators and PDEs
 """
 
-__version__ = "0.11.3"
+__version__ = "0.12.0_dev"
 
 
 from .operators import Diff, Identity

@@ -20,6 +20,7 @@ any number of dimensions.
 * Solve partial differential equations with Dirichlet or Neumann boundary conditions
 * Symbolic representation of finite difference schemes
 * **New in version 0.11**: More comfortable API (keeping the old API available)
+* **New in version 0.12**: Periodic boundary conditions for differential operators and PDEs.
 
 ## Installation
 
@@ -182,6 +183,24 @@ has the output
  [ 0.  0.  0.  1. -2.  1.  0.]
  [ 0.  0.  0.  0.  1. -2.  1.]
  [ 0.  0.  0. -1.  4. -5.  2.]]
+```
+
+If you have periodic boundary conditions, the matrix looks like that:
+
+```python
+d2_dx2 = Diff(0, dx, periodic=True)**2
+mat = d2_dx2.matrix((10,))  # this method returns a scipy sparse matrix
+print(mat.toarray())
+```
+
+```
+[[-2.  1.  0.  0.  0.  0.  1.]
+ [ 1. -2.  1.  0.  0.  0.  0.]
+ [ 0.  1. -2.  1.  0.  0.  0.]
+ [ 0.  0.  1. -2.  1.  0.  0.]
+ [ 0.  0.  0.  1. -2.  1.  0.]
+ [ 0.  0.  0.  0.  1. -2.  1.]
+ [ 1.  0.  0.  0.  0.  1. -2.]]
 ```
 
 ## Stencils
