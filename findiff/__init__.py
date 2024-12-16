@@ -19,7 +19,7 @@ Features:
 - Version 0.12.*: Periodic boundary conditions for differential operators and PDEs
 """
 
-__version__ = "0.12.0_dev"
+__version__ = "0.12.0"
 
 
 from .operators import Diff, Identity
