@@ -7,13 +7,19 @@ class Grid(ABC):
 
 class EquidistantGrid(Grid):
 
-    def __init__(self, spacing: dict):
-        for axis, h in spacing.items():
-            if h <= 0:
-                raise ValueError("spacing must be greater than zero")
+    def __init__(self, config: dict):
 
-        # key -> value == axis -> spacing for axis
-        self.spacing = spacing
+        self.spacing = {}
+        self.periodic = {}
+        for axis, spacing_or_dict in config.items():
+            if isinstance(spacing_or_dict, dict):
+                self.spacing[axis] = spacing_or_dict["h"]
+                self.periodic[axis] = spacing_or_dict.get("periodic", False)
+            else:
+                self.spacing[axis] = spacing_or_dict
+                self.periodic[axis] = False
+            if self.spacing[axis] <= 0:
+                raise ValueError("spacing must be greater than zero")
 
 
 class TensorProductGrid(Grid):

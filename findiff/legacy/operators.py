@@ -1,6 +1,3 @@
-from findiff.legacy.diff import _Diff
-from findiff.stencils import StencilSet
-
 DEFAULT_ACC = 2
 
 
@@ -70,70 +67,4 @@ class _FinDiff:
 
     """
 
-    def __init__(self, *args, **kwargs):
-        self.acc = None
-        self.spac = None
-        self.pds = self._eval_args(args, kwargs)
-
-    def __call__(self, rhs, *args, **kwargs):
-        return self.apply(rhs, *args, **kwargs)
-
-    def apply(self, rhs, *args, **kwargs):
-        if "acc" not in kwargs:
-            if self.acc is None:
-                acc = DEFAULT_ACC
-            else:
-                acc = self.acc
-            kwargs["acc"] = acc
-
-        if len(args) == 0 and "h" not in kwargs:
-            if self.uniform:
-                args = (self.spac,)
-            else:
-                args = (self.coords,)
-        return self.pds(rhs, *args, **kwargs)
-
-    def stencil(self, shape):
-        return StencilSet(self, shape)
-
-    def matrix(self, shape, h=None, acc=None):
-        if acc is None:
-            if self.acc is None:
-                acc = DEFAULT_ACC
-            else:
-                acc = self.acc
-
-        if self.uniform:
-            if h is None and self.spac is not None:
-                h = self.spac
-            return self.pds.matrix(shape, h=h, acc=acc)
-        else:
-            return self.pds.matrix(shape, coords=self.coords, acc=acc)
-
-    def set_accuracy(self, acc):
-        self.pds.set_accuracy(acc)
-
-    def _eval_args(self, args, kwargs):
-        spac = {}
-
-        if "acc" in kwargs:
-            self.acc = kwargs["acc"]
-
-        axis, h, order = args
-
-        pds = _Diff(axis, order)
-
-        spac[axis] = h
-
-        # Check if spac is really the spacing and not the coordinates (nonuniform case)
-        for a, s in spac.items():
-            if hasattr(s, "__len__"):
-                self.coords = spac
-                self.uniform = False
-                break
-            else:
-                self.spac = spac
-                self.uniform = True
-                break
-
-        return pds
+    pass

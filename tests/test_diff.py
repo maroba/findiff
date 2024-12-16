@@ -20,6 +20,50 @@ def test_partial_d_dx():
     assert_array_almost_equal(expected, actual)
 
 
+def test_partial_d_dx_periodic():
+    x = np.linspace(0, 2 * np.pi, 200, endpoint=False)
+    dx = x[1] - x[0]
+    f = np.sin(x)
+    expected = np.cos(x)
+    actual = Diff(0, dx, periodic=True, acc=4)(f)
+
+    assert_array_almost_equal(expected, actual)
+
+
+def test_partial_d2_dx2_matrix_periodic():
+    dx = 1
+    expected = np.array(
+        [
+            [-2, 1, 0, 0, 0, 1],
+            [1, -2, 1, 0, 0, 0],
+            [0, 1, -2, 1, 0, 0],
+            [0, 0, 1, -2, 1, 0],
+            [0, 0, 0, 1, -2, 1],
+            [1, 0, 0, 0, 1, -2],
+        ],
+        dtype=np.float64,
+    )
+    actual = (Diff(0, dx, periodic=True) ** 2).matrix((6,)).toarray()
+
+    assert_array_almost_equal(expected, actual)
+
+
+def test_partial_d2_dx2_matrix_periodic_2d():
+
+    x = y = np.linspace(0, np.pi, 100, endpoint=False)
+    dy = y[1] - y[0]
+    X, Y = np.meshgrid(x, y, indexing="ij")
+    f = np.sin(X) ** 2 * np.sin(Y) ** 2
+
+    d_dy = Diff(1, dy, periodic=True, acc=4)
+
+    expected = 2 * np.sin(X) ** 2 * np.sin(Y) * np.cos(Y)
+
+    actual = d_dy.matrix(f.shape).dot(f.reshape(-1)).reshape(100, 100)
+
+    assert_array_almost_equal(expected, actual)
+
+
 def test_partial_d2_dx2():
     shape = (101,)
     x, dx = make_grid(shape, (0, 1))

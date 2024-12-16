@@ -23,6 +23,29 @@ def test_1d_dirichlet_hom():
     np.testing.assert_array_almost_equal(expected, u)
 
 
+def test_1d_dirichlet_periodic():
+
+    shape = (101,)
+
+    x = np.linspace(0, 2 * np.pi, 101, endpoint=False)
+    dx = x[1] - x[0]
+    L = Diff(0, dx, periodic=True) ** 2 + 1
+    L.set_accuracy(4)
+
+    bc = BoundaryConditions(shape)
+
+    bc[0] = 1
+
+    pde = PDE(L, np.zeros_like(x), bc)
+    u = pde.solve()
+
+    # import matplotlib.pyplot as plt
+    # plt.plot(x, u)
+    # plt.savefig("test.png")
+    expected = np.cos(x)
+    np.testing.assert_array_almost_equal(expected, u)
+
+
 def test_1d_dirichlet_inhom():
 
     nx = 21
@@ -84,6 +107,33 @@ def test_2d_dirichlet_hom():
     u = pde.solve()
 
     np.testing.assert_array_almost_equal(expected, u)
+
+
+def test_2d_dirichlet_periodic():
+    shape = (101, 101)
+
+    x, y = np.linspace(0, 2 * np.pi, shape[0], endpoint=False), np.linspace(
+        0, 2 * np.pi, shape[1], endpoint=False
+    )
+    dx, dy = x[1] - x[0], y[1] - y[0]
+    X, Y = np.meshgrid(x, y, indexing="ij")
+    L = Diff(0) ** 2 + 1
+    L.set_accuracy(4)
+    L.set_grid({0: {"h": dx, "periodic": True}, 1: {"h": dy, "periodic": True}})
+
+    expected = np.cos(X) * np.sin(Y)
+
+    bc = BoundaryConditions(shape)
+
+    bc[0, :] = np.sin(Y)[0, :]
+    # other boundary conditions are implicitly periodic through periodic grid
+
+    bc[:, 0] = 0
+
+    pde = PDE(L, np.zeros_like(X), bc)
+    u = pde.solve()
+
+    np.testing.assert_array_almost_equal(expected, u, decimal=6)
 
 
 def test_2d_dirichlet_inhom():

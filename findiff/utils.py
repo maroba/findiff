@@ -25,8 +25,10 @@ def to_long_index(idx, shape):
     long_idx = 0
     siz = 1
     for axis in range(ndims):
-        long_idx += idx[ndims - 1 - axis] * siz
+        idx_ = idx[ndims - 1 - axis]
+        long_idx += idx_ * siz
         siz *= shape[ndims - 1 - axis]
+
     return long_idx
 
 
