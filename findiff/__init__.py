@@ -22,7 +22,8 @@ Features:
 __version__ = "0.12.0"
 
 
-from .operators import Diff, Identity
+from .interface import Diff
+from .operators import Identity
 from .pde import PDE, BoundaryConditions
 from .compatible import Coef, Coefficient, FinDiff, Id
 from .coefs import coefficients
