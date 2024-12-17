@@ -62,6 +62,15 @@ class _FinDiffBase:
 
         return slice(sl.start + off, sl.stop + off, sl.step)
 
+    def matrix(self, shape):
+        siz = np.prod(shape)
+        mat = sparse.lil_matrix((siz, siz))
+        self.write_matrix_entries(mat, shape)
+        return sparse.csr_matrix(mat)
+
+    def write_matrix_entries(self, mat, shape):
+        raise NotImplementedError
+
 
 class _FinDiffUniform(_FinDiffBase):
 
@@ -77,86 +86,82 @@ class _FinDiffUniform(_FinDiffBase):
     def __call__(self, f):
         self.validate_f(f)
         npts = f.shape[self.axis]
-        weights = self.center["coefficients"]
-        offsets = self.center["offsets"]
-
-        num_bndry_points = len(weights) // 2
-        ref_slice = slice(num_bndry_points, npts - num_bndry_points, 1)
-        off_slices = [
-            self.shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
-        ]
-
         fd = np.zeros_like(f)
+        num_bndry_points = len(self.center["coefficients"]) // 2
 
-        self.apply_to_array(fd, f, weights, off_slices, ref_slice, self.axis)
+        self._apply_central_coefs(f, fd, npts, num_bndry_points)
 
-        weights = self.forward["coefficients"]
-        offsets = self.forward["offsets"]
+        self._apply_forward_coefs(f, fd, npts, num_bndry_points)
 
-        ref_slice = slice(0, num_bndry_points, 1)
-        off_slices = [
-            self.shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
-        ]
-
-        self.apply_to_array(fd, f, weights, off_slices, ref_slice, self.axis)
-
-        weights = self.backward["coefficients"]
-        offsets = self.backward["offsets"]
-
-        ref_slice = slice(npts - num_bndry_points, npts, 1)
-        off_slices = [
-            self.shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
-        ]
-
-        self.apply_to_array(fd, f, weights, off_slices, ref_slice, self.axis)
+        self._apply_backward_coefs(f, fd, npts, num_bndry_points)
 
         h_inv = 1.0 / self.spacing**self.order
         return fd * h_inv
 
-    def matrix(self, shape):
+    def _apply_backward_coefs(self, f, fd, npts, num_bndry_points):
+        weights = self.backward["coefficients"]
+        offsets = self.backward["offsets"]
+        ref_slice = slice(npts - num_bndry_points, npts, 1)
+        off_slices = [
+            self.shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
+        ]
+        self.apply_to_array(fd, f, weights, off_slices, ref_slice, self.axis)
 
-        h = self.spacing
+    def _apply_forward_coefs(self, f, fd, npts, num_bndry_points):
+        weights = self.forward["coefficients"]
+        offsets = self.forward["offsets"]
+        ref_slice = slice(0, num_bndry_points, 1)
+        off_slices = [
+            self.shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
+        ]
+        self.apply_to_array(fd, f, weights, off_slices, ref_slice, self.axis)
 
-        ndims = len(shape)
-        siz = np.prod(shape)
+    def _apply_central_coefs(self, f, fd, npts, num_bndry_points):
+        weights = self.center["coefficients"]
+        offsets = self.center["offsets"]
+        ref_slice = slice(num_bndry_points, npts - num_bndry_points, 1)
+        off_slices = [
+            self.shift_slice(ref_slice, offsets[k], npts) for k in range(len(offsets))
+        ]
+        self.apply_to_array(fd, f, weights, off_slices, ref_slice, self.axis)
+
+    def write_matrix_entries(self, mat, shape):
         long_indices_nd = long_indices_as_ndarray(shape)
-
-        axis, order = self.axis, self.order
-        mat = sparse.lil_matrix((siz, siz))
-
         for scheme in ["center", "forward", "backward"]:
 
-            offsets_1d = getattr(self, scheme)["offsets"]
-            coeffs = getattr(self, scheme)["coefficients"]
+            offsets_long = self._convert_1D_offsets_to_long_indices(
+                self.axis, getattr(self, scheme)["offsets"], shape
+            )
 
-            # translate offsets of given scheme to long format
-            offsets_long = []
-            for o_1d in offsets_1d:
-                o_nd = np.zeros(ndims)
-                o_nd[axis] = o_1d
-                o_long = to_long_index(o_nd, shape)
-                offsets_long.append(o_long)
+            multi_slice = self._get_multislice_for_scheme(self.axis, scheme, shape)
+            Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
 
-            # determine points where to evaluate current scheme in long format
-            nside = len(self.center["coefficients"]) // 2
-            if scheme == "center":
-                multi_slice = [slice(None, None)] * ndims
-                multi_slice[axis] = slice(nside, -nside)
-                Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
-            elif scheme == "forward":
-                multi_slice = [slice(None, None)] * ndims
-                multi_slice[axis] = slice(0, nside)
-                Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
-            else:
-                multi_slice = [slice(None, None)] * ndims
-                multi_slice[axis] = slice(-nside, None)
-                Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
-
-            for o, c in zip(offsets_long, coeffs):
-                v = c / h**order
+            coefs = getattr(self, scheme)["coefficients"]
+            for o, c in zip(offsets_long, coefs):
+                v = c / self.spacing**self.order
                 mat[Is, Is + o] = v
 
-        return mat
+    def _get_multislice_for_scheme(self, axis, scheme, shape):
+        ndims = len(shape)
+        multi_slice = [slice(None, None)] * ndims
+        nside = len(self.center["coefficients"]) // 2
+        if scheme == "center":
+            multi_slice[axis] = slice(nside, -nside)
+        elif scheme == "forward":
+            multi_slice[axis] = slice(0, nside)
+        else:
+            multi_slice[axis] = slice(-nside, None)
+        return multi_slice
+
+    def _convert_1D_offsets_to_long_indices(self, axis, offsets_1d, shape):
+        ndims = len(shape)
+        offsets_long = []
+        for o_1d in offsets_1d:
+            o_nd = np.zeros(ndims)
+            o_nd[axis] = o_1d
+            o_long = to_long_index(o_nd, shape)
+            offsets_long.append(o_long)
+        return offsets_long
 
 
 class _FinDiffUniformPeriodic(_FinDiffBase):
@@ -175,36 +180,28 @@ class _FinDiffUniformPeriodic(_FinDiffBase):
         h_inv = 1.0 / self.spacing**self.order
         return fd * h_inv
 
-    def matrix(self, shape):
-        h = self.spacing
+    def write_matrix_entries(self, mat, shape):
+        Is = self._get_all_long_matrix_indices_as_1d_array(shape)
+        h_inv = 1 / self.spacing**self.order
+        for o, c in zip(self.coefs["offsets"], self.coefs["coefficients"]):
+            Is_off = self._get_offset_indices_long(o, shape)
+            mat[Is, Is_off] = c * h_inv
 
+    def _get_all_long_matrix_indices_as_1d_array(self, shape):
         ndims = len(shape)
-        siz = np.prod(shape)
         long_indices_nd = long_indices_as_ndarray(shape)
-
-        axis, order = self.axis, self.order
-        mat = sparse.lil_matrix((siz, siz))
-
-        offsets = self.coefs["offsets"]
-        coefs = self.coefs["coefficients"]
-
         multi_slice = [slice(None, None)] * ndims
         Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
+        return Is
 
+    def _get_offset_indices_long(self, o, shape):
+        ndims = len(shape)
         idxs_short = [np.arange(n) for n in shape]
-
-        for o, c in zip(offsets, coefs):
-            v = c / h**order
-
-            idxs_short[self.axis] = np.roll(np.arange(shape[self.axis]), -o)
-            grid = np.meshgrid(*idxs_short, indexing="ij")
-            index_tuples = np.stack(grid, axis=-1).reshape(-1, ndims)
-
-            Is_off = np.ravel_multi_index(index_tuples.T, shape)
-
-            mat[Is, Is_off] = v
-
-        return mat
+        idxs_short[self.axis] = np.roll(np.arange(shape[self.axis]), -o)
+        grid = np.meshgrid(*idxs_short, indexing="ij")
+        index_tuples = np.stack(grid, axis=-1).reshape(-1, ndims)
+        Is_off = np.ravel_multi_index(index_tuples.T, shape)
+        return Is_off
 
 
 class _FinDiffNonUniform(_FinDiffBase):
@@ -229,20 +226,17 @@ class _FinDiffNonUniform(_FinDiffBase):
         for i, x in enumerate(self.coords):
 
             coefs = self.coef_list[i]
-            weights = coefs["coefficients"]
-            offsets = coefs["offsets"]
             ref_multi_slice[dim] = i
 
-            for off, w in zip(offsets, weights):
+            for off, w in zip(coefs["offsets"], coefs["coefficients"]):
                 multi_slice[dim] = i + off
                 yd[tuple(ref_multi_slice)] += w * y[tuple(multi_slice)]
 
         return yd
 
-    def matrix(self, shape):
+    def write_matrix_entries(self, mat, shape):
 
         coords = self.coords
-
         siz = np.prod(shape)
         long_inds = np.arange(siz).reshape(shape)
         short_inds = [np.arange(shape[k]) for k in range(len(shape))]
@@ -251,8 +245,6 @@ class _FinDiffNonUniform(_FinDiffBase):
         coef_dicts = []
         for i in range(len(coords)):
             coef_dicts.append(coefficients_non_uni(self.order, self.acc, coords, i))
-
-        mat = sparse.lil_matrix((siz, siz))
 
         for base_ind_long, base_ind_short in enumerate(short_inds):
             cd = coef_dicts[base_ind_short[self.axis]]
@@ -264,5 +256,3 @@ class _FinDiffNonUniform(_FinDiffBase):
                 off_long = long_inds[tuple(off_ind_short)]
 
                 mat[base_ind_long, off_long] += c
-
-        return mat
