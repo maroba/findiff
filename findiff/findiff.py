@@ -1,11 +1,14 @@
-import itertools
-
 import numpy as np
 from scipy import sparse
 
 from findiff.coefs import coefficients_non_uni, coefficients
 from findiff.grids import GridAxis, EquidistantAxis, NonEquidistantAxis
-from findiff.utils import long_indices_as_ndarray, to_long_index
+from findiff.utils import (
+    get_long_indices_for_all_grid_points_as_ndarray,
+    to_long_index,
+    get_list_of_multiindex_tuples,
+    get_long_indices_for_all_grid_points_as_1d_array,
+)
 
 
 def build_differentiator(order: int, axis: GridAxis, acc):
@@ -126,7 +129,7 @@ class _FinDiffUniform(_FinDiffBase):
         self.apply_to_array(fd, f, weights, off_slices, ref_slice, self.axis)
 
     def write_matrix_entries(self, mat, shape):
-        long_indices_nd = long_indices_as_ndarray(shape)
+        long_indices_nd = get_long_indices_for_all_grid_points_as_ndarray(shape)
         for scheme in ["center", "forward", "backward"]:
 
             offsets_long = self._convert_1D_offsets_to_long_indices(
@@ -157,7 +160,7 @@ class _FinDiffUniform(_FinDiffBase):
         ndims = len(shape)
         offsets_long = []
         for o_1d in offsets_1d:
-            o_nd = np.zeros(ndims)
+            o_nd = np.zeros(ndims, dtype=int)
             o_nd[axis] = o_1d
             o_long = to_long_index(o_nd, shape)
             offsets_long.append(o_long)
@@ -181,18 +184,11 @@ class _FinDiffUniformPeriodic(_FinDiffBase):
         return fd * h_inv
 
     def write_matrix_entries(self, mat, shape):
-        Is = self._get_all_long_matrix_indices_as_1d_array(shape)
+        Is = get_long_indices_for_all_grid_points_as_1d_array(shape)
         h_inv = 1 / self.spacing**self.order
         for o, c in zip(self.coefs["offsets"], self.coefs["coefficients"]):
             Is_off = self._get_offset_indices_long(o, shape)
             mat[Is, Is_off] = c * h_inv
-
-    def _get_all_long_matrix_indices_as_1d_array(self, shape):
-        ndims = len(shape)
-        long_indices_nd = long_indices_as_ndarray(shape)
-        multi_slice = [slice(None, None)] * ndims
-        Is = long_indices_nd[tuple(multi_slice)].reshape(-1)
-        return Is
 
     def _get_offset_indices_long(self, o, shape):
         ndims = len(shape)
@@ -237,15 +233,14 @@ class _FinDiffNonUniform(_FinDiffBase):
     def write_matrix_entries(self, mat, shape):
 
         coords = self.coords
-        siz = np.prod(shape)
-        long_inds = np.arange(siz).reshape(shape)
-        short_inds = [np.arange(shape[k]) for k in range(len(shape))]
-        short_inds = list(itertools.product(*short_inds))
+
+        short_inds = get_list_of_multiindex_tuples(shape)
 
         coef_dicts = []
         for i in range(len(coords)):
             coef_dicts.append(coefficients_non_uni(self.order, self.acc, coords, i))
 
+        long_inds = get_long_indices_for_all_grid_points_as_ndarray(shape)
         for base_ind_long, base_ind_short in enumerate(short_inds):
             cd = coef_dicts[base_ind_short[self.axis]]
             cs, os = cd["coefficients"], cd["offsets"]

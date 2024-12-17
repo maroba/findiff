@@ -9,6 +9,7 @@ coefficients(deriv, acc=None, offsets=None, symbolic=False)
 to calculate the finite difference coefficients for a given derivative
 order and given accuracy order to given offsets.
 """
+
 from itertools import combinations
 
 import math
@@ -48,42 +49,40 @@ def coefficients(deriv, acc=None, offsets=None, symbolic=False, analytic_inv=Fal
     _validate_deriv(deriv)
 
     if acc is not None and offsets:
-        raise ValueError('acc and offsets cannot both be given')
+        raise ValueError("acc and offsets cannot both be given")
 
     if offsets:
         if deriv >= len(offsets):
             raise ValueError(
-                f'can not compute derivative of order {deriv} using {len(offsets)} offsets.'
+                f"can not compute derivative of order {deriv} using {len(offsets)} offsets."
             )
         return calc_coefs(deriv, offsets, symbolic, analytic_inv)
 
     if acc is None:
-        raise ValueError('either acc or offsets has to be given')
+        raise ValueError("either acc or offsets has to be given")
 
     _validate_acc(acc)
     ret = {}
+    num_central_coefs = 2 * math.floor((deriv + 1) / 2) - 1 + acc
+    num_side_coefs = num_central_coefs // 2
 
     # Determine central coefficients
-
-    num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
-    num_side = num_central // 2
-    offsets = list(range(-num_side, num_side+1))
-
+    offsets = list(range(-num_side_coefs, num_side_coefs + 1))
     ret["center"] = calc_coefs(deriv, offsets, symbolic, analytic_inv)
 
     # Determine forward coefficients
 
     if deriv % 2 == 0:
-        num_coef = num_central + 1
+        num_coef = num_central_coefs + 1
     else:
-        num_coef = num_central
+        num_coef = num_central_coefs
 
     offsets = list(range(num_coef))
     ret["forward"] = calc_coefs(deriv, offsets, symbolic, analytic_inv)
 
     # Determine backward coefficients
 
-    offsets = list(range(-num_coef+1, 1))
+    offsets = list(range(-num_coef + 1, 1))
     ret["backward"] = calc_coefs(deriv, offsets, symbolic, analytic_inv)
 
     return ret
@@ -114,21 +113,23 @@ def compute_inverse_Vandermonde(column, offsets, symbolic):
     n = len(offsets)
     k = column + 1
     inv_vandermonde_column = []
-    if k==n:
+    if k == n:
         # If the number of offsets matches the derivative order + 1, there is a special
         # case, compare the lower part of the bracket in the equation in proofwiki.
         for j in range(n):
-            denom = prod(minus(offsets[j], offsets[:j])) * prod(minus(offsets[j], offsets[j+1:]))
+            denom = prod(minus(offsets[j], offsets[:j])) * prod(
+                minus(offsets[j], offsets[j + 1 :])
+            )
             inv_vandermonde_column.append(1 / denom)
     else:
-        # This is the "regular" part of the bracket. First compute the sign that is the 
+        # This is the "regular" part of the bracket. First compute the sign that is the
         # same for all entries in the column that we compute
-        sign = (-1) ** (n-k)
+        sign = (-1) ** (n - k)
         for j in range(n):
             # All indices except j
-            range_wo_j = list(range(j)) + list(range(j+1, n))
+            range_wo_j = list(range(j)) + list(range(j + 1, n))
             # Get all combinations of n-k indices that are ascending and do not contain j
-            index_set = combinations(range_wo_j, r=n-k)
+            index_set = combinations(range_wo_j, r=n - k)
             enumerator = sum((prod(take(offsets, list(m))) for m in index_set))
             denominator = prod(minus(offsets[j], take(offsets, range_wo_j)))
             inv_vandermonde_column.append(sign * enumerator / denominator)
@@ -138,6 +139,7 @@ def compute_inverse_Vandermonde(column, offsets, symbolic):
         return [val * fact for val in inv_vandermonde_column]
 
     return np.array(inv_vandermonde_column) * math.factorial(column)
+
 
 def calc_coefs(deriv, offsets, symbolic=False, analytic_inv=False):
     if analytic_inv:
@@ -156,11 +158,8 @@ def calc_coefs(deriv, offsets, symbolic=False, analytic_inv=False):
     if not symbolic:
         offsets = np.array(offsets)
 
-    return {
-        "coefficients": coefs,
-        "offsets": offsets,
-        "accuracy": acc
-    }
+    return {"coefficients": coefs, "offsets": offsets, "accuracy": acc}
+
 
 def coefficients_non_uni(deriv, acc, coords, idx):
     """
@@ -170,12 +169,12 @@ def coefficients_non_uni(deriv, acc, coords, idx):
     :param deriv: int > 0: The derivative order.
 
     :param acc:  even int > 0: The accuracy order.
-     
+
     :param coords:  1D numpy.ndarray: the coordinates of the axis for the partial derivative
-    
+
     :param idx:  int: index of the grid position where to calculate the coefficients
 
-    :return: dict with the finite difference coefficients and corresponding offsets 
+    :return: dict with the finite difference coefficients and corresponding offsets
     """
 
     _validate_deriv(deriv)
@@ -197,29 +196,29 @@ def coefficients_non_uni(deriv, acc, coords, idx):
 
         ret = {
             "coefficients": np.linalg.solve(matrix, rhs),
-            "offsets": np.array(offsets)
+            "offsets": np.array(offsets),
         }
 
     elif idx >= len(coords) - num_side:
         matrix = _build_matrix_non_uniform(num_coef - 1, 0, coords, idx)
 
-        offsets = list(range(-num_coef+1, 1))
+        offsets = list(range(-num_coef + 1, 1))
         rhs = _build_rhs(offsets, deriv)
 
         ret = {
             "coefficients": np.linalg.solve(matrix, rhs),
-            "offsets": np.array(offsets)
+            "offsets": np.array(offsets),
         }
 
     else:
         matrix = _build_matrix_non_uniform(num_side, num_side, coords, idx)
 
-        offsets = list(range(-num_side, num_side+1))
+        offsets = list(range(-num_side, num_side + 1))
         rhs = _build_rhs(offsets, deriv)
 
         ret = {
             "coefficients": np.linalg.solve(matrix, rhs),
-            "offsets": np.array([p for p in range(-num_side, num_side + 1)])
+            "offsets": np.array([p for p in range(-num_side, num_side + 1)]),
         }
 
     return ret
@@ -234,7 +233,7 @@ def _build_matrix(offsets, symbolic=False):
     if symbolic:
         return sympy.Matrix(A)
     else:
-        return np.array(A,dtype='float')
+        return np.array(A, dtype="float")
 
 
 def _build_rhs(offsets, deriv, symbolic=False):
@@ -245,16 +244,16 @@ def _build_rhs(offsets, deriv, symbolic=False):
     if symbolic:
         return sympy.Matrix(b)
     else:
-        return np.array(b,dtype='float')
+        return np.array(b, dtype="float")
 
 
 def _build_matrix_non_uniform(p, q, coords, k):
     """Constructs the equation matrix for the finite difference coefficients of non-uniform grids at location k"""
-    A = [[1] * (p+q+1)]
+    A = [[1] * (p + q + 1)]
     for i in range(1, p + q + 1):
-        line = [(coords[k+j] - coords[k])**i for j in range(-p, q+1)]
+        line = [(coords[k + j] - coords[k]) ** i for j in range(-p, q + 1)]
         A.append(line)
-    return np.array(A,dtype='float')
+    return np.array(A, dtype="float")
 
 
 def _calc_accuracy(offsets, coefs, deriv, symbolic=False):
@@ -264,30 +263,30 @@ def _calc_accuracy(offsets, coefs, deriv, symbolic=False):
     if symbolic:
         break_cond = lambda b: b != 0
     else:
-        break_cond = lambda b: abs(b) > 1.E-6
+        break_cond = lambda b: abs(b) > 1.0e-6
 
     while True:
         b = 0
-        #for i, coef in enumerate(coefs):
+        # for i, coef in enumerate(coefs):
         for o, coef in zip(offsets, coefs):
-            #k = min(offsets) + i
-            b += coef * o ** n
+            # k = min(offsets) + i
+            b += coef * o**n
 
         if break_cond(b):
             break
 
         n += 1
         if n > max_n:
-            raise Exception('Cannot compute accuracy.')
+            raise Exception("Cannot compute accuracy.")
 
     return round(n - deriv)
 
 
 def _validate_acc(acc):
     if acc % 2 == 1 or acc <= 0:
-        raise ValueError('Accuracy order acc must be positive EVEN integer')
+        raise ValueError("Accuracy order acc must be positive EVEN integer")
 
 
 def _validate_deriv(deriv):
     if deriv < 0:
-        raise ValueError('Derive degree must be positive integer')
+        raise ValueError("Derive degree must be positive integer")

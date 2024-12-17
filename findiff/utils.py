@@ -1,7 +1,7 @@
+import itertools
 from itertools import product
+
 import numpy as np
-import warnings
-from functools import wraps
 
 
 def interior_mask_as_ndarray(shape):
@@ -16,11 +16,16 @@ def all_index_tuples_as_list(shape):
     return list(product(*tuple([list(range(shape[k])) for k in range(ndims)])))
 
 
-def long_indices_as_ndarray(shape):
-    return np.array(list(range(np.prod(shape)))).reshape(shape)
+def get_long_indices_for_all_grid_points_as_ndarray(shape):
+    return get_long_indices_for_all_grid_points_as_1d_array(shape).reshape(shape)
+
+
+def get_long_indices_for_all_grid_points_as_1d_array(shape):
+    return np.arange(np.prod(shape), dtype=np.int64)
 
 
 def to_long_index(idx, shape):
+
     ndims = len(shape)
     long_idx = 0
     siz = 1
@@ -41,6 +46,12 @@ def to_index_tuple(long_idx, shape):
         long_idx = long_idx - s * idx[k]
 
     return tuple(idx)
+
+
+def get_list_of_multiindex_tuples(shape):
+    short_inds = [np.arange(shape[k]) for k in range(len(shape))]
+    short_inds = list(itertools.product(*short_inds))
+    return short_inds
 
 
 #
