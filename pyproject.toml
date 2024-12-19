@@ -60,8 +60,11 @@ report.exclude_lines = [
 ]
 
 [tool.tox]
-requires = ["tox>=4.19"]
-env_list = ["3.13", "3.12", "3.11", "3.10", "3.9", "3.8"]
+requires = ["tox>=4.21"]
+env_list = [
+    "fmt", "lint",
+    "3.13", "3.12", "3.11", "3.10", "3.9", "3.8",
+]
 
 [tool.tox.env_run_base]
 wheel_build_env = ".pkg"
@@ -70,4 +73,33 @@ deps = [
 ]
 commands = [
     ["pytest"],
+]
+
+[tool.tox.env.fmt]
+package = "skip"
+deps = [
+    "ruff",
+]
+commands = [
+    ["ruff", "format", "--check", { replace = "posargs", default = ["."], extend = true }],
+]
+
+[tool.tox.env.lint]
+package = "skip"
+deps = [
+    "ruff",
+]
+commands = [
+    ["ruff", "check", "--no-fix", { replace = "posargs", default = ["."], extend = true }],
+]
+
+[tool.ruff]
+line-length = 88
+lint.extend-select = [
+    "B",  # flake8-bugbear
+    "I",  # isort
+    "UP",  # pyupgrade
+]
+extend-exclude = [
+    "docs/source/**/*.ipynb",
 ]
