@@ -1,12 +1,11 @@
-import unittest
-
 import numpy as np
+import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from findiff import FinDiff, Coef, Identity
 
 
-class FinDiffTest(unittest.TestCase):
+class TestFinDiff:
 
     def test_partial_diff_1d(self):
         nx = 11
@@ -211,7 +210,7 @@ class FinDiffTest(unittest.TestCase):
         d2u_dx2 = d2_dx2(u)
         expected = d2u_dx2[idx]
 
-        self.assertAlmostEqual(expected, actual)
+        assert pytest.approx(expected) == actual
 
         actual = stl.apply_all(u)
         expected = d2u_dx2
@@ -344,7 +343,7 @@ class FinDiffTest(unittest.TestCase):
         expected = L(u).reshape(-1)
         np.testing.assert_array_almost_equal(expected, actual)
 
-    @unittest.skip
+    @pytest.mark.skip
     def test_eigs(self):
 
         shape = (8,)
@@ -367,7 +366,7 @@ class FinDiffTest(unittest.TestCase):
         print(vecs)
 
 
-class TestFinDiffNonUniform(unittest.TestCase):
+class TestFinDiffNonUniform:
 
     def test_1d_different_accs(self):
         x = np.r_[np.arange(0, 4, 0.05), np.arange(4, 10, 1)]
@@ -430,7 +429,8 @@ class TestFinDiffNonUniform(unittest.TestCase):
 
     def test_accepts_not_more_than_three_args(self):
         x = np.linspace(0, 1, 10)
-        self.assertRaises(Exception, lambda: FinDiff(0, x, 2, 3))
+        with pytest.raises(Exception):
+            FinDiff(0, x, 2, 3)
 
     def test_matrix_1d_nonuni(self):
 
@@ -488,7 +488,7 @@ class TestFinDiffNonUniform(unittest.TestCase):
         expected = L(u).reshape(-1)
         np.testing.assert_array_almost_equal(expected, actual)
 
-    @unittest.skip
+    @pytest.mark.skip
     def test_matrix_3d_nonuni_performance(self):
 
         x = y = z = np.linspace(0, 4, 30)
@@ -505,6 +505,7 @@ class TestFinDiffNonUniform(unittest.TestCase):
     def test_grid(self):
         np.testing.assert_equal(grid(2, 50, 0, 1), grid(2, [50, 50], [0, 0], [1, 1]))
 
+
 def grid(ndim, npts, a, b):
 
     if not hasattr(a, "__len__"):
@@ -519,7 +520,3 @@ def grid(ndim, npts, a, b):
     spac = [coords[i][1] - coords[i][0] for i in range(ndim)]
 
     return mesh, coords, spac
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1,9 +1,10 @@
-import unittest
-
 from findiff.utils import *
 
 
-class TestUtils(unittest.TestCase):
+class TestUtils:
+
+    def assertEqual(self, first, second):
+        assert first == second
 
     def test_all_index_tuples_for_shape(self):
 

@@ -1,10 +1,11 @@
-import unittest
-from numpy.testing import assert_array_almost_equal
 import numpy as np
+import pytest
+from numpy.testing import assert_array_almost_equal
+
 from findiff import Gradient, Divergence, Curl, Laplacian
 
 
-class TestGradient(unittest.TestCase):
+class TestGradient:
 
     def test_3d_gradient_on_scalar_func(self):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
@@ -54,10 +55,11 @@ class TestGradient(unittest.TestCase):
             [np.sin(X) * np.sin(Y) * np.sin(Z), np.sin(X) * np.sin(Y) * np.sin(Z)]
         )
         grad = Gradient(spac=h, acc=4)
-        self.assertRaises(ValueError, grad, f)
+        with pytest.raises(ValueError):
+            grad(f)
 
 
-class TestDivergence(unittest.TestCase):
+class TestDivergence:
 
     def test_3d_divergence_on_vector_func(self):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
@@ -78,10 +80,11 @@ class TestDivergence(unittest.TestCase):
         f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z)] * 3)
         assert f.shape == (3, 50, 50, 50)
         div = Divergence(spac=[1, 1], acc=4)
-        self.assertRaises(ValueError, div, f)
+        with pytest.raises(ValueError):
+            div(f)
 
 
-class TestCurl(unittest.TestCase):
+class TestCurl:
 
     def test_curl_on_3d_vector_func(self):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
@@ -102,13 +105,15 @@ class TestCurl(unittest.TestCase):
         axes, h, [X, Y, Z] = init_mesh(3, (50, 50, 50))
         f = np.array([np.sin(X) * np.sin(Y) * np.sin(Z)] * 3)
         assert f.shape == (3, 50, 50, 50)
-        self.assertRaises(ValueError, Curl, spac=[1, 1], acc=4)
+        with pytest.raises(ValueError):
+            Curl(spac=[1, 1], acc=4)
 
     def test_curl_for_2d_function(self):
         axes, h, [X, Y] = init_mesh(2, (50, 50))
         f = np.array([np.sin(X) * np.sin(Y)] * 2)
         curl = Curl(spac=[1, 1, 1], acc=4)
-        self.assertRaises(ValueError, curl, f)
+        with pytest.raises(ValueError):
+            curl(f)
 
     def test_laplacian(self):
         axes, h, [X, Y] = init_mesh(2, (50, 50))
@@ -122,7 +127,3 @@ def init_mesh(ndims, npoints):
     h = [x[1] - x[0] for x in axes]
     mesh = np.meshgrid(*axes, indexing="ij")
     return axes, h, mesh
-
-
-if __name__ == "__main__":
-    unittest.main()

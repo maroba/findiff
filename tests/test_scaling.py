@@ -1,14 +1,12 @@
-import sys
-
-sys.path.insert(1, "..")
-
 from math import log
-import unittest
+
 import numpy as np
+import pytest
+
 from findiff import FinDiff
 
 
-class TestScaling(unittest.TestCase):
+class TestScaling:
 
     def fit_1d(self, acc):
         nx_list = 10 ** np.linspace(1.75, 2.0, 10)
@@ -56,21 +54,15 @@ class TestScaling(unittest.TestCase):
         fit = np.polyfit(log_dx_list, log_err_list, deg=1)
         return fit[0]
 
-    def test_1d_acc2(self):
-        self.assertAlmostEqual(2.0, self.fit_1d(acc=2), 1)
+    @pytest.mark.parametrize("acc", [2, 4, 6])
+    def test_1d_acc(self, acc):
+        assert self.fit_1d(acc=acc) == pytest.approx(acc, 0.1)
 
-    def test_1d_acc4(self):
-        self.assertAlmostEqual(4.0, self.fit_1d(acc=4), 1)
+    @pytest.mark.parametrize("acc", [2, 4])
+    def test_2d_acc2(self, acc):
+        assert self.fit_2d(acc=acc) == pytest.approx(acc, 0.1)
 
-    def test_1d_acc6(self):
-        self.assertAlmostEqual(6.0, self.fit_1d(acc=6), 1)
-
-    def test_2d_acc2(self):
-        self.assertAlmostEqual(2.0, self.fit_2d(acc=2), 1)
-
-    def test_2d_acc4(self):
-        self.assertAlmostEqual(4.0, self.fit_2d(acc=4), 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    def assertAlmostEqual(self, first, second, acc=None):
+        if acc:
+            assert first == pytest.approx(second, abs=acc)
+        assert first == pytest.approx(second)

@@ -1,17 +1,13 @@
-import sys
-
 import numpy as np
+import pytest
 
-sys.path.insert(1, "..")
-
-import unittest
 from findiff import *
 
 # import matplotlib.pyplot as plt
 # from mpl_toolkits import mplot3d
 
 
-class TestPDE(unittest.TestCase):
+class TestPDE:
 
     def test_1d_dirichlet_hom(self):
 
@@ -291,7 +287,7 @@ class TestPDE(unittest.TestCase):
         np.testing.assert_array_almost_equal(expected, actual, decimal=4)
 
     # This simple case in not running yet!
-    @unittest.skip
+    @pytest.mark.skip
     def test_2d_inhom_var_coefs_with_identity_all_dirichlet(self):
 
         shape = (5, 5)

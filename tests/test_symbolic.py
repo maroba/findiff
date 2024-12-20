@@ -1,11 +1,12 @@
-import unittest
-
 from sympy import IndexedBase, Symbol, symbols, latex
 
 from findiff.symbolic import SymbolicMesh, SymbolicDiff
 
 
-class TestSymbolicMesh(unittest.TestCase):
+class TestSymbolicMesh:
+
+    def assertEqual(self, first, second):
+        assert first == second
 
     def test_parse_symbolic_mesh(self):
         # 1D
@@ -57,7 +58,10 @@ class TestSymbolicMesh(unittest.TestCase):
         # self.assertEqual(actual, expected)
 
 
-class TestDiff(unittest.TestCase):
+class TestDiff:
+
+    def assertEqual(self, first, second):
+        assert first == second
 
     def test_init(self):
         mesh = SymbolicMesh("x")
@@ -91,7 +95,3 @@ class TestDiff(unittest.TestCase):
         expected = (u[n, m + 1] - u[n, m - 1]) / (2 * mesh.spacing[1])
 
         self.assertEqual(0, (expected - actual).simplify())
-
-
-if __name__ == "__main__":
-    unittest.main()
