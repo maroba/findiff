@@ -10,7 +10,7 @@ class TestOldBugs(unittest.TestCase):
 
     def test_findiff_should_raise_exception_when_applied_to_unevaluated_function(self):
         def f(x, y):
-            return 5 * x**2 - 5 * x + 10 * y**2 - 10 * y
+            return 5 * x**2 - 5 * x + 10 * y**2 - 10 * y  # pragma: no cover
 
         d_dx = FinDiff(1, 0.01)
         self.assertRaises(ValueError, lambda ff: d_dx(ff), f)
@@ -128,12 +128,14 @@ class TestOldBugs(unittest.TestCase):
 
         np.testing.assert_allclose(d_dx(np.linspace(0, 1, 11)), np.ones(11))
 
-    def assert_dict_almost_equal(self, actual, expected, places=7):
-        if len(actual) != len(expected):
-            return False
-
-        for key, value in actual.items():
-            self.assertAlmostEqual(actual[key], expected[key], places=places)
+    def assert_dict_almost_equal(self, first, second, places=7):
+        for k in set(first) & set(second):
+            self.assertAlmostEqual(first[k], second[k], places=places)
+        # NOTE: missing item(s) should be zero
+        for k in set(first) - set(second):
+            self.assertAlmostEqual(first[k], 0, places=places)
+        for k in set(second) - set(first):
+            self.assertAlmostEqual(0, second[k], places=places)
 
 
 if __name__ == "__main__":
