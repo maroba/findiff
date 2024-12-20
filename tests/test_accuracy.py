@@ -65,7 +65,3 @@ def test_iterative_accuracy():
 def loglog_slope(x, y):
     slope, intercept = np.polyfit(np.log(x), np.log(y), 1)
     return slope
-
-
-if __name__ == "__main__":
-    test_iterative_accuracy()
