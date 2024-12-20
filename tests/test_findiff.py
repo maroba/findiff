@@ -287,13 +287,6 @@ class FinDiffTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(2 * np.ones_like(X), du_dx)
 
-    def dict_almost_equal(self, d1, d2):
-
-        self.assertEqual(len(d1), len(d2))
-
-        for k, v in d1.items():
-            self.assertAlmostEqual(v, d2[k])
-
     def test_matrix_1d(self):
 
         x = np.linspace(0, 6, 7)
@@ -509,6 +502,8 @@ class TestFinDiffNonUniform(unittest.TestCase):
             6 * np.ones_like(X).reshape(-1), mat.dot(u.reshape(-1))
         )
 
+    def test_grid(self):
+        np.testing.assert_equal(grid(2, 50, 0, 1), grid(2, [50, 50], [0, 0], [1, 1]))
 
 def grid(ndim, npts, a, b):
 
@@ -516,7 +511,7 @@ def grid(ndim, npts, a, b):
         a = [a] * ndim
     if not hasattr(b, "__len__"):
         b = [b] * ndim
-    if not hasattr(np, "__len__"):
+    if not hasattr(npts, "__len__"):
         npts = [npts] * ndim
 
     coords = [np.linspace(a[i], b[i], npts[i]) for i in range(ndim)]

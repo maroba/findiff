@@ -138,7 +138,7 @@ class TestCoefs(unittest.TestCase):
             with self.subTest():
                 self.assertEqual(2, coefs["accuracy"])
 
-    def test_calc_accuracy_from_offsets_symbolic(self):
+    def test_calc_accuracy_from_offsets_symbolic1(self):
         for analytic_inv in [True, False]:
             coefs = calc_coefs(
                 2, [0, 1, 2, 3], symbolic=True, analytic_inv=analytic_inv
@@ -146,7 +146,7 @@ class TestCoefs(unittest.TestCase):
             with self.subTest():
                 self.assertEqual(2, coefs["accuracy"])
 
-    def test_calc_accuracy_from_offsets_symbolic(self):
+    def test_calc_accuracy_from_offsets_symbolic2(self):
         for analytic_inv in [True, False]:
             coefs = calc_coefs(
                 2, [-4, -2, 0, 2, 4], symbolic=True, analytic_inv=analytic_inv

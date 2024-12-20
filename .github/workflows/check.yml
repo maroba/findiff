@@ -2,11 +2,20 @@ name: Checks
 
 on:
   push:
+    branches: [main, master]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: test-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -21,18 +30,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          # prerequisites
-          python -m pip install --upgrade pip wheel
-          python -m pip install codecov coverage pytest pytest-cov
-          # install dependencies
-          pip install -e .[all]
-          # show installed packages
-          pip freeze
+          python -m pip install --upgrade pip
+          python -m pip install pytest pytest-cov
+      - name: Install package
+        run: pip install -e .
+      - name: Show installed packages
+        run: pip freeze
       - name: Test with pytest
-        run: |
-          pytest
+        run: pytest --cov --showlocals
       - name: Submit code coverage
-        run: |
-          pytest --cov=findiff --cov-report=html tests        
-          codecov -t ${{ secrets.CODECOV_TOKEN }}
-
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
