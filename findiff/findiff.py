@@ -211,9 +211,10 @@ class _FinDiffNonUniform(_FinDiffBase):
         super().__init__(axis, order)
         self.coords = coords
         self.acc = acc
-        self.coef_list = []
-        for i in range(len(self.coords)):
-            self.coef_list.append(coefficients_non_uni(order, self.acc, self.coords, i))
+        self.coef_list = [
+            coefficients_non_uni(order, self.acc, self.coords, i)
+            for i in range(len(coords))
+        ]
 
     def __call__(self, y):
         """The core function to take a partial derivative on a non-uniform grid"""
