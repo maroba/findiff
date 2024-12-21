@@ -32,13 +32,17 @@ class _FinDiffBase:
         self.axis = axis
         self.order = order
 
-    def validate_f(self, f):
+    def guard_valid_target(self, f):
         try:
             f.shape[self.axis]
         except AttributeError as err:
             raise ValueError(
                 "Diff objects can only be applied to arrays or evaluated(!) functions returning arrays"
             ) from err
+
+        if np.issubdtype(f.dtype, np.integer):
+            f = f.astype(np.float64)
+        return f
 
     def apply_to_array(self, yd, y, weights, off_slices, ref_slice, dim):
         """Applies the finite differences only to slices along a given axis"""
@@ -87,9 +91,7 @@ class _FinDiffUniform(_FinDiffBase):
         self.center = coef_schemes["center"]
 
     def __call__(self, f):
-        self.validate_f(f)
-        if np.issubdtype(f.dtype, np.integer):
-            f = f.astype(np.float64)
+        f = self.guard_valid_target(f)
 
         npts = f.shape[self.axis]
         fd = np.zeros_like(f)
@@ -179,12 +181,7 @@ class _FinDiffUniformPeriodic(_FinDiffBase):
         self.coefs = coefficients(self.order, acc)["center"]
 
     def __call__(self, f):
-        self.validate_f(f)
-        if np.issubdtype(f.dtype, np.integer):
-            f = f.astype(np.float64)
-
-        if np.issubdtype(f.dtype, np.integer):
-            f = f.astype(np.float64)
+        f = self.guard_valid_target(f)
 
         fd = np.zeros_like(f)
         for off, coef in zip(self.coefs["offsets"], self.coefs["coefficients"]):
@@ -220,9 +217,7 @@ class _FinDiffNonUniform(_FinDiffBase):
 
     def __call__(self, y):
         """The core function to take a partial derivative on a non-uniform grid"""
-
-        if np.issubdtype(y.dtype, np.integer):
-            y = y.astype(np.float64)
+        y = self.guard_valid_target(y)
 
         order, dim = self.order, self.axis
 
