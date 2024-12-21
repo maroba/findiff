@@ -5,7 +5,7 @@ import numpy as np
 from .compatible import FinDiff
 
 
-class VectorOperator(object):
+class VectorOperator:
     """Base class for all vector differential operators.
     Shall not be instantiated directly, but through the child classes.
     """
@@ -188,9 +188,7 @@ class Curl(VectorOperator):
 
         if self.ndims != 3:
             raise ValueError(
-                "Curl operation is only defined in 3 dimensions. {} were given.".format(
-                    self.ndims
-                )
+                f"Curl operation is only defined in 3 dimensions. {self.ndims} were given."
             )
 
     def __call__(self, f):
@@ -232,7 +230,7 @@ class Curl(VectorOperator):
         return result
 
 
-class Laplacian(object):
+class Laplacian:
     r"""
     The N-dimensional Laplace operator.
 
@@ -255,7 +253,8 @@ class Laplacian(object):
 
     """A representation of the Laplace operator in arbitrary dimensions using finite difference schemes"""
 
-    def __init__(self, h=[1.0], acc=2):
+    def __init__(self, h=None, acc=2):
+        h = h or [1.0]
         h = wrap_in_ndarray(h)
 
         self._parts = [FinDiff((k, h[k], 2), acc=acc) for k in range(len(h))]

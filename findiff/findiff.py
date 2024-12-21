@@ -1,13 +1,13 @@
 import numpy as np
 from scipy import sparse
 
-from findiff.coefs import coefficients_non_uni, coefficients
-from findiff.grids import GridAxis, EquidistantAxis, NonEquidistantAxis
+from findiff.coefs import coefficients, coefficients_non_uni
+from findiff.grids import EquidistantAxis, GridAxis, NonEquidistantAxis
 from findiff.utils import (
-    get_long_indices_for_all_grid_points_as_ndarray,
-    to_long_index,
     get_list_of_multiindex_tuples,
     get_long_indices_for_all_grid_points_as_1d_array,
+    get_long_indices_for_all_grid_points_as_ndarray,
+    to_long_index,
 )
 
 
@@ -220,7 +220,7 @@ class _FinDiffNonUniform(_FinDiffBase):
         """The core function to take a partial derivative on a non-uniform grid"""
         y = self.guard_valid_target(y)
 
-        order, dim = self.order, self.axis
+        dim = self.axis
 
         yd = np.zeros_like(y)
 
@@ -228,7 +228,7 @@ class _FinDiffNonUniform(_FinDiffBase):
         multi_slice = [slice(None, None)] * ndims
         ref_multi_slice = [slice(None, None)] * ndims
 
-        for i, x in enumerate(self.coords):
+        for i, _ in enumerate(self.coords):
 
             coefs = self.coef_list[i]
             ref_multi_slice[dim] = i

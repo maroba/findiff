@@ -1,6 +1,6 @@
 """This module provides an interface to obsolete classes for backward compatibility."""
 
-from findiff import Diff
+from findiff.interface import Diff
 from findiff.operators import FieldOperator, Identity
 
 

@@ -1,12 +1,11 @@
 import numbers
 from abc import ABC, abstractmethod
 
-import numpy
 import numpy as np
 from scipy import sparse
 
 from findiff.findiff import build_differentiator
-from findiff.grids import Grid, GridAxis, make_grid
+from findiff.grids import GridAxis, make_grid
 from findiff.stencils import StencilSet
 
 

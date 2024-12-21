@@ -3,10 +3,10 @@ from itertools import product
 
 import numpy as np
 
-from .utils import to_long_index, to_index_tuple
+from .utils import to_index_tuple, to_long_index
 
 
-class StencilSet(object):
+class StencilSet:
     """
     Represent the finite difference stencil for a given differential operator.
     """

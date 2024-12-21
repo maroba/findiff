@@ -9,7 +9,7 @@ import scipy.sparse as sparse
 from scipy.sparse.linalg import spsolve
 
 
-class PDE(object):
+class PDE:
     """
     Representation of a partial differential equation.
     """
@@ -62,7 +62,7 @@ class PDE(object):
         return spsolve(L, f).reshape(shape)
 
 
-class BoundaryConditions(object):
+class BoundaryConditions:
     """
     Represents Dirichlet or Neumann boundary conditions for a PDE.
     """

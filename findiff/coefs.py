@@ -10,9 +10,9 @@ to calculate the finite difference coefficients for a given derivative
 order and given accuracy order to given offsets.
 """
 
+import math
 from itertools import combinations
 
-import math
 import numpy as np
 import sympy
 
@@ -101,14 +101,14 @@ def compute_inverse_Vandermonde(column, offsets, symbolic):
     are 1-based.
     """
     if symbolic:
-        take = lambda arr, ids: [arr[idx] for idx in ids]
+        take = lambda arr, ids: [arr[idx] for idx in ids]  # noqa: E731
         prod = sympy.prod
-        minus = lambda x, arr: [x - val for val in arr]
+        minus = lambda x, arr: [x - val for val in arr]  # noqa: E731
     else:
-        take = lambda arr, ids: arr[ids]
+        take = lambda arr, ids: arr[ids]  # noqa: E731
         prod = np.prod
         offsets = np.array(offsets)
-        minus = lambda x, arr: x - arr
+        minus = lambda x, arr: x - arr  # noqa: E731
 
     n = len(offsets)
     k = column + 1
@@ -130,7 +130,7 @@ def compute_inverse_Vandermonde(column, offsets, symbolic):
             range_wo_j = list(range(j)) + list(range(j + 1, n))
             # Get all combinations of n-k indices that are ascending and do not contain j
             index_set = combinations(range_wo_j, r=n - k)
-            enumerator = sum((prod(take(offsets, list(m))) for m in index_set))
+            enumerator = sum(prod(take(offsets, list(m))) for m in index_set)
             denominator = prod(minus(offsets[j], take(offsets, range_wo_j)))
             inv_vandermonde_column.append(sign * enumerator / denominator)
 
@@ -261,9 +261,9 @@ def _calc_accuracy(offsets, coefs, deriv, symbolic=False):
     n = deriv + 1
     max_n = 999
     if symbolic:
-        break_cond = lambda b: b != 0
+        break_cond = lambda b: b != 0  # noqa: E731
     else:
-        break_cond = lambda b: abs(b) > 1.0e-6
+        break_cond = lambda b: abs(b) > 1.0e-6  # noqa: E731
 
     while True:
         b = 0

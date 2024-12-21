@@ -22,9 +22,25 @@ Features:
 __version__ = "0.12.1"
 
 
+from .coefs import coefficients
+from .compatible import Coef, Coefficient, FinDiff, Id
 from .interface import Diff
 from .operators import Identity
 from .pde import PDE, BoundaryConditions
-from .compatible import Coef, Coefficient, FinDiff, Id
-from .coefs import coefficients
-from .vector import Gradient, Divergence, Curl, Laplacian
+from .vector import Curl, Divergence, Gradient, Laplacian
+
+__all__ = [
+    "coefficients",
+    "Coef",
+    "Coefficient",
+    "FinDiff",
+    "Id",
+    "Diff",
+    "Identity",
+    "PDE",
+    "BoundaryConditions",
+    "Curl",
+    "Divergence",
+    "Gradient",
+    "Laplacian",
+]

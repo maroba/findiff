@@ -1,4 +1,3 @@
-import numpy as np
 
 from .grids import make_axis
 from .operators import Diff as _Diff

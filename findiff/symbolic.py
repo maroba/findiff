@@ -1,5 +1,4 @@
-from sympy import IndexedBase, Symbol, Add, Indexed, latex
-from sympy import Rational, factorial, linsolve, Matrix
+from sympy import Add, IndexedBase, Matrix, Rational, Symbol, factorial, linsolve
 
 
 class SymbolicMesh:
