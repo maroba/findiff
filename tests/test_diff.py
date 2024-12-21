@@ -7,16 +7,6 @@ from numpy.testing import assert_array_almost_equal
 from findiff import Diff, Identity
 
 
-def test_partial_d_dx_periodic():
-    x = np.linspace(0, 2 * np.pi, 200, endpoint=False)
-    dx = x[1] - x[0]
-    f = np.sin(x)
-    expected = np.cos(x)
-    actual = Diff(0, dx, periodic=True, acc=4)(f)
-
-    assert_array_almost_equal(expected, actual)
-
-
 def test_partial_d2_dx2_matrix_periodic():
     dx = 1
     expected = np.array(

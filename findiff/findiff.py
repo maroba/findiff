@@ -88,6 +88,9 @@ class _FinDiffUniform(_FinDiffBase):
 
     def __call__(self, f):
         self.validate_f(f)
+        if np.issubdtype(f.dtype, np.integer):
+            f = f.astype(np.float64)
+
         npts = f.shape[self.axis]
         fd = np.zeros_like(f)
         num_bndry_points = len(self.center["coefficients"]) // 2
@@ -177,6 +180,12 @@ class _FinDiffUniformPeriodic(_FinDiffBase):
 
     def __call__(self, f):
         self.validate_f(f)
+        if np.issubdtype(f.dtype, np.integer):
+            f = f.astype(np.float64)
+
+        if np.issubdtype(f.dtype, np.integer):
+            f = f.astype(np.float64)
+
         fd = np.zeros_like(f)
         for off, coef in zip(self.coefs["offsets"], self.coefs["coefficients"]):
             fd += coef * np.roll(f, -off, axis=self.axis)
@@ -212,7 +221,11 @@ class _FinDiffNonUniform(_FinDiffBase):
     def __call__(self, y):
         """The core function to take a partial derivative on a non-uniform grid"""
 
+        if np.issubdtype(y.dtype, np.integer):
+            y = y.astype(np.float64)
+
         order, dim = self.order, self.axis
+
         yd = np.zeros_like(y)
 
         ndims = len(y.shape)

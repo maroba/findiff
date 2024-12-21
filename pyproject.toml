@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "findiff"
 authors = [
-    {name = "Matthias Baer"},
+    { name = "Matthias Baer" },
 ]
 maintainers = [
-    {name = "Matthias Baer", email="matthias.r.baer@googlemail.com"},
+    { name = "Matthias Baer", email = "matthias.r.baer@googlemail.com" },
 ]
 description = "A Python package for finite difference derivatives in any number of dimensions."
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 dependencies = [
     "numpy",
     "scipy",
@@ -46,6 +46,20 @@ include = ["findiff"]
 
 [tool.setuptools.dynamic]
 version = { attr = "findiff.__version__" }
+
+[tool.pytest.ini_options]
+addopts = [
+    "--strict-markers"
+]
+testpaths = "tests"
+markers = [
+    "functional: Functional tests for stuff that the user would do",
+    "one_dimensional: Tests in 1D",
+    "periodic: Tests for periodic boundary conditions",
+    "invalid_args: Tests for invalid argument handling",
+    "default_args: Tests for default argument handling",
+    "grid_spec: Marker to construct grid data by fixtures"
+]
 
 [tool.coverage]
 run.source_pkgs = ["findiff", "tests"]
@@ -96,9 +110,9 @@ commands = [
 [tool.ruff]
 line-length = 88
 lint.extend-select = [
-    "B",  # flake8-bugbear
-    "I",  # isort
-    "UP",  # pyupgrade
+    "B", # flake8-bugbear
+    "I", # isort
+    "UP", # pyupgrade
 ]
 extend-exclude = [
     "docs/source/**/*.ipynb",

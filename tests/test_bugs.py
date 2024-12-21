@@ -1,8 +1,10 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal
 
 import findiff
 from findiff import FinDiff
+from findiff.coefs import coefficients_non_uni
 
 
 def test_findiff_should_raise_exception_when_applied_to_unevaluated_function():
@@ -141,3 +143,22 @@ def assert_dict_almost_equal(first, second):
         assert first[k] == pytest.approx(0, abs=1.0e-8)
     for k in set(second) - set(first):
         assert 0 == pytest.approx(second[k], abs=1.0e-8)
+
+
+class TestIssue90:
+
+    def test_reproduce_issue90(self):
+
+        x = np.array([0.0, 1.0, 1.5, 3.5, 4.0, 6.0])
+        f1 = np.array([1, 2, 4, 7, 11, 16])
+        f2 = np.sin(x)
+
+        d_dx = FinDiff(0, x, acc=2)
+        df_dx1 = d_dx(f1)
+        df_dx2 = d_dx(f2)
+
+        grad1 = np.gradient(f1, x, edge_order=2)
+        grad2 = np.gradient(f2, x, edge_order=2)
+
+        assert_array_almost_equal(df_dx2, grad2)
+        assert_array_almost_equal(df_dx1, grad1)
