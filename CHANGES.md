@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.12.x
+
+- Implements periodic boundary confitions
+
 ## Version 0.11.x
 
 - More comfortable API. (Old API still available)
