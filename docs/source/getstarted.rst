@@ -247,7 +247,7 @@ This returns
      ('H', 'C'): {(-3, 0): -1.0, (-2, 0): 4.0, (-1, 0): -5.0, (0, -1): 1.0, (0, 0): 0.0, (0, 1): 1.0},
      ('H', 'H'): {(-3, 0): -1.0, (-2, 0): 4.0, (-1, 0): -5.0, (0, -3): -1.0, (0, -2): 4.0, (0, -1): -5.0, (0, 0): 4.0}}
 
-In the interior of the grid (the :code:`('C', 'C') case), the stencil looks
+In the interior of the grid (the :code:`('C', 'C')` case), the stencil looks
 like this:
 
 .. image:: images/laplace2d.png

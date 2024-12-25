@@ -8,3 +8,6 @@ scipy
 sphinxcontrib.bibtex>=2.0
 sphinx_rtd_theme
 ipython
+ipykernel
+nbsphinx
+nbsphinx-link
