@@ -84,6 +84,9 @@ env_list = [
 wheel_build_env = ".pkg"
 deps = [
     "pytest",
+    "ipykernel",
+    "nbclient",
+    "matplotlib",
 ]
 commands = [
     ["pytest"],
