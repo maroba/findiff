@@ -37,15 +37,18 @@ sys.path.insert(0, os.path.join(os.path.abspath(".."), "findiff"))
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
     "sphinx.ext.mathjax",
     "nbsphinx",
+    "nbsphinx_link",
 ]
 
 
 nbsphinx_execute = "always"
+nbsphinx_kernel_name = "python3"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

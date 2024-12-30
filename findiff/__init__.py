@@ -27,6 +27,7 @@ from .compatible import Coef, Coefficient, FinDiff, Id
 from .interface import Diff
 from .operators import Identity
 from .pde import PDE, BoundaryConditions
+from .symbolic import SymbolicDiff, SymbolicMesh
 from .vector import Curl, Divergence, Gradient, Laplacian
 
 __all__ = [
@@ -39,6 +40,8 @@ __all__ = [
     "Identity",
     "PDE",
     "BoundaryConditions",
+    "SymbolicDiff",
+    "SymbolicMesh",
     "Curl",
     "Divergence",
     "Gradient",

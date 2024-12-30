@@ -71,6 +71,7 @@ report.exclude_lines = [
     "if TYPE_CHECKING:",
     "@overload",
     "@unittest.skip",
+    "@pytest.mark.skip",
 ]
 
 [tool.tox]
@@ -84,9 +85,30 @@ env_list = [
 wheel_build_env = ".pkg"
 deps = [
     "pytest",
+    "ipykernel",
+    "nbclient",
+    "matplotlib",
 ]
 commands = [
     ["pytest"],
+]
+
+[tool.tox.env.docs]
+deps = [
+    "sphinx",
+    "-r docs/requirements.txt",
+]
+commands = [
+    ["sphinx-build", "-M", "html", "docs/source", "docs/build/"],
+]
+
+[tool.tox.env.doctest]
+deps = [
+    "sphinx",
+    "-r docs/requirements.txt",
+]
+commands = [
+    ["sphinx-build", "-M", "doctest", "docs/source", "docs/build/"],
 ]
 
 [tool.tox.env.fmt]

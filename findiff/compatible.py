@@ -45,6 +45,9 @@ def FinDiff(*args, **kwargs):
 
        >>> import numpy as np
        >>> x, y, z = [np.linspace(-1, 1, 100) for _ in range(3)]
+       >>> dx = x[1] - x[0]
+       >>> dy = y[1] - y[0]
+       >>> dz = z[1] - z[0]
        >>> X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
        >>> f = X**2 + Y**2 + Z**2
 
@@ -52,7 +55,7 @@ def FinDiff(*args, **kwargs):
        along the 0th axis or 1st axis, respectively, instantiate a FinDiff object and call it:
 
        >>> d_dx = FinDiff(0, dx)
-       >>> d_dy = FinDiff(1, dx)
+       >>> d_dy = FinDiff(1, dy)
        >>> result = d_dx(f)
 
        For :math:`\\frac{\\partial^2 f}{\\partial x^2}` or :math:`\\frac{\\partial^2 f}{\\partial y^2}`:

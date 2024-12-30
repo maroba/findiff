@@ -6,7 +6,7 @@ A Python package for finite difference numerical derivatives
 and partial differential equations in any number of dimensions.
 
 
-.. image:: source/images/findiff_logo.png
+.. image:: images/findiff_logo.png
     :width: 300
     :align: center
 
@@ -33,11 +33,11 @@ Content
 .. toctree::
     :maxdepth: 1
 
-    source/getstarted
-    source/examples
-    source/theory
-    source/citation
-    source/modules
+    getstarted
+    examples
+    theory
+    citation
+    modules
 
 
 Indices and tables
