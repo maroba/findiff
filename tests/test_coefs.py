@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from sympy import Rational
+from sympy import Rational, cancel
 
 from findiff import coefficients
 from findiff.coefs import calc_coefs
@@ -196,3 +196,23 @@ def test_invalid_deriv_raises_exception():
         coefficients(-1, 2)
     with pytest.raises(ValueError):
         coefficients_non_uni(-1, 2, None, None)
+
+
+def test_compact_differences_coefficients():
+
+    R = Rational
+    coefs = calc_coefs(
+        1,
+        [-3, -2, -1, 0, 1, 2, 3],
+        alphas={1: R(1, 3), 0: 1, -1: R(1, 3)},
+        symbolic=True,
+    )
+    c = {off: coef for off, coef in zip(coefs["offsets"], coefs["coefficients"])}
+
+    a = 2 * c[1]
+    b = 4 * c[2]
+
+    # The expected values come from Lele, J. Comp. Phys. 103 (1992), p. 17
+    assert R(14, 9) == a
+    assert R(1, 9) == b
+    assert 0 == c[0]

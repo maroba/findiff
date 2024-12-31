@@ -104,11 +104,13 @@ def compute_inverse_Vandermonde(column, offsets, symbolic):
         take = lambda arr, ids: [arr[idx] for idx in ids]  # noqa: E731
         prod = sympy.prod
         minus = lambda x, arr: [x - val for val in arr]  # noqa: E731
+        frac = lambda num, denom: sympy.Rational(num, denom)  # noqa: E731
     else:
         take = lambda arr, ids: arr[ids]  # noqa: E731
         prod = np.prod
         offsets = np.array(offsets)
         minus = lambda x, arr: x - arr  # noqa: E731
+        frac = lambda num, denom: num / denom  # noqa: E731
 
     n = len(offsets)
     k = column + 1
@@ -120,7 +122,7 @@ def compute_inverse_Vandermonde(column, offsets, symbolic):
             denom = prod(minus(offsets[j], offsets[:j])) * prod(
                 minus(offsets[j], offsets[j + 1 :])
             )
-            inv_vandermonde_column.append(1 / denom)
+            inv_vandermonde_column.append(frac(1, denom))
     else:
         # This is the "regular" part of the bracket. First compute the sign that is the
         # same for all entries in the column that we compute
@@ -132,7 +134,7 @@ def compute_inverse_Vandermonde(column, offsets, symbolic):
             index_set = combinations(range_wo_j, r=n - k)
             enumerator = sum(prod(take(offsets, list(m))) for m in index_set)
             denominator = prod(minus(offsets[j], take(offsets, range_wo_j)))
-            inv_vandermonde_column.append(sign * enumerator / denominator)
+            inv_vandermonde_column.append(sign * frac(enumerator, denominator))
 
     if symbolic:
         fact = math.factorial(column)
@@ -141,12 +143,19 @@ def compute_inverse_Vandermonde(column, offsets, symbolic):
     return np.array(inv_vandermonde_column) * math.factorial(column)
 
 
-def calc_coefs(deriv, offsets, symbolic=False, analytic_inv=False):
+def calc_coefs(deriv, offsets, symbolic=False, analytic_inv=False, alphas=None):
+
+    if alphas and analytic_inv:
+        raise NotImplementedError(
+            "compact finite differences for analytic inversion not yet implemented"
+        )
+    if not alphas:
+        alphas = {0: 1}
     if analytic_inv:
         coefs = compute_inverse_Vandermonde(deriv, offsets, symbolic)
     else:
         matrix = _build_matrix(offsets, symbolic)
-        rhs = _build_rhs(offsets, deriv, symbolic)
+        rhs = _build_rhs(offsets, deriv, alphas, symbolic)
         if symbolic:
             coefs = sympy.linsolve((matrix, rhs))
             coefs = list(tuple(coefs)[0])
@@ -192,7 +201,7 @@ def coefficients_non_uni(deriv, acc, coords, idx):
         matrix = _build_matrix_non_uniform(0, num_coef - 1, coords, idx)
 
         offsets = list(range(num_coef))
-        rhs = _build_rhs(offsets, deriv)
+        rhs = _build_rhs(offsets, deriv, alphas={0: 1})
 
         ret = {
             "coefficients": np.linalg.solve(matrix, rhs),
@@ -203,7 +212,7 @@ def coefficients_non_uni(deriv, acc, coords, idx):
         matrix = _build_matrix_non_uniform(num_coef - 1, 0, coords, idx)
 
         offsets = list(range(-num_coef + 1, 1))
-        rhs = _build_rhs(offsets, deriv)
+        rhs = _build_rhs(offsets, deriv, alphas={0: 1})
 
         ret = {
             "coefficients": np.linalg.solve(matrix, rhs),
@@ -214,7 +223,7 @@ def coefficients_non_uni(deriv, acc, coords, idx):
         matrix = _build_matrix_non_uniform(num_side, num_side, coords, idx)
 
         offsets = list(range(-num_side, num_side + 1))
-        rhs = _build_rhs(offsets, deriv)
+        rhs = _build_rhs(offsets, deriv, alphas={0: 1})
 
         ret = {
             "coefficients": np.linalg.solve(matrix, rhs),
@@ -236,11 +245,25 @@ def _build_matrix(offsets, symbolic=False):
         return np.array(A, dtype="float")
 
 
-def _build_rhs(offsets, deriv, symbolic=False):
+def _build_rhs(
+    offsets,
+    deriv,
+    alphas,
+    symbolic=False,
+):
     """The right hand side of the equation system matrix"""
 
+    if symbolic:
+        frac = lambda num, denom: sympy.Rational(num, denom)  # noqa: E731
+    else:
+        frac = lambda num, denom: num / denom  # noqa: E731
+
     b = [0 for _ in offsets]
-    b[deriv] = math.factorial(deriv)
+    for j in range(deriv, len(offsets)):
+        b[j] = frac(math.factorial(j), math.factorial(j - deriv)) * sum(
+            r ** (j - deriv) * alphas[r] for r in alphas
+        )
+
     if symbolic:
         return sympy.Matrix(b)
     else:
