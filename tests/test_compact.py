@@ -127,12 +127,42 @@ def test_wrap_around():
     from findiff.utils import create_cyclic_band_diagonal
 
     print()
-
-    # Example usage
     n = 10
-    num_bands = 5
-    offsets = [-2, -1, 0, 1, 2]  # Lower diagonal, main diagonal, upper diagonal
-    band_values = [3, 1, 2, 1, 3]  # Values for the bands
+    offsets = [-2, -1, 0, 1, 2]
+    band_values = [3, 1, 2, 1, 3]
 
     matrix = create_cyclic_band_diagonal(n, offsets, band_values)
     print(matrix.toarray())
+
+
+def test_compact_differences_diff_apply_2d():
+    num_points = 100
+    x = y = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
+    X, Y = np.meshgrid(x, y, indexing="ij")
+
+    dx = dy = x[1] - x[0]
+
+    def get_diff(dim):
+
+        d_dx = Diff(dim, dx, periodic=True)
+        d_dx.set_scheme(
+            CompactScheme(
+                left={-1: 1 / 3, 0: 1, 1: 1 / 3},
+                right=[-3, -2, -1, 0, 1, 2, 3],
+            )
+        )
+        return d_dx
+
+    D = get_diff(0)
+    f = np.exp(np.sin(X))
+    expected = np.cos(X) * f
+    actual = D(f)
+
+    np.testing.assert_allclose(expected, actual, atol=1.0e-5)
+
+    D = get_diff(1)
+    f = np.exp(np.sin(Y))
+    expected = np.cos(Y) * f
+    actual = D(f)
+
+    np.testing.assert_allclose(expected, actual, atol=1.0e-5)

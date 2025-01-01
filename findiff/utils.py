@@ -2,7 +2,7 @@ import itertools
 from itertools import product
 
 import numpy as np
-from scipy.sparse import diags
+from scipy.sparse import diags, eye, kron
 
 
 def interior_mask_as_ndarray(shape):
@@ -94,3 +94,34 @@ def create_cyclic_band_diagonal(n, offsets, band_values):
             )
 
     return band_matrix
+
+
+def extend_to_ND(A, dim, shape):
+    """
+    Extend a 1D sparse matrix A to an N-dimensional sparse matrix operating along the specified dimension.
+
+    Parameters:
+        A : scipy.sparse matrix
+            The 1D sparse matrix to be extended.
+        dim : int
+            The dimension along which A operates (0 to N-1).
+        shape : list of int
+            The sizes of the grid in each dimension (length N).
+
+    Returns:
+        A_ND : scipy.sparse matrix
+            The extended N-dimensional sparse matrix.
+    """
+    ndims = len(shape)  # Number of dimensions
+    if dim < 0 or dim >= ndims:
+        raise ValueError(f"dim must be between 0 and {ndims - 1}, inclusive.")
+
+    result = A if dim == 0 else eye(shape[0], format="csr")
+
+    for i in range(1, ndims):
+        if i == dim:
+            result = kron(result, A)
+        else:
+            result = kron(result, eye(shape[i], format="csr"))
+
+    return result
