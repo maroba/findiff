@@ -2,6 +2,7 @@ import numpy as np
 from scipy import sparse
 
 from findiff.coefs import coefficients, coefficients_non_uni
+from findiff.compact import _CompactDiffUniformPeriodic
 from findiff.grids import EquidistantAxis, GridAxis, NonEquidistantAxis
 from findiff.utils import (
     get_list_of_multiindex_tuples,
@@ -11,7 +12,15 @@ from findiff.utils import (
 )
 
 
-def build_differentiator(order: int, axis: GridAxis, acc):
+def build_differentiator(order: int, axis: GridAxis, acc, scheme=None):
+    if scheme:
+        if isinstance(axis, EquidistantAxis):
+            if axis.periodic:
+                return _CompactDiffUniformPeriodic(
+                    axis.dim, order, axis.spacing, scheme
+                )
+        raise NotImplementedError("This is not yet implemented for compact schemes.")
+
     if isinstance(axis, EquidistantAxis):
         if not axis.periodic:
             return _FinDiffUniform(axis.dim, order, axis.spacing, acc)

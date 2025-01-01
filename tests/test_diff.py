@@ -1,10 +1,12 @@
 import numpy as np
+import pytest
 
 # import matplotlib.pyplot as plt
 from numpy import cos, sin
 from numpy.testing import assert_array_almost_equal
 
 from findiff import Diff, Identity
+from findiff.compact import CompactScheme
 
 
 def test_partial_d2_dx2_matrix_periodic():

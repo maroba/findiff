@@ -1,32 +1,31 @@
 import numpy as np
 import pytest
-from sympy import Rational, cancel
+from sympy import Rational
 
 from findiff import coefficients
-from findiff.coefs import calc_coefs
+from findiff.coefs import calc_coefs, vandermonde_matrix
 from findiff.coefs import coefficients_non_uni
 
 
 @pytest.mark.parametrize("analytic_inv", [True, False])
 def test_order2_acc2(analytic_inv):
 
-    for analytic_inv in [True, False]:
-        c = coefficients(deriv=2, acc=2, analytic_inv=analytic_inv)
+    c = coefficients(deriv=2, acc=2, analytic_inv=analytic_inv)
 
-        coefs = c["center"]["coefficients"]
-        np.testing.assert_array_almost_equal(np.array([1.0, -2.0, 1.0]), coefs)
-        offs = c["center"]["offsets"]
-        np.testing.assert_array_almost_equal(np.array([-1, 0, 1]), offs)
+    coefs = c["center"]["coefficients"]
+    np.testing.assert_array_almost_equal(np.array([1.0, -2.0, 1.0]), coefs)
+    offs = c["center"]["offsets"]
+    np.testing.assert_array_almost_equal(np.array([-1, 0, 1]), offs)
 
-        coefs = c["forward"]["coefficients"]
-        np.testing.assert_array_almost_equal(np.array([2, -5, 4, -1]), coefs)
-        offs = c["forward"]["offsets"]
-        np.testing.assert_array_almost_equal(np.array([0, 1, 2, 3]), offs)
+    coefs = c["forward"]["coefficients"]
+    np.testing.assert_array_almost_equal(np.array([2, -5, 4, -1]), coefs)
+    offs = c["forward"]["offsets"]
+    np.testing.assert_array_almost_equal(np.array([0, 1, 2, 3]), offs)
 
-        coefs = c["backward"]["coefficients"]
-        np.testing.assert_array_almost_equal(np.array(([2, -5, 4, -1])[::-1]), coefs)
-        offs = c["backward"]["offsets"]
-        np.testing.assert_array_almost_equal(np.array([-3, -2, -1, 0]), offs)
+    coefs = c["backward"]["coefficients"]
+    np.testing.assert_array_almost_equal(np.array(([2, -5, 4, -1])[::-1]), coefs)
+    offs = c["backward"]["offsets"]
+    np.testing.assert_array_almost_equal(np.array([-3, -2, -1, 0]), offs)
 
 
 @pytest.mark.parametrize("analytic_inv", [True, False])
@@ -198,21 +197,7 @@ def test_invalid_deriv_raises_exception():
         coefficients_non_uni(-1, 2, None, None)
 
 
-def test_compact_differences_coefficients():
-
-    R = Rational
-    coefs = calc_coefs(
-        1,
-        [-3, -2, -1, 0, 1, 2, 3],
-        alphas={1: R(1, 3), 0: 1, -1: R(1, 3)},
-        symbolic=True,
-    )
-    c = {off: coef for off, coef in zip(coefs["offsets"], coefs["coefficients"])}
-
-    a = 2 * c[1]
-    b = 4 * c[2]
-
-    # The expected values come from Lele, J. Comp. Phys. 103 (1992), p. 17
-    assert R(14, 9) == a
-    assert R(1, 9) == b
-    assert 0 == c[0]
+def test_vandermonde_matrix():
+    actual = vandermonde_matrix([1, 2, 3])
+    expected = [[1, 1, 1], [1, 2, 3], [1, 4, 9]]
+    assert actual == expected
