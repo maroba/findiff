@@ -317,7 +317,7 @@ class CoefficientCalculator:
     def solve(self):
         coefs = self.solver.solve(self.deriv, self.offsets, self.alphas)
         self.sol = {off: coef for off, coef in zip(self.offsets, coefs)}
-        self.acc = self.solver.calc_accuracy(self.deriv, self.offsets, coefs)
+        self.acc = self.solver.acc
         return self.sol
 
 
@@ -327,11 +327,14 @@ class Solver:
 
     def __init__(self, wrapper=None):
         self.wrapper = wrapper or NumericMatrixWrapper()
+        self.acc = None
 
     def solve(self, deriv, offsets, alphas):
-        return np.linalg.solve(
+        sol = np.linalg.solve(
             self.lhs(deriv, offsets), self.rhs(deriv, offsets, alphas)
         )
+        self.acc = self.calc_accuracy(deriv, offsets, sol, alphas)
+        return sol
 
     def rhs(self, deriv, offsets, alphas):
 
@@ -346,24 +349,30 @@ class Solver:
     def lhs(self, deriv, offsets):
         return self.wrapper(vandermonde_matrix(offsets))
 
-    def calc_accuracy(self, deriv, offsets, coefs):
-        n = deriv + 1
+    def calc_accuracy(self, deriv, offsets, coefs, alphas):
+        n_plus_s = deriv + 1
         max_n = 999
         break_condition = lambda b: abs(b) > self.atol  # noqa: E731
 
         while True:
             b = 0
+            fac = 1 / math.factorial(n_plus_s)
             for o, coef in zip(offsets, coefs):
-                b += coef * o**n
+                b += coef * o**n_plus_s * fac
+
+            s = n_plus_s - deriv
+            fac = 1 / math.factorial(s)
+            for o, alpha in alphas.items():
+                b -= alpha * fac * o**s
 
             if break_condition(b):
                 break
 
-            n += 1
-            if n > max_n:
+            n_plus_s += 1
+            if n_plus_s > max_n:
                 raise Exception("Cannot compute accuracy.")
 
-        return round(n - deriv)
+        return round(n_plus_s - deriv)
 
 
 class SymbolicSolver(Solver):
@@ -377,14 +386,18 @@ class SymbolicSolver(Solver):
         sol = sympy.linsolve(
             (self.lhs(deriv, offsets), self.rhs(deriv, offsets, alphas))
         )
-        return list(tuple(sol)[0])
+        sol = list(tuple(sol)[0])
+        self.acc = self.calc_accuracy(deriv, offsets, sol, alphas)
+        return sol
 
 
 class AnalyticSolver(Solver):
     symbolic = False
 
     def solve(self, deriv, offsets, alphas):
-        return InverseVandermondeColumn(symbolic=self.symbolic).compute(deriv, offsets)
+        sol = InverseVandermondeColumn(symbolic=self.symbolic).compute(deriv, offsets)
+        self.acc = self.calc_accuracy(deriv, offsets, sol, alphas)
+        return sol
 
 
 class SymbolicAnalyticSolver(AnalyticSolver):

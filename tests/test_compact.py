@@ -180,7 +180,6 @@ def test_compact_differences_diff_apply_2d():
     np.testing.assert_allclose(expected, actual, atol=1.0e-5)
 
 
-@pytest.mark.skip()
 def test_accuracy():
     coefs = calc_coefs(
         1,
@@ -189,4 +188,4 @@ def test_accuracy():
         symbolic=False,
     )
 
-    assert coefs["accuracy"] == 4
+    assert coefs["accuracy"] == 6
