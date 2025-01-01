@@ -2,6 +2,7 @@ import itertools
 from itertools import product
 
 import numpy as np
+from scipy.sparse import diags
 
 
 def interior_mask_as_ndarray(shape):
@@ -54,36 +55,42 @@ def get_list_of_multiindex_tuples(shape):
     return short_inds
 
 
-#
-# The following is working, but unused yet. Commented because there are no tests yet.
-#
-# def deprecated(reason="This feature is deprecated."):
-#     def decorator(func_or_class):
-#         if isinstance(func_or_class, type):  # Handle classes
-#             original_init = func_or_class.__init__
-#
-#             @wraps(original_init)
-#             def new_init(self, *args, **kwargs):
-#                 warnings.warn(
-#                     f"{func_or_class.__name__} is deprecated and will be removed in future versions: {reason}",
-#                     category=DeprecationWarning,
-#                     stacklevel=2,
-#                 )
-#                 original_init(self, *args, **kwargs)
-#
-#             func_or_class.__init__ = new_init
-#             return func_or_class
-#
-#         # Handle functions
-#         @wraps(func_or_class)
-#         def wrapped(*args, **kwargs):
-#             warnings.warn(
-#                 f"{func_or_class.__name__} is deprecated: {reason}",
-#                 category=DeprecationWarning,
-#                 stacklevel=2,
-#             )
-#             return func_or_class(*args, **kwargs)
-#
-#         return wrapped
-#
-#     return decorator
+def create_cyclic_band_diagonal(n, offsets, band_values):
+    """
+    Create a cyclic band-diagonal matrix using scipy.sparse.
+
+    Parameters:
+        n (int): The size of the matrix (n x n).
+        offsets (list of int): Offsets for the bands (negative, 0, or positive).
+        band_values (list of float): Values to fill in the bands (length must match num_bands).
+
+    Returns:
+        scipy.sparse.csr_matrix: Cyclic band-diagonal matrix.
+    """
+    num_bands = len(offsets)
+    if len(offsets) != num_bands or len(band_values) != num_bands:
+        raise ValueError(
+            "Offsets and band_values must match the number of bands (num_bands)."
+        )
+
+    # Create the diagonal values for each band
+    diagonals = []
+    for offset, value in zip(offsets, band_values):
+        diag = np.full(n, value)
+        diagonals.append(diag)
+
+    # Build the band-diagonal matrix
+    band_matrix = diags(diagonals, offsets, shape=(n, n), format="csr")
+
+    # Add cyclic wrap-around connections
+    for offset, value in zip(offsets, band_values):
+        if offset > 0:  # Wrap from top rows to bottom
+            band_matrix += diags(
+                [np.full(offset, value)], [offset - n], shape=(n, n), format="csr"
+            )
+        elif offset < 0:  # Wrap from bottom rows to top
+            band_matrix += diags(
+                [np.full(-offset, value)], [offset + n], shape=(n, n), format="csr"
+            )
+
+    return band_matrix

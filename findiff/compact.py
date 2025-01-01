@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.sparse import lil_matrix, csr_matrix
 from scipy.sparse.linalg import spsolve
-
+from findiff.utils import create_cyclic_band_diagonal
 from findiff.coefs import calc_coefs
 
 
@@ -33,30 +33,14 @@ class _CompactDiffUniformPeriodic:
 
     def _calculate_diff_matrix(self):
         size = np.prod(*self._shape)
-        L = lil_matrix((size, size))
-        R = lil_matrix((size, size))
-        L.setdiag(1)
-        R.setdiag(1)
 
-        nx = self._shape[self.dim]
         coefs = calc_coefs(self.order, self.scheme.right, alphas=self.scheme.left)
         h = self.spacing ** (-self.order)
-        for i in range(nx):
-            for off, coef in self.scheme.left.items():
-                if 0 < i + off < nx:
-                    L[i, i + off] = coef
-                elif i + off < 0:
-                    L[i, nx + off] = coef
-                else:
-                    L[i, i + off - nx] = coef
+        L = create_cyclic_band_diagonal(
+            size, list(self.scheme.left.keys()), list(self.scheme.left.values())
+        )
+        values = [value * h for value in coefs["coefficients"]]
+        R = create_cyclic_band_diagonal(size, coefs["offsets"], values)
 
-            for off, coef in zip(coefs["offsets"], coefs["coefficients"]):
-                if 0 < i + off < nx:
-                    R[i, i + off] = coef * h
-                elif i + off < 0:
-                    R[i, nx + off] = coef * h
-                else:
-                    R[i, i + off - nx] = coef * h
-
-        self._left_matrix = csr_matrix(L)
-        self._right_matrix = csr_matrix(R)
+        self._left_matrix = L
+        self._right_matrix = R
