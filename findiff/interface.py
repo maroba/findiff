@@ -1,11 +1,12 @@
-
 from .grids import make_axis
 from .operators import Diff as _Diff
 
 
 class Diff(_Diff):
 
-    def __init__(self, axis=0, grid=None, periodic=False, acc=_Diff.DEFAULT_ACC):
+    def __init__(
+        self, axis=0, grid=None, periodic=False, acc=_Diff.DEFAULT_ACC, scheme=None
+    ):
         """Represents a partial derivative (along one axis).
 
         For higher derivatives, exponentiate. For mixed partial derivatives, multiply. See
@@ -45,4 +46,4 @@ class Diff(_Diff):
             >>> d3f_dxdydz = d3_dxdydz(f)
         """
         grid_axis = make_axis(axis, grid, periodic)
-        super().__init__(axis, grid_axis, acc)
+        super().__init__(axis, grid_axis, acc, scheme)

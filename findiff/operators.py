@@ -188,7 +188,7 @@ class Diff(Expression):
 
     DEFAULT_ACC = 2
 
-    def __init__(self, dim, axis: GridAxis = None, acc=DEFAULT_ACC):
+    def __init__(self, dim, axis: GridAxis = None, acc=DEFAULT_ACC, scheme=None):
         """Initializes a Diff instance.
 
         Parameters
@@ -207,7 +207,7 @@ class Diff(Expression):
         self.acc = acc
         self._order = 1
         self._differentiator = None
-        self.scheme = None
+        self.scheme = scheme
 
     def set_grid(self, grid):
         super().set_grid(grid)

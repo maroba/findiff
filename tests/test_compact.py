@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from sympy import Rational
 
 from findiff import Diff
@@ -29,6 +30,17 @@ def test_compact_differences_coefficients():
     assert 0 == c[0]
 
     print(coefs["accuracy"])
+
+
+def test_compact_differences_diff_set_scheme_implicitly():
+    d_dx = Diff(
+        0,
+        scheme=CompactScheme(
+            left={-1: 1 / 3, 0: 1, 1: 1 / 3}, right=[-3, -2, -1, 0, 1, 2, 3]
+        ),
+    )
+
+    assert d_dx.scheme is not None
 
 
 def test_compact_differences_diff_set_scheme():
@@ -166,3 +178,15 @@ def test_compact_differences_diff_apply_2d():
     actual = D(f)
 
     np.testing.assert_allclose(expected, actual, atol=1.0e-5)
+
+
+@pytest.mark.skip()
+def test_accuracy():
+    coefs = calc_coefs(
+        1,
+        [-3, -2, -1, 0, 1, 2, 3],
+        alphas={1: 1 / 3, 0: 1, -1: 1 / 3},
+        symbolic=False,
+    )
+
+    assert coefs["accuracy"] == 4
