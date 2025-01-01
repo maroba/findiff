@@ -312,6 +312,7 @@ class CoefficientCalculator:
         self.alphas = alphas
         self.solver = solver
         self.sol = None
+        self.acc = None
 
     def solve(self):
         coefs = self.solver.solve(self.deriv, self.offsets, self.alphas)
@@ -348,14 +349,14 @@ class Solver:
     def calc_accuracy(self, deriv, offsets, coefs):
         n = deriv + 1
         max_n = 999
-        break_cond = lambda b: abs(b) > self.atol  # noqa: E731
+        break_condition = lambda b: abs(b) > self.atol  # noqa: E731
 
         while True:
             b = 0
             for o, coef in zip(offsets, coefs):
                 b += coef * o**n
 
-            if break_cond(b):
+            if break_condition(b):
                 break
 
             n += 1

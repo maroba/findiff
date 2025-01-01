@@ -1,9 +1,8 @@
-import numpy as np
-from scipy.sparse import lil_matrix, csr_matrix
+from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
-from findiff.utils import create_cyclic_band_diagonal, extend_to_ND
 
 from findiff.coefs import calc_coefs
+from findiff.utils import create_cyclic_band_diagonal, extend_to_ND
 
 
 class CompactScheme:
@@ -29,7 +28,10 @@ class _CompactDiffUniformPeriodic:
             self._shape = f.shape
             self._calculate_diff_matrix()
 
-        result = spsolve(self._left_matrix, self._right_matrix.dot(f.reshape(-1)))
+        result = spsolve(
+            csr_matrix(self._left_matrix),
+            csr_matrix(self._right_matrix).dot(f.reshape(-1)),
+        )
         return result.reshape(self._shape)
 
     def _calculate_diff_matrix(self):
