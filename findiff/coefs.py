@@ -10,11 +10,13 @@ to calculate the finite difference coefficients for a given derivative
 order and given accuracy order to given offsets.
 """
 
+import abc
 import math
 from itertools import combinations
 
 import numpy as np
 import sympy
+from sympy import Matrix, Rational
 
 
 def coefficients(deriv, acc=None, offsets=None, symbolic=False, analytic_inv=False):
@@ -88,61 +90,6 @@ def coefficients(deriv, acc=None, offsets=None, symbolic=False, analytic_inv=Fal
     return ret
 
 
-def compute_inverse_Vandermonde(column, offsets, symbolic):
-    """Computes a given column of the inverse of the Vandermonde matrix that
-    belongs to given offsets, multiplied by the factorial of the column index.
-
-    This code implements the first equation for b_kj under "Proof 1" in
-    https://proofwiki.org/wiki/Inverse_of_Vandermonde_Matrix
-    Note that the result has to be transposed because the original Vandermonde
-    matrix is defined transposed as compared to _build_matrix.
-
-    Also, we have 0-based indexing here, whereas the formulae in the wiki entry
-    are 1-based.
-    """
-    if symbolic:
-        take = lambda arr, ids: [arr[idx] for idx in ids]  # noqa: E731
-        prod = sympy.prod
-        minus = lambda x, arr: [x - val for val in arr]  # noqa: E731
-        frac = lambda num, denom: sympy.Rational(num, denom)  # noqa: E731
-    else:
-        take = lambda arr, ids: arr[ids]  # noqa: E731
-        prod = np.prod
-        offsets = np.array(offsets)
-        minus = lambda x, arr: x - arr  # noqa: E731
-        frac = lambda num, denom: num / denom  # noqa: E731
-
-    n = len(offsets)
-    k = column + 1
-    inv_vandermonde_column = []
-    if k == n:
-        # If the number of offsets matches the derivative order + 1, there is a special
-        # case, compare the lower part of the bracket in the equation in proofwiki.
-        for j in range(n):
-            denom = prod(minus(offsets[j], offsets[:j])) * prod(
-                minus(offsets[j], offsets[j + 1 :])
-            )
-            inv_vandermonde_column.append(frac(1, denom))
-    else:
-        # This is the "regular" part of the bracket. First compute the sign that is the
-        # same for all entries in the column that we compute
-        sign = (-1) ** (n - k)
-        for j in range(n):
-            # All indices except j
-            range_wo_j = list(range(j)) + list(range(j + 1, n))
-            # Get all combinations of n-k indices that are ascending and do not contain j
-            index_set = combinations(range_wo_j, r=n - k)
-            enumerator = sum(prod(take(offsets, list(m))) for m in index_set)
-            denominator = prod(minus(offsets[j], take(offsets, range_wo_j)))
-            inv_vandermonde_column.append(sign * frac(enumerator, denominator))
-
-    if symbolic:
-        fact = math.factorial(column)
-        return [val * fact for val in inv_vandermonde_column]
-
-    return np.array(inv_vandermonde_column) * math.factorial(column)
-
-
 def calc_coefs(deriv, offsets, symbolic=False, analytic_inv=False, alphas=None):
 
     if alphas and analytic_inv:
@@ -151,23 +98,27 @@ def calc_coefs(deriv, offsets, symbolic=False, analytic_inv=False, alphas=None):
         )
     if not alphas:
         alphas = {0: 1}
-    if analytic_inv:
-        coefs = compute_inverse_Vandermonde(deriv, offsets, symbolic)
-    else:
-        matrix = _build_matrix(offsets, symbolic)
-        rhs = _build_rhs(offsets, deriv, alphas, symbolic)
-        if symbolic:
-            coefs = sympy.linsolve((matrix, rhs))
-            coefs = list(tuple(coefs)[0])
-        else:
-            coefs = np.linalg.solve(matrix, rhs)
 
-    acc = _calc_accuracy(offsets, coefs, deriv, symbolic)
+    if analytic_inv:
+        if symbolic:
+            solver = SymbolicAnalyticSolver()
+        else:
+            solver = AnalyticSolver()
+    else:
+        if symbolic:
+            solver = SymbolicSolver()
+        else:
+            solver = Solver()
+
+    calculator = CoefficientCalculator(deriv, offsets, alphas, solver)
+
+    calculator.solve()
+    coefs = list(calculator.sol.values())
 
     if not symbolic:
         offsets = np.array(offsets)
 
-    return {"coefficients": coefs, "offsets": offsets, "accuracy": acc}
+    return {"coefficients": coefs, "offsets": offsets, "accuracy": calculator.acc}
 
 
 def coefficients_non_uni(deriv, acc, coords, idx):
@@ -233,16 +184,11 @@ def coefficients_non_uni(deriv, acc, coords, idx):
     return ret
 
 
-def _build_matrix(offsets, symbolic=False):
-    """Constructs the equation system matrix for the finite difference coefficients"""
-
-    A = [([1 for _ in offsets])]
-    for i in range(1, len(offsets)):
-        A.append([j**i for j in offsets])
-    if symbolic:
-        return sympy.Matrix(A)
-    else:
-        return np.array(A, dtype="float")
+def vandermonde_matrix(values):
+    A = [([1 for _ in values])]
+    for i in range(1, len(values)):
+        A.append([j**i for j in values])
+    return A
 
 
 def _build_rhs(
@@ -279,32 +225,6 @@ def _build_matrix_non_uniform(p, q, coords, k):
     return np.array(A, dtype="float")
 
 
-def _calc_accuracy(offsets, coefs, deriv, symbolic=False):
-
-    n = deriv + 1
-    max_n = 999
-    if symbolic:
-        break_cond = lambda b: b != 0  # noqa: E731
-    else:
-        break_cond = lambda b: abs(b) > 1.0e-6  # noqa: E731
-
-    while True:
-        b = 0
-        # for i, coef in enumerate(coefs):
-        for o, coef in zip(offsets, coefs):
-            # k = min(offsets) + i
-            b += coef * o**n
-
-        if break_cond(b):
-            break
-
-        n += 1
-        if n > max_n:
-            raise Exception("Cannot compute accuracy.")
-
-    return round(n - deriv)
-
-
 def _validate_acc(acc):
     if acc % 2 == 1 or acc <= 0:
         raise ValueError("Accuracy order acc must be positive EVEN integer")
@@ -313,3 +233,175 @@ def _validate_acc(acc):
 def _validate_deriv(deriv):
     if deriv < 0:
         raise ValueError("Derive degree must be positive integer")
+
+
+class InverseVandermondeColumn:
+
+    def __init__(self, symbolic=False):
+
+        self.symbolic = symbolic
+        if symbolic:
+            self.take = lambda arr, ids: [arr[idx] for idx in ids]  # noqa: E731
+            self.prod = sympy.prod
+            self.minus = lambda x, arr: [x - val for val in arr]  # noqa: E731
+            self.frac = lambda num, denom: sympy.Rational(num, denom)  # noqa: E731
+        else:
+            self.take = lambda arr, ids: arr[ids]  # noqa: E731
+            self.prod = np.prod
+            self.minus = lambda x, arr: x - arr  # noqa: E731
+            self.frac = lambda num, denom: num / denom  # noqa: E731
+
+    def compute(self, column, offsets):
+        """Computes a given column of the inverse of the Vandermonde matrix that
+        belongs to given offsets, multiplied by the factorial of the column index.
+
+        This code implements the first equation for b_kj under "Proof 1" in
+        https://proofwiki.org/wiki/Inverse_of_Vandermonde_Matrix
+        Note that the result has to be transposed because the original Vandermonde
+        matrix is defined transposed as compared to _build_matrix.
+
+        Also, we have 0-based indexing here, whereas the formulae in the wiki entry
+        are 1-based.
+        """
+
+        if not self.symbolic:
+            offsets = np.array(offsets)
+
+        n = len(offsets)
+        k = column + 1
+        inv_vandermonde_column = []
+        if k == n:
+            # If the number of offsets matches the derivative order + 1, there is a special
+            # case, compare the lower part of the bracket in the equation in proofwiki.
+            for j in range(n):
+                denom = self.prod(self.minus(offsets[j], offsets[:j])) * self.prod(
+                    self.minus(offsets[j], offsets[j + 1 :])
+                )
+                inv_vandermonde_column.append(self.frac(1, denom))
+        else:
+            # This is the "regular" part of the bracket. First compute the sign that is the
+            # same for all entries in the column that we compute
+            sign = (-1) ** (n - k)
+            for j in range(n):
+                # All indices except j
+                range_wo_j = list(range(j)) + list(range(j + 1, n))
+                # Get all combinations of n-k indices that are ascending and do not contain j
+                index_set = combinations(range_wo_j, r=n - k)
+                enumerator = sum(
+                    self.prod(self.take(offsets, list(m))) for m in index_set
+                )
+                denominator = self.prod(
+                    self.minus(offsets[j], self.take(offsets, range_wo_j))
+                )
+                inv_vandermonde_column.append(sign * self.frac(enumerator, denominator))
+
+        fact = math.factorial(column)
+
+        result = [val * fact for val in inv_vandermonde_column]
+        if self.symbolic:
+            return result
+
+        return np.array(result)
+
+
+class CoefficientCalculator:
+
+    def __init__(self, deriv, offsets, alphas, solver):
+        self.deriv = deriv
+        self.offsets = offsets
+        self.alphas = alphas
+        self.solver = solver
+        self.sol = None
+
+    def solve(self):
+        coefs = self.solver.solve(self.deriv, self.offsets, self.alphas)
+        self.sol = {off: coef for off, coef in zip(self.offsets, coefs)}
+        self.acc = self.solver.calc_accuracy(self.deriv, self.offsets, coefs)
+        return self.sol
+
+
+class Solver:
+
+    atol = 1.0e-6
+
+    def __init__(self, wrapper=None):
+        self.wrapper = wrapper or NumericMatrixWrapper()
+
+    def solve(self, deriv, offsets, alphas):
+        return np.linalg.solve(
+            self.lhs(deriv, offsets), self.rhs(deriv, offsets, alphas)
+        )
+
+    def rhs(self, deriv, offsets, alphas):
+
+        b = [0 for _ in offsets]
+        for j in range(deriv, len(offsets)):
+            b[j] = self.wrapper.frac(
+                math.factorial(j), math.factorial(j - deriv)
+            ) * sum(r ** (j - deriv) * alphas[r] for r in alphas)
+
+        return self.wrapper(b)
+
+    def lhs(self, deriv, offsets):
+        return self.wrapper(vandermonde_matrix(offsets))
+
+    def calc_accuracy(self, deriv, offsets, coefs):
+        n = deriv + 1
+        max_n = 999
+        break_cond = lambda b: abs(b) > self.atol  # noqa: E731
+
+        while True:
+            b = 0
+            for o, coef in zip(offsets, coefs):
+                b += coef * o**n
+
+            if break_cond(b):
+                break
+
+            n += 1
+            if n > max_n:
+                raise Exception("Cannot compute accuracy.")
+
+        return round(n - deriv)
+
+
+class SymbolicSolver(Solver):
+
+    atol = 0
+
+    def __init__(self):
+        super().__init__(SymbolicMatrixWrapper())
+
+    def solve(self, deriv, offsets, alphas):
+        sol = sympy.linsolve(
+            (self.lhs(deriv, offsets), self.rhs(deriv, offsets, alphas))
+        )
+        return list(tuple(sol)[0])
+
+
+class AnalyticSolver(Solver):
+    symbolic = False
+
+    def solve(self, deriv, offsets, alphas):
+        return InverseVandermondeColumn(symbolic=self.symbolic).compute(deriv, offsets)
+
+
+class SymbolicAnalyticSolver(AnalyticSolver):
+    symbolic = True
+    atol = 0
+
+
+class SymbolicMatrixWrapper:
+    def __call__(self, arr):
+        return Matrix(arr)
+
+    def frac(self, num, denom):
+        return Rational(num, denom)
+
+
+class NumericMatrixWrapper:
+    def __call__(self, arr):
+        return np.array(arr, dtype=np.float64)
+
+    def frac(self, num, denom):
+        return num / denom

@@ -207,6 +207,7 @@ class Diff(Expression):
         self.acc = acc
         self._order = 1
         self._differentiator = None
+        self.scheme = None
 
     def set_grid(self, grid):
         super().set_grid(grid)
@@ -214,6 +215,10 @@ class Diff(Expression):
 
     def set_axis(self, axis: GridAxis):
         self._axis = axis
+        self._differentiator = None
+
+    def set_scheme(self, scheme):
+        self.scheme = scheme
         self._differentiator = None
 
     @property
@@ -243,7 +248,9 @@ class Diff(Expression):
     @property
     def differentiator(self):
         if self._differentiator is None:
-            self._differentiator = build_differentiator(self.order, self.axis, self.acc)
+            self._differentiator = build_differentiator(
+                self.order, self.axis, self.acc, self.scheme
+            )
         return self._differentiator
 
     def matrix(self, shape):
