@@ -1,3 +1,4 @@
+from findiff import Diff
 from findiff.utils import *
 
 
@@ -47,3 +48,20 @@ class TestUtils:
         expected[1:-1, 1:-1] = True
 
         np.testing.assert_array_equal(expected, interior_mask_as_ndarray(shape))
+
+
+def test_extend_to_ND():
+    D = Diff(0, 1).matrix((8,))
+
+    shape = (8, 8, 8)
+    expected = Diff(0, 1).matrix(shape)
+    actual = extend_to_ND(D, 0, shape)
+    np.testing.assert_array_equal(actual.toarray(), expected.toarray())
+
+    expected = Diff(1, 1).matrix(shape)
+    actual = extend_to_ND(D, 1, shape)
+    np.testing.assert_array_equal(actual.toarray(), expected.toarray())
+
+    expected = Diff(2, 1).matrix(shape)
+    actual = extend_to_ND(D, 2, shape)
+    np.testing.assert_array_equal(actual.toarray(), expected.toarray())
