@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy import sparse
 
+from findiff.compact import CompactScheme
 from findiff.findiff import build_differentiator
 from findiff.grids import GridAxis, make_grid
 from findiff.stencils import StencilSet
@@ -199,6 +200,9 @@ class Diff(Expression):
             The grid axis.
         acc: (optional) int
             The accuracy order to use. Must be a positive even number.
+        scheme: CompactScheme or None
+            Allows to activate the compact (implicit) finite difference scheme (see documentation
+            for CompactScheme). If None, standard explicit finite differences will be used.
         """
         super().__init__()
 
@@ -217,7 +221,8 @@ class Diff(Expression):
         self._axis = axis
         self._differentiator = None
 
-    def set_scheme(self, scheme):
+    def set_scheme(self, scheme: CompactScheme = None):
+        """Allows to activate using compact (implicit) finite differences."""
         self.scheme = scheme
         self._differentiator = None
 

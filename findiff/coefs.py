@@ -10,7 +10,6 @@ to calculate the finite difference coefficients for a given derivative
 order and given accuracy order to given offsets.
 """
 
-import abc
 import math
 from itertools import combinations
 
@@ -91,6 +90,25 @@ def coefficients(deriv, acc=None, offsets=None, symbolic=False, analytic_inv=Fal
 
 
 def calc_coefs(deriv, offsets, symbolic=False, analytic_inv=False, alphas=None):
+    """The working horse for calculating finite difference coefficients on equidistant grids.
+
+    Args:
+        deriv: int
+            The order of the derivative.
+        offsets: list of ints
+            Which neighboring points to use.
+        symbolic: bool
+            Compute symbolically or numerically.
+        analytic_inv: bool
+            Use analytic inverse for Vandermonde matrix or numerical.
+        alphas: dict
+            Specifies the implicit scheme to use (the left hand side of the
+            system equation in `CompactScheme`). If None, normal (explicit)
+            finite differences will be used.
+
+    Returns:
+        A dict describing the finite difference scheme.
+    """
 
     if alphas and analytic_inv:
         raise NotImplementedError(
