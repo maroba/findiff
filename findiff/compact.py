@@ -10,7 +10,8 @@ from findiff.utils import (
 
 
 class CompactScheme:
-    """Represents compact finite difference as in Lele, J. Comp. Phys 103, 16-42 (1992)
+    r"""
+    Represents compact finite difference as in Lele, J. Comp. Phys 103, 16-42 (1992)
 
     A more appropriate name for the scheme would be "implicite finite differences".
 
@@ -31,9 +32,11 @@ class CompactScheme:
     """
 
     def __init__(self, left: dict, right: list, periodic=True):
-        """Initializes a CompactScheme instance.
+        r"""
+        Initializes a CompactScheme instance.
 
         The compact/implicit finite difference scheme is defined by:
+
         .. math::
             \sum_k \alpha_k f^{(n)}_{i+k} = \sum_k c_k f_{i+k}
 
