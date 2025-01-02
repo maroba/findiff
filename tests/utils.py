@@ -9,8 +9,11 @@ def print_arrays(*arrs):
         np.array2string(
             arr,
             separator=", ",
-            formatter={"float_kind": lambda x: f"{x:.3f}"},
-        ).split("\n")
+            formatter={"float_kind": lambda x: f"{float(x):.3f}"},
+        )
+        # .replace("np.float64(", "")
+        # .replace(")", "")
+        .split("\n")
         for arr in arrs
     ]
 

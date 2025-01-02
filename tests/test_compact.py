@@ -4,7 +4,11 @@ from sympy import Rational
 
 from findiff import Diff
 from findiff.coefs import calc_coefs
-from findiff.compact import CompactScheme, _CompactDiffUniformPeriodic
+from findiff.compact import (
+    CompactScheme,
+    _CompactDiffUniformPeriodic,
+    _CompactDiffUniformNonPeriodic,
+)
 from tests.utils import print_arrays
 
 fmt = {"float_kind": lambda x: f"{x:.3f}"}
@@ -180,12 +184,108 @@ def test_compact_differences_diff_apply_2d():
     np.testing.assert_allclose(expected, actual, atol=1.0e-5)
 
 
+def test_compact_differences_diff_apply_2d_nonperiodic():
+    num_points = 100
+    x = y = np.linspace(0, 2 * np.pi, num_points)
+    X, Y = np.meshgrid(x, y, indexing="ij")
+
+    dx = dy = x[1] - x[0]
+
+    def get_diff(dim):
+
+        d_dx = Diff(dim, dx, periodic=False)
+        d_dx.set_scheme(
+            CompactScheme(
+                left={-1: 1 / 3, 0: 1, 1: 1 / 3},
+                right=[-3, -2, -1, 0, 1, 2, 3],
+            )
+        )
+        return d_dx
+
+    D = get_diff(0)
+    f = np.exp(np.sin(X))
+    expected = np.cos(X) * f
+    actual = D(f)
+
+    np.testing.assert_allclose(expected, actual, atol=1.0e-5)
+
+    D = get_diff(1)
+    f = np.exp(np.sin(Y))
+    expected = np.cos(Y) * f
+    actual = D(f)
+
+    np.testing.assert_allclose(expected, actual, atol=1.0e-5)
+
+
 def test_accuracy():
     coefs = calc_coefs(
         1,
-        [-3, -2, -1, 0, 1, 2, 3],
+        [-2, -1, 0, 1, 2],
         alphas={1: 1 / 3, 0: 1, -1: 1 / 3},
         symbolic=False,
     )
 
-    assert coefs["accuracy"] == 6
+    assert coefs["accuracy"] == 6  # according to Lele 1992
+
+    # regular finite differences have lower accuracy... that's
+    # the benefit from implicitness...:
+
+    coefs = calc_coefs(
+        1,
+        [-2, -1, 0, 1, 2],
+        alphas={0: 1},
+        symbolic=False,
+    )
+
+    assert coefs["accuracy"] == 4
+
+
+def test_nonperiodic_uniform():
+    scheme = CompactScheme(
+        left={1: 1 / 3, 0: 1, -1: 1 / 3}, right=[-2, -1, 0, 1, 2], periodic=False
+    )
+    x = np.linspace(0, 1, 30)
+    dx = x[1] - x[0]
+    f = np.sin(x)
+    d_dx = Diff(0, dx, scheme=scheme)
+    actual = d_dx(f)
+
+    # import matplotlib.pyplot as plt
+    #
+    # plt.semilogy(x, abs(np.cos(x) - actual), ".")
+    # plt.show()
+
+    np.testing.assert_allclose(actual, np.cos(x))
+
+
+def test_nonperiodic_matrices():
+    scheme = CompactScheme(
+        left={1: 1 / 3, 0: 1, -1: 1 / 3}, right=[-2, -1, 0, 1, 2], periodic=False
+    )
+    differ = _CompactDiffUniformNonPeriodic(dim=0, order=1, spacing=1, scheme=scheme)
+    f = np.ones(10, dtype=np.float64)
+    differ(f)
+    L, R = differ._left_matrix, differ._right_matrix
+    print("L=")
+    print_arrays(L.toarray())
+    print("R=")
+    print_arrays(R.toarray())
+
+    np.testing.assert_array_almost_equal(
+        L.toarray(),
+        np.array(
+            [
+                [1.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                [0.000, 1.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                [0.000, 0.333, 1.000, 0.333, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                [0.000, 0.000, 0.333, 1.000, 0.333, 0.000, 0.000, 0.000, 0.000, 0.000],
+                [0.000, 0.000, 0.000, 0.333, 1.000, 0.333, 0.000, 0.000, 0.000, 0.000],
+                [0.000, 0.000, 0.000, 0.000, 0.333, 1.000, 0.333, 0.000, 0.000, 0.000],
+                [0.000, 0.000, 0.000, 0.000, 0.000, 0.333, 1.000, 0.333, 0.000, 0.000],
+                [0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.333, 1.000, 0.333, 0.000],
+                [0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 1.000, 0.000],
+                [0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 1.000],
+            ]
+        ),
+        decimal=3,
+    )
