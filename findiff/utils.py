@@ -55,44 +55,53 @@ def get_list_of_multiindex_tuples(shape):
     return short_inds
 
 
-def create_cyclic_band_diagonal(n, offsets, band_values):
+def create_cyclic_band_diagonal(size, offsets, band_values, mtype="csr"):
     """
     Create a cyclic band-diagonal matrix using scipy.sparse.
 
     Parameters:
-        n (int): The size of the matrix (n x n).
+        size (int): The size of the matrix (n x n).
         offsets (list of int): Offsets for the bands (negative, 0, or positive).
         band_values (list of float): Values to fill in the bands (length must match num_bands).
 
     Returns:
         scipy.sparse.csr_matrix: Cyclic band-diagonal matrix.
     """
-    num_bands = len(offsets)
-    if len(offsets) != num_bands or len(band_values) != num_bands:
-        raise ValueError(
-            "Offsets and band_values must match the number of bands (num_bands)."
-        )
-
-    # Create the diagonal values for each band
-    diagonals = []
-    for offset, value in zip(offsets, band_values):
-        diag = np.full(n, value)
-        diagonals.append(diag)
-
-    # Build the band-diagonal matrix
-    band_matrix = diags(diagonals, offsets, shape=(n, n), format="csr")
+    band_matrix = create_band_diagonal(size, offsets, band_values, mtype)
 
     # Add cyclic wrap-around connections
     for offset, value in zip(offsets, band_values):
         if offset > 0:  # Wrap from top rows to bottom
             band_matrix += diags(
-                [np.full(offset, value)], [offset - n], shape=(n, n), format="csr"
+                [np.full(offset, value)],
+                [offset - size],
+                shape=(size, size),
+                format=mtype,
             )
         elif offset < 0:  # Wrap from bottom rows to top
             band_matrix += diags(
-                [np.full(-offset, value)], [offset + n], shape=(n, n), format="csr"
+                [np.full(-offset, value)],
+                [offset + size],
+                shape=(size, size),
+                format=mtype,
             )
 
+    return band_matrix
+
+
+def create_band_diagonal(size, offsets, band_values, mtype="csr"):
+    num_bands = len(offsets)
+    if len(offsets) != num_bands or len(band_values) != num_bands:
+        raise ValueError(
+            "Offsets and band_values must match the number of bands (num_bands)."
+        )
+    # Create the diagonal values for each band
+    diagonals = []
+    for offset, value in zip(offsets, band_values):
+        diag = np.full(size, value)
+        diagonals.append(diag)
+    # Build the band-diagonal matrix
+    band_matrix = diags(diagonals, offsets, shape=(size, size), format=mtype)
     return band_matrix
 
 
