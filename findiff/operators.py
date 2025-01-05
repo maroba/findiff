@@ -263,13 +263,21 @@ class Diff(Expression):
 
     def __pow__(self, power):
         """Returns a Diff instance for a higher order derivative."""
-        new_diff = Diff(self.dim, self.axis, acc=self.acc)
-        new_diff._order *= power
+        new_order = self.order * power
+
+        if self.scheme:
+            new_scheme = CompactScheme.from_accuracy(
+                self.scheme.get_accuracy(self.order), new_order, len(self.scheme.left)
+            )
+        else:
+            new_scheme = None
+        new_diff = Diff(self.dim, self.axis, acc=self.acc, scheme=new_scheme)
+        new_diff._order = new_order
         return new_diff
 
     def __mul__(self, other):
         if isinstance(other, Diff) and self.dim == other.dim:
-            new_diff = Diff(self.dim, self.axis, acc=self.acc)
+            new_diff = Diff(self.dim, self.axis, acc=self.acc, scheme=self.scheme)
             new_diff._order += other.order
             return new_diff
         return super().__mul__(other)

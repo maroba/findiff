@@ -1,7 +1,8 @@
+import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 
-from findiff.coefs import calc_coefs, coefficients
+from findiff.coefs import calc_coefs, coefficients, CoefficientCalculator, Solver
 from findiff.utils import (
     create_cyclic_band_diagonal,
     extend_to_ND,
@@ -31,7 +32,7 @@ class CompactScheme:
     fewer neighboring points than in the explicit schemes.
     """
 
-    def __init__(self, left: dict, right: list, periodic=True):
+    def __init__(self, deriv, left: dict, right: list, periodic=True):
         r"""
         Initializes a CompactScheme instance.
 
@@ -41,6 +42,8 @@ class CompactScheme:
             \sum_k \alpha_k f^{(n)}_{i+k} = \sum_k c_k f_{i+k}
 
         Args:
+            deriv: int
+                The order of the derivative
             left: dict
                 Defines the alphas in the formula above. Keys: k, Values: alpha_k
             right: list|tuple
@@ -48,9 +51,37 @@ class CompactScheme:
             periodic: bool
                 Whether to use periodic or non-periodic boundary conditions.
         """
+        self.deriv = deriv
         self.left = left
         self.right = right
         self.periodic = periodic
+
+    def get_accuracy(self, deriv):
+        calculator = CoefficientCalculator(deriv, self.right, self.left, Solver())
+        calculator.solve()
+        return calculator.acc
+
+    @classmethod
+    def from_accuracy(cls, acc, deriv, num_left):
+        alphas = {
+            off: (1 / num_left) ** abs(off)
+            for off in range(-(num_left // 2), (num_left // 2) + 1)
+        }
+        alphas[0] = 1
+        offsets = [-1, 0, 1]
+        max_offsets = 99
+        while len(offsets) < max_offsets:
+            calculator = CoefficientCalculator(deriv, offsets, alphas, Solver())
+            try:
+                calculator.solve()
+                if calculator.acc >= acc:
+                    return CompactScheme(deriv, alphas, offsets)
+            except np.linalg.LinAlgError:
+                pass
+            n = len(offsets) // 2 + 1
+            offsets = [-n] + offsets + [n]
+
+        raise Exception(f"Unable to solve compact scheme for given accuracy: {acc}")
 
 
 class _CompactDiffUniform:

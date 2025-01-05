@@ -36,11 +36,32 @@ def test_compact_differences_coefficients():
     print(coefs["accuracy"])
 
 
+def test_compact_differences_coefficients_second_deriv():
+    alpha = 2 / 11
+    coefs = calc_coefs(
+        2,
+        [-2, -1, 0, 1, 2],
+        alphas={1: alpha, 0: 1, -1: alpha},
+        symbolic=False,
+    )
+    c = {off: coef for off, coef in zip(coefs["offsets"], coefs["coefficients"])}
+
+    a = c[1]
+    b = 4 * c[2]
+
+    # The expected values come from Lele, J. Comp. Phys. 103 (1992), p. 19
+    assert 12 / 11 == pytest.approx(a)
+    assert 3 / 11 == pytest.approx(b)
+
+    assert 6 == coefs["accuracy"]
+    print(coefs["accuracy"])
+
+
 def test_compact_differences_diff_set_scheme_implicitly():
     d_dx = Diff(
         0,
         scheme=CompactScheme(
-            left={-1: 1 / 3, 0: 1, 1: 1 / 3}, right=[-3, -2, -1, 0, 1, 2, 3]
+            deriv=1, left={-1: 1 / 3, 0: 1, 1: 1 / 3}, right=[-3, -2, -1, 0, 1, 2, 3]
         ),
     )
 
@@ -50,7 +71,7 @@ def test_compact_differences_diff_set_scheme_implicitly():
 def test_compact_differences_diff_set_scheme():
     d_dx = Diff(0)
     scheme = CompactScheme(
-        left={-1: 1 / 3, 0: 1, 1: 1 / 3}, right=[-3, -2, -1, 0, 1, 2, 3]
+        deriv=1, left={-1: 1 / 3, 0: 1, 1: 1 / 3}, right=[-3, -2, -1, 0, 1, 2, 3]
     )
 
     assert d_dx.scheme is None
@@ -62,6 +83,7 @@ def test_compact_differences_diff_set_scheme():
 
 def test_calculate_diff_matrices():
     scheme = CompactScheme(
+        deriv=1,
         left={-1: 1 / 3, 0: 1, 1: 1 / 3},
         right=[-2, -1, 0, 1, 2],
     )
@@ -105,40 +127,6 @@ def test_calculate_diff_matrices():
     )
 
 
-def test_compact_differences_diff_apply():
-    nx = 40
-    x = np.linspace(0, 2 * np.pi, nx, endpoint=False)
-    dx = x[1] - x[0]
-    d_dx = Diff(0, dx, periodic=True)
-    d_dx.set_scheme(
-        CompactScheme(
-            left={-1: 1 / 3, 0: 1, 1: 1 / 3},
-            # left={0: 1},
-            right=[-3, -2, -1, 0, 1, 2, 3],
-            # right=[-1, 0, 1],
-        )
-    )
-    f = np.exp(np.sin(x))
-    expected = np.cos(x) * f
-    # f = np.sin(x)
-    # expected = np.cos(x)
-    actual = d_dx(f)
-
-    print_arrays(
-        d_dx._differentiator._right_matrix.toarray(),
-        f.reshape(-1, 1),
-        actual.reshape(-1, 1),
-        expected.reshape(-1, 1),
-    )
-
-    # import matplotlib.pyplot as plt
-    #
-    # plt.semilogy(x, abs((expected - actual)), ".")
-    # plt.show()
-
-    np.testing.assert_allclose(expected, actual, atol=1.0e-5)
-
-
 def test_wrap_around():
     from findiff.utils import create_cyclic_band_diagonal
 
@@ -163,6 +151,7 @@ def test_compact_differences_diff_apply_2d():
         d_dx = Diff(dim, dx, periodic=True)
         d_dx.set_scheme(
             CompactScheme(
+                deriv=1,
                 left={-1: 1 / 3, 0: 1, 1: 1 / 3},
                 right=[-3, -2, -1, 0, 1, 2, 3],
             )
@@ -196,6 +185,7 @@ def test_compact_differences_diff_apply_2d_nonperiodic():
         d_dx = Diff(dim, dx, periodic=False)
         d_dx.set_scheme(
             CompactScheme(
+                deriv=1,
                 left={-1: 1 / 3, 0: 1, 1: 1 / 3},
                 right=[-3, -2, -1, 0, 1, 2, 3],
             )
@@ -242,25 +232,27 @@ def test_accuracy():
 
 def test_nonperiodic_uniform():
     scheme = CompactScheme(
-        left={1: 1 / 3, 0: 1, -1: 1 / 3}, right=[-2, -1, 0, 1, 2], periodic=False
+        deriv=1,
+        left={1: 1 / 3, 0: 1, -1: 1 / 3},
+        right=[-2, -1, 0, 1, 2],
+        periodic=False,
     )
-    x = np.linspace(0, 1, 30)
+    x = np.linspace(0, 1, 60)
     dx = x[1] - x[0]
     f = np.sin(x)
     d_dx = Diff(0, dx, scheme=scheme)
-    actual = d_dx(f)
+    d2_dx2 = d_dx**2
 
-    # import matplotlib.pyplot as plt
-    #
-    # plt.semilogy(x, abs(np.cos(x) - actual), ".")
-    # plt.show()
-
-    np.testing.assert_allclose(actual, np.cos(x))
+    np.testing.assert_array_almost_equal(d_dx(f), np.cos(x))
+    np.testing.assert_array_almost_equal(d2_dx2(f), -np.sin(x))
 
 
 def test_nonperiodic_matrices():
     scheme = CompactScheme(
-        left={1: 1 / 3, 0: 1, -1: 1 / 3}, right=[-2, -1, 0, 1, 2], periodic=False
+        deriv=1,
+        left={1: 1 / 3, 0: 1, -1: 1 / 3},
+        right=[-2, -1, 0, 1, 2],
+        periodic=False,
     )
     differ = _CompactDiffUniformNonPeriodic(dim=0, order=1, spacing=1, scheme=scheme)
     f = np.ones(10, dtype=np.float64)
@@ -289,3 +281,60 @@ def test_nonperiodic_matrices():
         ),
         decimal=3,
     )
+
+
+def test_scheme_from_accuracy():
+    pass
+
+
+def test_compact_differences_diff_apply():
+    nx = 40
+    x = np.linspace(0, 2 * np.pi, nx, endpoint=False)
+    dx = x[1] - x[0]
+    d_dx = Diff(0, dx, periodic=True)
+    d_dx.set_scheme(
+        CompactScheme(
+            deriv=1,
+            left={-1: 1 / 3, 0: 1, 1: 1 / 3},
+            right=[-3, -2, -1, 0, 1, 2, 3],
+        )
+    )
+    f = np.exp(np.sin(x))
+    expected = np.cos(x) * f
+    # f = np.sin(x)
+    # expected = np.cos(x)
+    actual = d_dx(f)
+
+    print_arrays(
+        d_dx._differentiator._right_matrix.toarray(),
+        f.reshape(-1, 1),
+        actual.reshape(-1, 1),
+        expected.reshape(-1, 1),
+    )
+
+    # import matplotlib.pyplot as plt
+    #
+    # plt.semilogy(x, abs((expected - actual)), ".")
+    # plt.show()
+
+    np.testing.assert_allclose(expected, actual, atol=1.0e-5)
+
+
+def test_periodic_uniform_shortcut():
+    scheme = CompactScheme(
+        deriv=1,
+        left={1: 1 / 3, 0: 1, -1: 1 / 3},
+        right=[-3, -2, -1, 0, 1, 2, 3],
+        periodic=True,
+    )
+
+    x = np.linspace(0, 2 * np.pi, 40, endpoint=False)
+    dx = x[1] - x[0]
+    f = np.exp(np.sin(x))
+    d_dx = Diff(0, dx, scheme=scheme, periodic=True)
+    d_dx_shortcut = Diff(0, dx, compact=3, acc=6, periodic=True)
+
+    expected = d_dx(f)
+    actual = d_dx_shortcut(f)
+
+    np.testing.assert_allclose(expected, actual, atol=1.0e-12)

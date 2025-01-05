@@ -1,3 +1,4 @@
+from .compact import CompactScheme
 from .grids import make_axis
 from .operators import Diff as _Diff
 
@@ -5,7 +6,13 @@ from .operators import Diff as _Diff
 class Diff(_Diff):
 
     def __init__(
-        self, axis=0, grid=None, periodic=False, acc=_Diff.DEFAULT_ACC, scheme=None
+        self,
+        axis=0,
+        grid=None,
+        periodic=False,
+        acc=_Diff.DEFAULT_ACC,
+        scheme=None,
+        compact=None,
     ):
         """Represents a partial derivative (along one axis).
 
@@ -45,5 +52,12 @@ class Diff(_Diff):
             >>> d3_dxdydz.set_grid({0: dx, 1: dy, 2: dz})
             >>> d3f_dxdydz = d3_dxdydz(f)
         """
+        if compact and scheme:
+            raise ValueError("Cannot specify both `compact` and `scheme`")
+        if compact:
+            if compact % 2 == 0:
+                raise ValueError("`compact` must be odd integer")
+            scheme = CompactScheme.from_accuracy(acc, 1, compact)
+
         grid_axis = make_axis(axis, grid, periodic)
         super().__init__(axis, grid_axis, acc, scheme)
