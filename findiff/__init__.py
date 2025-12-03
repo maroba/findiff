@@ -19,7 +19,7 @@ Features:
 - Version 0.12.*: Periodic boundary conditions for differential operators and PDEs
 """
 
-__version__ = "0.12.1"
+__version__ = "0.12.2"
 
 
 from .coefs import coefficients

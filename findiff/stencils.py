@@ -239,12 +239,12 @@ class Stencil:
         if start is None:
             start = 0
         if start < 0:
-            start = length - start
+            start = length + start
         stop = sl.stop
         if stop is None:
-            stop = 0
+            stop = length
         if stop < 0:
-            stop = length - start
+            stop = length + stop
         return slice(start, stop)
 
     @property
