@@ -2,6 +2,10 @@ import numpy as np
 import pytest
 
 from findiff import Identity, FinDiff
+
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:FinDiff is deprecated:DeprecationWarning"
+)
 from findiff.stencils import Stencil
 
 

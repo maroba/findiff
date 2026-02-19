@@ -5,6 +5,10 @@ import pytest
 
 from findiff import FinDiff
 
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:FinDiff is deprecated:DeprecationWarning"
+)
+
 
 class TestScaling:
 

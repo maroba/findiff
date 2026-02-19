@@ -3,6 +3,10 @@ import pytest
 
 from findiff import *
 
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:FinDiff is deprecated:DeprecationWarning"
+)
+
 # import matplotlib.pyplot as plt
 # from mpl_toolkits import mplot3d
 

@@ -31,6 +31,7 @@ class TestFinDiffDeprecationWarning:
             assert len(deprecation_warnings) == 0
 
 
+@pytest.mark.filterwarnings("ignore:FinDiff is deprecated:DeprecationWarning")
 class TestFinDiff:
 
     def test_partial_diff_1d(self):
@@ -388,6 +389,7 @@ class TestFinDiff:
         np.testing.assert_array_almost_equal(vals, expected, decimal=1)
 
 
+@pytest.mark.filterwarnings("ignore:FinDiff is deprecated:DeprecationWarning")
 class TestFinDiffNonUniform:
 
     def test_1d_different_accs(self):

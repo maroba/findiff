@@ -4,6 +4,10 @@ from numpy.testing import assert_array_almost_equal
 
 import findiff
 from findiff import FinDiff
+
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:FinDiff is deprecated:DeprecationWarning"
+)
 from findiff.coefs import coefficients_non_uni
 
 
