@@ -208,122 +208,115 @@ class TestStencilOperations:
 
 class TestStencilSliceBugs:
     """Test cases for reproducing slice handling bugs in Stencil class. (Issue #99)"""
-    
+
     def test_negative_slice_indices_bug(self):
-        
+
         # Create a simple 3D grid
         grid_shape = (3, 3, 3)
         x = y = z = np.linspace(0, 1, 3)
-        
+
         # Create a level set that varies linearly along x-axis
         level_set = np.zeros(grid_shape)
         for i in range(3):
             level_set[i, :, :] = x[i]
-        
+
         dx = dy = dz = x[1] - x[0]  # 0.5
         spacings = (dx, dy, dz)
-        
+
         # Set up forward difference stencil for first derivative along x-axis
         offsets = [(0, 0, 0), (1, 0, 0)]
         partials = {(1, 0, 0): 1}  # First derivative in x direction
-        
+
         stencil = Stencil(offsets=offsets, partials=partials, spacings=spacings)
-        
-        # This SHOULD work: slice(0, -1) should select all elements except the last along axis 0
+
+        # slice(0, -1) should select all elements except the last along axis 0
         slices = (slice(0, -1), slice(None), slice(None))
-        
-        # BUG: This currently raises ValueError due to broadcasting shape mismatch
-        # When fixed, this should compute the derivative correctly
+
         derivative = stencil(level_set, on=slices)
-        
-        # Expected: derivative should be 1.0 in the computed region
-        # The result should have shape (3, 3, 3) with derivatives computed for first 2 slices
+
         assert derivative.shape == (3, 3, 3)
         expected_derivative = 1.0
         np.testing.assert_allclose(derivative[0:2, :, :], expected_derivative)
-    
-    def test_slice_none_canonicalization_bug(self):        
+
+    def test_slice_none_canonicalization_bug(self):
         # Create a simple 3D array
         level_set = np.ones((3, 3, 3))
-        
+
         # Create a simple stencil
         offsets = [(0, 0, 0), (1, 0, 0)]
         partials = {(1, 0, 0): 1}
         spacings = (0.5, 0.5, 0.5)
-        
+
         stencil = Stencil(offsets=offsets, partials=partials, spacings=spacings)
-        
+
         # Test slice(None) handling - this should select all elements
         slices = (slice(0, -1), slice(None), slice(None))
-        
-        # BUG: The _canonic_slice method incorrectly converts slice(None) to slice(0, 0)
-        # which results in empty arrays and broadcasting errors
-        # When fixed, this should work without errors
+
         derivative = stencil(level_set, on=slices)
-        
+
         # Should return a result with the expected shape
         assert derivative.shape == (3, 3, 3)
-    
+
     def test_workaround_explicit_slice_bounds_works(self):
         """Test that explicit slice bounds work as expected (user's workaround)."""
         # Create a simple 3D grid
         grid_shape = (3, 3, 3)
         x = y = z = np.linspace(0, 1, 3)
-        
+
         # Create a level set that varies linearly along x-axis
         level_set = np.zeros(grid_shape)
         for i in range(3):
             level_set[i, :, :] = x[i]
-        
+
         dx = dy = dz = x[1] - x[0]  # 0.5
         spacings = (dx, dy, dz)
-        
+
         # Set up forward difference stencil for first derivative along x-axis
         offsets = [(0, 0, 0), (1, 0, 0)]
         partials = {(1, 0, 0): 1}  # First derivative in x direction
-        
+
         stencil = Stencil(offsets=offsets, partials=partials, spacings=spacings)
-        
+
         # Workaround: Use explicit bounds instead of slice(None) or slice(0, -1)
         slices = (
             slice(0, level_set.shape[0] - 1),  # Instead of slice(0, -1)
             slice(0, level_set.shape[1]),      # Instead of slice(None)
             slice(0, level_set.shape[2])       # Instead of slice(None)
         )
-        
+
         # This should work fine
         derivative = stencil(level_set, on=slices)
-        
+
         # The derivative should be 1.0 everywhere except the last slice along x-axis
         expected_derivative = 1.0
         assert derivative.shape == (3, 3, 3)
-        
+
         # First two slices should have derivative = 1.0
         np.testing.assert_allclose(derivative[0:2, :, :], expected_derivative)
-        
+
         # Last slice should be 0 (not computed)
         np.testing.assert_allclose(derivative[2, :, :], 0.0)
-    
+
     def test_canonic_slice_method_bugs(self):
-        
+
         # Create a dummy stencil to access the _canonic_slice method
         offsets = [(0,), (1,)]
         partials = {(1,): 1}
         stencil = Stencil(offsets=offsets, partials=partials)
-        
+
         length = 5
-        
-        # BUG 1: slice(None) should become slice(0, length) but currently becomes slice(0, 0)
+
+        # slice(None) should become slice(0, length)
         canonical = stencil._canonic_slice(slice(None), length)
         assert canonical.start == 0
-        assert canonical.stop == length, f"BUG: slice(None) should give stop={length}, got {canonical.stop}"
-        
-        # BUG 2: slice(0, -1) should become slice(0, 4) but has wrong calculation
+        assert canonical.stop == length
+
+        # slice(0, -1) should become slice(0, 4)
         canonical = stencil._canonic_slice(slice(0, -1), length)
         assert canonical.start == 0
-        assert canonical.stop == length - 1, f"BUG: slice(0, -1) should give stop={length - 1}, got {canonical.stop}"
-        
-        # BUG 3: slice(1, -1) should become slice(1, 4)
+        assert canonical.stop == length - 1
+
+        # slice(1, -1) should become slice(1, 4)
         canonical = stencil._canonic_slice(slice(1, -1), length)
         assert canonical.start == 1
-        assert canonical.stop == length - 1, f"BUG: slice(1, -1) should give stop={length - 1}, got {canonical.stop}"
+        assert canonical.stop == length - 1

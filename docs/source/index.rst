@@ -35,6 +35,7 @@ Content
 
     getstarted
     examples
+    compact
     theory
     citation
     modules
