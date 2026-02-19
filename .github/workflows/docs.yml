@@ -25,6 +25,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -33,7 +36,9 @@ jobs:
           python -m pip install -e .
 
       - name: Build documentation
-        run: sphinx-build -M html docs/source docs/build
+        run: |
+          cp examples/*.ipynb docs/source/
+          sphinx-build -M html docs/source docs/build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

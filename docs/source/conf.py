@@ -43,7 +43,6 @@ extensions = [
     "IPython.sphinxext.ipython_directive",
     "sphinx.ext.mathjax",
     "nbsphinx",
-    "nbsphinx_link",
 ]
 
 
