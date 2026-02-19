@@ -264,3 +264,55 @@ def test_matrix_1d_coeffs():
     actual = L.matrix(shape).dot(u)
     expected = L(u).reshape(-1)
     np.testing.assert_array_almost_equal(expected, actual)
+
+
+class TestRepr:
+
+    def test_diff_first_order(self):
+        d = Diff(0, 0.1)
+        assert str(d) == "d/dx"
+        assert repr(d) == "d/dx"
+
+    def test_diff_second_order(self):
+        d = Diff(0, 0.1) ** 2
+        assert str(d) == "d2/dx2"
+
+    def test_diff_third_axis(self):
+        d = Diff(3, 0.1)
+        assert str(d) == "d/dw"
+
+    def test_diff_high_axis(self):
+        d = Diff(8, 0.1)
+        assert str(d) == "d/dx8"
+
+    def test_identity_str(self):
+        assert str(Identity()) == "I"
+
+    def test_add_str(self):
+        d_dx = Diff(0, 0.1)
+        d_dy = Diff(1, 0.1)
+        op = d_dx + d_dy
+        assert str(op) == "d/dx + d/dy"
+
+    def test_mul_str(self):
+        d_dx = Diff(0, 0.1)
+        d_dy = Diff(1, 0.1)
+        op = d_dx * d_dy
+        assert str(op) == "d/dx * d/dy"
+
+    def test_scalar_mul_str(self):
+        d_dx = Diff(0, 0.1)
+        op = 3 * d_dx
+        assert str(op) == "3 * d/dx"
+
+    def test_complex_expression_str(self):
+        d_dx = Diff(0, 0.1)
+        d_dy = Diff(1, 0.1)
+        op = d_dx ** 2 + d_dy ** 2
+        assert str(op) == "d2/dx2 + d2/dy2"
+
+    def test_mul_with_add_parentheses(self):
+        d_dx = Diff(0, 0.1)
+        d_dy = Diff(1, 0.1)
+        op = d_dx * (d_dy + d_dx)
+        assert str(op) == "d/dx * (d/dy + d/dx)"

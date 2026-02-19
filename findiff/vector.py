@@ -3,6 +3,7 @@
 import numpy as np
 
 from .compatible import FinDiff
+from .interface import Diff as _Diff
 
 
 class VectorOperator:
@@ -39,13 +40,13 @@ class VectorOperator:
                 kw = "h"
             self.h = kwargs.pop(kw)
             self.ndims = len(self.h)
-            self.components = [FinDiff(k, self.h[k], 1) for k in range(self.ndims)]
+            self.components = [_Diff(k, self.h[k]) for k in range(self.ndims)]
 
         if "coords" in kwargs:
             coords = kwargs.pop("coords")
             self.ndims = self.__get_dimension(coords)
             self.components = [
-                FinDiff((k, coords[k], 1), **kwargs) for k in range(self.ndims)
+                _Diff(k, coords[k], **kwargs) for k in range(self.ndims)
             ]
 
     def __get_dimension(self, coords):
@@ -167,14 +168,15 @@ class Curl(VectorOperator):
 
         {\rm \bf rot} = \nabla \times
 
-    Is only defined for 3D.
+    In 3D, maps a vector field to a vector field.
+    In 2D, maps a vector field to a scalar (the z-component of the curl).
 
     :param kwargs:  exactly one of *h* and *coords* must be specified
 
      *h*
-             list with the grid spacings of a 3-dimensional uniform grid
+             list with the grid spacings of a 2- or 3-dimensional uniform grid
      *coords*
-             list of 1D arrays with the coordinate values along the 3 axes.
+             list of 1D arrays with the coordinate values along the 2 or 3 axes.
              This is used for non-uniform grids.
 
      *acc*
@@ -186,9 +188,9 @@ class Curl(VectorOperator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        if self.ndims != 3:
+        if self.ndims not in (2, 3):
             raise ValueError(
-                f"Curl operation is only defined in 3 dimensions. {self.ndims} were given."
+                f"Curl operation is only defined in 2 or 3 dimensions. {self.ndims} were given."
             )
 
     def __call__(self, f):
@@ -197,11 +199,13 @@ class Curl(VectorOperator):
 
         :param f: ``numpy.ndarray``
 
-               a vector function of N variables, so its array has N+1 axes.
+               In 3D: a vector function with 3 components, so f has shape (3, ...) with 3 spatial axes.
+               In 2D: a vector function with 2 components, so f has shape (2, ...) with 2 spatial axes.
 
         :returns: ``numpy.ndarray``
 
-               the curl, which is a vector function of N variables, so it's array dimension has N+1 axes
+               In 3D: the curl vector, shape (3, ...) with 3 spatial axes.
+               In 2D: the scalar curl (z-component), shape (...) with 2 spatial axes.
 
         """
 
@@ -210,9 +214,29 @@ class Curl(VectorOperator):
                 "Function to differentiate must be numpy.ndarray or list of numpy.ndarrays"
             )
 
-        if len(f.shape) != self.ndims + 1 and f.shape[0] != self.ndims:
+        if self.ndims == 2:
+            return self._curl_2d(f)
+        else:
+            return self._curl_3d(f)
+
+    def _curl_2d(self, f):
+        """Compute the 2D scalar curl: dF_y/dx - dF_x/dy."""
+
+        if len(f.shape) != 3 or f.shape[0] != 2:
             raise ValueError(
-                "Curl can only be applied to vector functions of the three dimensions"
+                "In 2D, curl expects a vector function with shape (2, nx, ny)"
+            )
+
+        return self.components[0](f[1], acc=self.acc) - self.components[1](
+            f[0], acc=self.acc
+        )
+
+    def _curl_3d(self, f):
+        """Compute the 3D vector curl."""
+
+        if len(f.shape) != 4 or f.shape[0] != 3:
+            raise ValueError(
+                "In 3D, curl expects a vector function with shape (3, nx, ny, nz)"
             )
 
         result = np.zeros(f.shape)
@@ -257,7 +281,9 @@ class Laplacian:
         h = h or [1.0]
         h = wrap_in_ndarray(h)
 
-        self._parts = [FinDiff((k, h[k], 2), acc=acc) for k in range(len(h))]
+        self._parts = [_Diff(k, h[k]) ** 2 for k in range(len(h))]
+        for part in self._parts:
+            part.set_accuracy(acc)
 
     def __call__(self, f):
         """

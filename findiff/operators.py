@@ -18,6 +18,9 @@ class Expression(ABC):
     def __init__(self, *args, **kwargs):
         self.children = []
 
+    def __repr__(self):
+        return str(self)
+
     @abstractmethod
     def __call__(self, f, *args, **kwargs):
         """Applies the differential operator expression L to array f.
@@ -105,6 +108,11 @@ class FieldOperator(Expression):
         super().__init__()
         self.value = value
 
+    def __str__(self):
+        if isinstance(self.value, np.ndarray):
+            return "f(x)"
+        return str(self.value)
+
     def __call__(self, f, *args, **kwargs):
         if isinstance(f, (numbers.Number, np.ndarray)):
             return self.value * f
@@ -127,6 +135,9 @@ class ScalarOperator(FieldOperator):
             raise ValueError("Expected number, got " + str(type(value)))
         super().__init__(value)
 
+    def __str__(self):
+        return str(self.value)
+
     def matrix(self, shape):
         siz = np.prod(shape)
         mat = sparse.lil_matrix((siz, siz))
@@ -140,6 +151,9 @@ class Identity(ScalarOperator):
 
     def __init__(self):
         super().__init__(1)
+
+    def __str__(self):
+        return "I"
 
 
 class BinaryOperation(Expression):
@@ -165,6 +179,9 @@ class Add(BinaryOperation):
     def __call__(self, f, *args, **kwargs):
         return self.left(f, *args, **kwargs) + self.right(f, *args, **kwargs)
 
+    def __str__(self):
+        return f"{self.left} + {self.right}"
+
     def matrix(self, shape):
         return self.left.matrix(shape) + self.right.matrix(shape)
 
@@ -180,6 +197,15 @@ class Mul(BinaryOperation):
 
     def __call__(self, f, *args, **kwargs):
         return self.left(self.right(f, *args, **kwargs), *args, **kwargs)
+
+    def __str__(self):
+        left_str = str(self.left)
+        right_str = str(self.right)
+        if isinstance(self.left, Add):
+            left_str = f"({left_str})"
+        if isinstance(self.right, Add):
+            right_str = f"({right_str})"
+        return f"{left_str} * {right_str}"
 
     def matrix(self, shape):
         return self.left.matrix(shape) * self.right.matrix(shape)
@@ -220,6 +246,18 @@ class Diff(Expression):
     def set_axis(self, axis: GridAxis):
         self._axis = axis
         self._differentiator = None
+
+    def __str__(self):
+        if self._order == 1:
+            return f"d/d{self._axis_label}"
+        return f"d{self._order}/d{self._axis_label}{self._order}"
+
+    @property
+    def _axis_label(self):
+        labels = "xyzwvuts"
+        if self.dim < len(labels):
+            return labels[self.dim]
+        return f"x{self.dim}"
 
     def set_scheme(self, scheme: CompactScheme = None):
         """Allows to activate using compact (implicit) finite differences."""

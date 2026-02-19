@@ -1,8 +1,34 @@
 import numpy as np
 import pytest
+import warnings
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 from findiff import FinDiff, Coef, Identity
+
+
+class TestFinDiffDeprecationWarning:
+
+    def test_findiff_emits_deprecation_warning(self):
+        with pytest.warns(DeprecationWarning, match="FinDiff is deprecated"):
+            FinDiff(0, 0.1)
+
+    def test_findiff_still_works(self):
+        x = np.linspace(0, 2 * np.pi, 100)
+        dx = x[1] - x[0]
+        f = np.sin(x)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            d_dx = FinDiff(0, dx)
+            result = d_dx(f, acc=4)
+        assert_array_almost_equal(result, np.cos(x), decimal=4)
+
+    def test_findiff_warning_can_be_suppressed(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            warnings.filterwarnings("ignore", message="FinDiff is deprecated")
+            FinDiff(0, 0.1)
+            deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+            assert len(deprecation_warnings) == 0
 
 
 class TestFinDiff:

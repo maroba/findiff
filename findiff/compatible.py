@@ -1,5 +1,7 @@
 """This module provides an interface to obsolete classes for backward compatibility."""
 
+import warnings
+
 from findiff.interface import Diff
 from findiff.operators import FieldOperator, Identity
 
@@ -72,6 +74,15 @@ def FinDiff(*args, **kwargs):
 
 
     """
+    warnings.warn(
+        "FinDiff is deprecated, use Diff instead. "
+        "See https://findiff.readthedocs.io/en/latest/ for the new API. "
+        "To suppress this warning: "
+        "import warnings; warnings.filterwarnings('ignore', message='FinDiff is deprecated')",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     if len(args) > 3:
         raise ValueError("FinDiff accepts not more than 3 positional arguments.")
 
