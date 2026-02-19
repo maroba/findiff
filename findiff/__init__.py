@@ -20,14 +20,14 @@ Features:
 - Version 0.13.*: Compact finite difference schemes for interior and boundary points
 """
 
-__version__ = "0.13.0"
+__version__ = "0.13.1"
 
 
 from .coefs import coefficients
 from .compact import CompactScheme
 from .compatible import Coef, Coefficient, FinDiff, Id
 from .interface import Diff
-from .operators import Identity
+from .operators import ErrorEstimate, Identity
 from .pde import PDE, BoundaryConditions
 from .symbolic import SymbolicDiff, SymbolicMesh
 from .vector import Curl, Divergence, Gradient, Laplacian
@@ -37,6 +37,7 @@ __all__ = [
     "CompactScheme",
     "Coef",
     "Coefficient",
+    "ErrorEstimate",
     "FinDiff",
     "Id",
     "Diff",

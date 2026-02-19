@@ -27,6 +27,7 @@ Features
 - Symbolic representation of finite difference schemes
 - Periodic boundary conditions for differential operators and PDEs
 - Compact (implicit) finite differences with spectral-like resolution
+- Estimate truncation error by comparing accuracy orders
 
 .. versionadded:: 0.11
    Comfortable new API via ``Diff`` (the old ``FinDiff`` API remains available)
@@ -36,6 +37,9 @@ Features
 
 .. versionadded:: 0.13
    Compact (implicit) finite differences with spectral-like resolution
+
+.. versionadded:: 0.14
+   Error estimation via accuracy order comparison
 
 
 Content

@@ -1,5 +1,6 @@
 import numbers
 from abc import ABC, abstractmethod
+from collections import namedtuple
 
 import numpy as np
 from scipy import sparse
@@ -8,6 +9,9 @@ from findiff.compact import CompactScheme
 from findiff.findiff import build_differentiator
 from findiff.grids import GridAxis, make_grid
 from findiff.stencils import StencilSet
+
+
+ErrorEstimate = namedtuple("ErrorEstimate", ["derivative", "error", "extrapolated"])
 
 
 class Expression(ABC):
@@ -99,6 +103,68 @@ class Expression(ABC):
         self.acc = acc
         for child in self.children:
             child.set_accuracy(acc)
+
+    def estimate_error(self, f, acc=None):
+        r"""Estimate truncation error by comparing results at two accuracy orders.
+
+        Computes the derivative at accuracy order *p* and at *p + 2*, then
+        uses the pointwise difference as an error estimate for the order-\ *p*
+        result.  The higher-order result is also returned as an improved
+        ("extrapolated") derivative.
+
+        Parameters
+        ----------
+        f : numpy.ndarray
+            The array to differentiate.
+        acc : int or None
+            Base accuracy order.  If ``None``, uses the operator's current
+            accuracy (default 2).
+
+        Returns
+        -------
+        ErrorEstimate
+            Named tuple with fields:
+
+            - **derivative** – result at the base accuracy order *p*.
+            - **error** – estimated pointwise absolute truncation error.
+            - **extrapolated** – result at accuracy order *p + 2*.
+
+        Raises
+        ------
+        NotImplementedError
+            If compact finite difference schemes are in use.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from findiff import Diff
+        >>> x = np.linspace(0, 2 * np.pi, 200)
+        >>> d_dx = Diff(0, x[1] - x[0])
+        >>> result = d_dx.estimate_error(np.sin(x))
+        >>> result.derivative.shape
+        (200,)
+        """
+        if self._has_compact_scheme():
+            raise NotImplementedError(
+                "estimate_error does not support compact finite difference schemes"
+            )
+
+        original_acc = acc if acc is not None else getattr(self, "acc", 2)
+
+        result_low = self(f, acc=original_acc)
+        result_high = self(f, acc=original_acc + 2)
+
+        # Restore operator to its original accuracy
+        self.set_accuracy(original_acc)
+
+        error = np.abs(result_low - result_high)
+        return ErrorEstimate(result_low, error, result_high)
+
+    def _has_compact_scheme(self):
+        """Check whether any node in the expression tree uses a compact scheme."""
+        if getattr(self, "scheme", None) is not None:
+            return True
+        return any(child._has_compact_scheme() for child in self.children)
 
     def _eliminate_boundary_dofs(self, mat, bc):
         """Extract the interior submatrix by removing boundary DOFs.
