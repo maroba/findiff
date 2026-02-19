@@ -14,14 +14,22 @@ any number of dimensions.
 
 * Differentiate arrays of any number of dimensions along any axis with any desired accuracy order
 * Accurate treatment of grid boundary
+* Can handle uniform and non-uniform grids
 * Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 * Fully vectorized for speed
+* Standard operators from vector calculus: gradient, divergence, curl, Laplacian
 * Matrix representations of arbitrary linear differential operators
-* Solve partial differential equations with Dirichlet or Neumann boundary conditions
+* Solve partial differential equations with Dirichlet, Neumann or Robin boundary conditions
+* Solve eigenvalue problems (e.g. Schrodinger equation, vibration modes)
+* Direct and iterative solvers with preconditioner support
+* Calculate raw finite difference coefficients for any derivative and accuracy order
+* Generate differential operators for arbitrary stencils
 * Symbolic representation of finite difference schemes
+* Estimate truncation error by comparing accuracy orders
 * **New in version 0.11**: More comfortable API (keeping the old API available)
 * **New in version 0.12**: Periodic boundary conditions for differential operators and PDEs.
 * **New in version 0.13**: Compact (implicit) finite differences with spectral-like resolution.
+* **New in version 0.14**: Error estimation via accuracy order comparison.
 
 ## Installation
 
@@ -110,7 +118,7 @@ d_dx = Diff(0)
 d_dx.set_grid({0: {"h": dx, "periodic": True}})
 ```
 
-More examples can be found [here](https://maroba.github.io/findiff/examples.html) and in [this blog](https://medium.com/p/7e54132a73a3).
+More examples can be found in the [documentation](https://maroba.github.io/findiff/) and in [this blog](https://medium.com/p/7e54132a73a3).
 
 ### Accuracy Control
 
@@ -118,16 +126,16 @@ When constructing an instance of `Diff`, you can request the desired accuracy
 order by setting the keyword argument `acc`. For example:
 
 ```python
-d_dx = Diff(0, dy, acc=4)
-df_dx = d2_dx2(f)
+d_dx = Diff(0, dx, acc=4)
+df_dx = d_dx(f)
 ```
 
 Alternatively, you can also split operator definition and configuration:
 
 ```python
 d_dx = Diff(0, dx)
-d_dx.set_accuracy(2)
-df_dx = d2_dx2(f)
+d_dx.set_accuracy(4)
+df_dx = d_dx(f)
 ```
 
 which comes in handy if you have a complicated expression of differential operators, because then you
@@ -405,14 +413,14 @@ x, y = np.linspace(0, 1, shape[0]), np.linspace(0, 1, shape[1])
 dx, dy = x[1]-x[0], y[1]-y[0]
 X, Y = np.meshgrid(x, y, indexing='ij')
 
-L = FinDiff(0, dx, 2) + FinDiff(1, dy, 2)
+L = Diff(0, dx)**2 + Diff(1, dy)**2
 f = np.zeros(shape)
 
 bc = BoundaryConditions(shape)
-bc[1,:] = FinDiff(0, dx, 1), 0  # Neumann BC
+bc[1,:] = Diff(0, dx), 0  # Neumann BC
 bc[-1,:] = 300. - 200*Y   # Dirichlet BC
 bc[:, 0] = 300.   # Dirichlet BC
-bc[1:-1, -1] = FinDiff(1, dy, 1), 0  # Neumann BC
+bc[1:-1, -1] = Diff(1, dy), 0  # Neumann BC
 
 pde = PDE(L, f, bc)
 u = pde.solve()

@@ -50,8 +50,10 @@ Content
 
     getting-started/index
     guides/index
+    examples
     theory/index
     api/index
+    migration
     citation
 
 

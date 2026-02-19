@@ -1,12 +1,20 @@
 # Change Log
 
+## Version 0.14.x
+
+- Truncation error estimation via accuracy order comparison
+- Support for non-uniform grids in Laplacian
+- Iterative solvers for PDEs (CG, GMRES, BiCGSTAB, LGMRES, MINRES) with preconditioner support
+- Eigenvalue problem support (eigs and eigsh methods)
+- Robin (mixed) boundary conditions for PDEs
+
 ## Version 0.13.x
 
 - Implements compact difference schemes
 
 ## Version 0.12.x
 
-- Implements periodic boundary confitions
+- Implements periodic boundary conditions
 
 ## Version 0.11.x
 
