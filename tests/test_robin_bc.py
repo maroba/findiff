@@ -54,10 +54,7 @@ class TestRobin1D:
         assert_array_almost_equal(u, expected, decimal=3)
 
     def test_robin_both_ends(self):
-        """u'' = 0, u(0) + u'(0) = 2, u(1) - u'(1) = 0 → u = x + 1.
-
-        Left: u(0) + u'(0) = 1 + 1 = 2 ✓
-        Right: u(1) - u'(1) = 2 - 1 = 1... Let's use different values.
+        """u'' = 0, u(0) + u'(0) = 2, u(1) - u'(1) = 1 → u = x + 1.
 
         u = x + 1: u'(x) = 1
         Left Robin: 1*u(0) + 1*u'(0) = 1 + 1 = 2
@@ -116,6 +113,44 @@ class TestRobin1D:
         u2 = PDE(L, np.zeros_like(x), bc2).solve()
 
         assert_array_almost_equal(u1, u2)
+
+    def test_robin_alpha_zero_reduces_to_neumann(self):
+        """4-tuple with alpha=0 should behave like a Neumann BC.
+
+        u'' = 0, u(0) = 1, 0*u(1) + 1*u'(1) = 1 → u' = 1 everywhere → u = x + 1
+        """
+        n = 101
+        x = np.linspace(0, 1, n)
+        dx = x[1] - x[0]
+        L = Diff(0, dx) ** 2
+
+        bc = BoundaryConditions(x.shape)
+        bc[0] = 1
+        bc[-1] = (0, Diff(0, dx), 1, 1)  # 0*u + 1*u' = 1
+
+        pde = PDE(L, np.zeros_like(x), bc)
+        u = pde.solve()
+        expected = x + 1
+        assert_array_almost_equal(u, expected, decimal=4)
+
+    def test_robin_beta_zero_reduces_to_dirichlet(self):
+        """4-tuple with beta=0 should behave like a Dirichlet BC.
+
+        u'' = 0, u(0) = 1, 1*u(1) + 0*u'(1) = 2 → u(1) = 2 → u = x + 1
+        """
+        n = 101
+        x = np.linspace(0, 1, n)
+        dx = x[1] - x[0]
+        L = Diff(0, dx) ** 2
+
+        bc = BoundaryConditions(x.shape)
+        bc[0] = 1
+        bc[-1] = (1, Diff(0, dx), 0, 2)  # 1*u + 0*u' = 2
+
+        pde = PDE(L, np.zeros_like(x), bc)
+        u = pde.solve()
+        expected = x + 1
+        assert_array_almost_equal(u, expected, decimal=4)
 
 
 class TestRobin2D:
@@ -193,23 +228,51 @@ class TestRobin2D:
         u = pde.solve()
         assert_array_almost_equal(u, expected, decimal=3)
 
+    def test_robin_2d_y_edge(self):
+        """Robin BC on a y-edge (using Diff(1, dy)).
+
+        u = x + y + 1, ∇²u = 0
+        Robin at y=1: u + ∂u/∂y = (x+1+1) + 1 = x + 3
+        """
+        shape = (31, 31)
+        x = y = np.linspace(0, 1, shape[0])
+        dx = dy = x[1] - x[0]
+        X, Y = np.meshgrid(x, y, indexing="ij")
+
+        L = Diff(0, dx) ** 2 + Diff(1, dy) ** 2
+        expected = X + Y + 1
+
+        bc = BoundaryConditions(shape)
+        bc[:, -1] = (1, Diff(1, dy), 1, X + 3)  # Robin at y=1
+        bc[0, :] = expected
+        bc[-1, :] = expected
+        bc[:, 0] = expected
+
+        pde = PDE(L, np.zeros_like(X), bc)
+        u = pde.solve()
+        assert_array_almost_equal(u, expected, decimal=3)
+
 
 class TestRobinMixed:
 
     def test_robin_and_dirichlet(self):
-        """Robin on one end, Dirichlet on the other."""
+        """Robin on one end, Dirichlet on the other.
+
+        u'' = 0 on [0,2], u(0) = 0 (Dirichlet), 3*u(2) + u'(2) = 7 (Robin)
+        u = x: 3*2 + 1 = 7 ✓
+        """
         n = 101
-        x = np.linspace(0, 1, n)
+        x = np.linspace(0, 2, n)
         dx = x[1] - x[0]
         L = Diff(0, dx) ** 2
 
         bc = BoundaryConditions(x.shape)
-        bc[0] = 1                              # Dirichlet
-        bc[-1] = (1, Diff(0, dx), 1, 3)        # Robin: u + u' = 3
+        bc[0] = 0                              # Dirichlet
+        bc[-1] = (3, Diff(0, dx), 1, 7)        # Robin: 3u + u' = 7
 
         pde = PDE(L, np.zeros_like(x), bc)
         u = pde.solve()
-        expected = x + 1
+        expected = x
         assert_array_almost_equal(u, expected, decimal=4)
 
     def test_robin_and_neumann(self):
