@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-import nbclient
-import nbformat
-import pytest
+pytest = __import__("pytest")
+nbclient = pytest.importorskip("nbclient")
+nbformat = pytest.importorskip("nbformat")
 
 
 @pytest.mark.parametrize(
