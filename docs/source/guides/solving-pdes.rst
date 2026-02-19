@@ -2,8 +2,8 @@
 Solving Partial Differential Equations
 ==============================
 
-*findiff* can solve linear partial differential equations with Dirichlet
-or Neumann boundary conditions using sparse matrix representations.
+*findiff* can solve linear partial differential equations with Dirichlet,
+Neumann or Robin boundary conditions using sparse matrix representations.
 
 Setup
 -----
@@ -76,3 +76,35 @@ For Neumann BCs, pass a ``Diff`` operator as the second element:
     bc = BoundaryConditions(x.shape)
     bc[0] = 0                         # u(0) = 0
     bc[-1] = Diff(0, dx), 1.0         # u'(L) = 1.0
+
+
+Robin (Mixed) Boundary Conditions
+-----------------------------------
+
+Robin boundary conditions have the form
+:math:`\alpha \, u + \beta \, \frac{\partial u}{\partial n} = g`.
+Specify them as a 4-tuple ``(alpha, diff_op, beta, g)``:
+
+.. code:: python
+
+    bc = BoundaryConditions(x.shape)
+    bc[0] = 1                                       # Dirichlet: u(0) = 1
+    bc[-1] = (1, Diff(0, dx), 1, 3)                 # Robin: u + u' = 3
+
+For 2D problems, Robin BCs on an edge work the same way:
+
+.. code:: python
+
+    bc = BoundaryConditions(X.shape)
+    bc[-1, :] = (1, Diff(0, dx), 0.5, g_boundary)   # alpha*u + beta*du/dx = g
+    bc[0, :] = u_left                                # Dirichlet on other edges
+    bc[:, 0] = u_bottom
+    bc[:, -1] = u_top
+
+Alternatively, you can construct the Robin operator yourself using
+``Identity()`` and ``Diff`` and pass it as a 2-tuple (like a Neumann BC):
+
+.. code:: python
+
+    robin_op = alpha * Identity() + beta * Diff(0, dx)
+    bc[-1] = robin_op, g

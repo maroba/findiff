@@ -1,6 +1,6 @@
 """
 This module contains class for solving Partial Differential Equations (PDE)
-with Dirichlet and Neumann Boundary Conditions.
+with Dirichlet, Neumann and Robin Boundary Conditions.
 """
 
 
@@ -64,7 +64,21 @@ class PDE:
 
 class BoundaryConditions:
     """
-    Represents Dirichlet or Neumann boundary conditions for a PDE.
+    Represents boundary conditions for a PDE.
+
+    Supports Dirichlet, Neumann and Robin (mixed) boundary conditions.
+
+    Dirichlet:
+        ``bc[index] = value``
+
+    Neumann:
+        ``bc[index] = (diff_operator, value)``
+
+    Robin (:math:`\\alpha u + \\beta \\partial u / \\partial n = g`):
+        ``bc[index] = (alpha, diff_operator, beta, value)``
+
+    Alternatively, Robin BCs can be specified using the operator-tuple
+    form ``bc[index] = (alpha * Identity() + beta * diff_operator, value)``.
     """
 
     def __init__(self, shape):
@@ -98,19 +112,33 @@ class BoundaryConditions:
             where (on what grid points) to apply the boundary condition.
             Specified by the indices (or slices) of the grid point(s).
 
-        value: Constant or FinDiff object
-            the boundary condition to apply. Is a constant (scalar or array)
-            for Dirichlet and a FinDiff object for Neumann boundary conditions
+        value:
+            The boundary condition to apply.
+
+            - **Dirichlet**: a scalar or array — ``bc[idx] = g``
+            - **Neumann**: a 2-tuple ``(diff_op, g)`` — ``bc[idx] = (Diff(0, dx), g)``
+            - **Robin**: a 4-tuple ``(alpha, diff_op, beta, g)`` representing
+              :math:`\\alpha u + \\beta \\frac{\\partial u}{\\partial n} = g`.
         """
+        from findiff.operators import Identity
 
         lng_inds = self.long_indices[key]
 
-        if isinstance(value, tuple): # Neumann BC
+        if isinstance(value, tuple) and len(value) == 4:
+            # Robin BC: (alpha, diff_op, beta, rhs_value)
+            alpha, diff_op, beta, rhs_value = value
+            robin_op = alpha * Identity() + beta * diff_op
+            mat = sparse.lil_matrix(robin_op.matrix(self.shape))
+            self.lhs[lng_inds, :] = mat[lng_inds, :]
+            value = rhs_value
+        elif isinstance(value, tuple):
+            # Neumann BC: (diff_op, rhs_value)
             op, value = value
-            # Avoid calling matrix for the whole grid! Optimize later!
             mat = sparse.lil_matrix(op.matrix(self.shape))
             self.lhs[lng_inds, :] = mat[lng_inds, :]
-        else: # Dirichlet BC
+        else:
+            # Dirichlet BC: scalar or array
+            self.lhs[lng_inds, :] = 0
             self.lhs[lng_inds, lng_inds] = 1
 
         if isinstance(value, np.ndarray):
