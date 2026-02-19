@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.13.x
+
+- Implements compact difference schemes
+
 ## Version 0.12.x
 
 - Implements periodic boundary confitions
