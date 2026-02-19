@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import sparse
 
-from findiff.coefs import coefficients, coefficients_non_uni
+from findiff.coefs import coefficients, calc_coefs_non_uni_batched
 from findiff.compact import _CompactDiffUniformPeriodic, _CompactDiffUniformNonPeriodic
 from findiff.grids import EquidistantAxis, GridAxis, NonEquidistantAxis
 from findiff.utils import (
@@ -224,52 +224,96 @@ class _FinDiffNonUniform(_FinDiffBase):
         super().__init__(axis, order)
         self.coords = coords
         self.acc = acc
-        self.coef_list = [
-            coefficients_non_uni(order, self.acc, self.coords, i)
-            for i in range(len(coords))
-        ]
+
+        schemes = calc_coefs_non_uni_batched(order, acc, coords)
+        self.num_bndry = schemes["num_bndry"]
+        self.forward = schemes["forward"]
+        self.backward = schemes["backward"]
+        self.center = schemes["center"]
 
     def __call__(self, y):
         """The core function to take a partial derivative on a non-uniform grid"""
         y = self.guard_valid_target(y)
 
         dim = self.axis
-
+        N = len(self.coords)
         yd = np.zeros_like(y)
-
         ndims = len(y.shape)
-        multi_slice = [slice(None, None)] * ndims
-        ref_multi_slice = [slice(None, None)] * ndims
 
-        for i, _ in enumerate(self.coords):
+        self._apply_nonuni_weights(
+            yd, y, dim, ndims,
+            self.center["coefficients"], self.center["offsets"],
+            slice(self.num_bndry, N - self.num_bndry),
+        )
 
-            coefs = self.coef_list[i]
-            ref_multi_slice[dim] = i
+        self._apply_nonuni_weights(
+            yd, y, dim, ndims,
+            self.forward["coefficients"], self.forward["offsets"],
+            slice(0, self.num_bndry),
+        )
 
-            for off, w in zip(coefs["offsets"], coefs["coefficients"]):
-                multi_slice[dim] = i + off
-                yd[tuple(ref_multi_slice)] += w * y[tuple(multi_slice)]
+        self._apply_nonuni_weights(
+            yd, y, dim, ndims,
+            self.backward["coefficients"], self.backward["offsets"],
+            slice(N - self.num_bndry, N),
+        )
 
         return yd
 
+    def _apply_nonuni_weights(self, yd, y, dim, ndims, weights, offsets, ref_slice):
+        """Apply per-point weights using vectorized slice operations."""
+        n_pts = ref_slice.stop - ref_slice.start
+        if n_pts == 0:
+            return
+
+        ref_multi = [slice(None)] * ndims
+        ref_multi[dim] = ref_slice
+
+        for j_idx, off in enumerate(offsets):
+            off_slice = slice(ref_slice.start + int(off), ref_slice.stop + int(off))
+            off_multi = [slice(None)] * ndims
+            off_multi[dim] = off_slice
+
+            w = weights[:, j_idx]
+            w_shape = [1] * ndims
+            w_shape[dim] = n_pts
+            yd[tuple(ref_multi)] += w.reshape(w_shape) * y[tuple(off_multi)]
+
     def write_matrix_entries(self, mat, shape):
+        long_indices_nd = get_long_indices_for_all_grid_points_as_ndarray(shape)
+        N = len(self.coords)
+        ndims = len(shape)
 
-        coords = self.coords
+        schemes = [
+            (self.forward, slice(0, self.num_bndry)),
+            (self.center, slice(self.num_bndry, N - self.num_bndry)),
+            (self.backward, slice(N - self.num_bndry, N)),
+        ]
 
-        short_inds = get_list_of_multiindex_tuples(shape)
+        for scheme, axis_slice in schemes:
+            n_axis_pts = axis_slice.stop - axis_slice.start
+            if n_axis_pts == 0:
+                continue
 
-        coef_dicts = []
-        for i in range(len(coords)):
-            coef_dicts.append(coefficients_non_uni(self.order, self.acc, coords, i))
+            src_multi = [slice(None)] * ndims
+            src_multi[self.axis] = axis_slice
+            Is = long_indices_nd[tuple(src_multi)].reshape(-1)
 
-        long_inds = get_long_indices_for_all_grid_points_as_ndarray(shape)
-        for base_ind_long, base_ind_short in enumerate(short_inds):
-            cd = coef_dicts[base_ind_short[self.axis]]
-            cs, os = cd["coefficients"], cd["offsets"]
-            for c, o in zip(cs, os):
-                off_short = np.zeros(len(shape), dtype=int)
-                off_short[self.axis] = int(o)
-                off_ind_short = np.array(base_ind_short, dtype=int) + off_short
-                off_long = long_inds[tuple(off_ind_short)]
+            selected_shape = list(shape)
+            selected_shape[self.axis] = n_axis_pts
 
-                mat[base_ind_long, off_long] += c
+            for j_idx, o in enumerate(scheme["offsets"]):
+                tgt_multi = [slice(None)] * ndims
+                tgt_multi[self.axis] = slice(
+                    axis_slice.start + int(o), axis_slice.stop + int(o)
+                )
+                Js = long_indices_nd[tuple(tgt_multi)].reshape(-1)
+
+                w = scheme["coefficients"][:, j_idx]
+                w_shape = [1] * ndims
+                w_shape[self.axis] = n_axis_pts
+                w_broadcast = np.broadcast_to(
+                    w.reshape(w_shape), selected_shape
+                ).reshape(-1)
+
+                mat[Is, Js] = w_broadcast

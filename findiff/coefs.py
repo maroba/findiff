@@ -202,6 +202,94 @@ def coefficients_non_uni(deriv, acc, coords, idx):
     return ret
 
 
+def calc_coefs_non_uni_batched(deriv, acc, coords):
+    """Compute FD coefficients for all points on a non-uniform grid using batched linear algebra.
+
+    Instead of solving one linear system per grid point, this groups points by stencil type
+    (forward/central/backward) and solves all systems in each group with a single batched
+    ``np.linalg.solve`` call.
+
+    :param deriv: int > 0: The derivative order.
+    :param acc:  even int > 0: The accuracy order.
+    :param coords: 1D numpy.ndarray: the coordinates of the axis.
+    :return: dict with 'forward', 'backward', 'center' keys plus 'num_bndry'.
+             Each scheme dict contains 'coefficients' (2D array) and 'offsets' (1D array).
+    """
+    _validate_deriv(deriv)
+    _validate_acc(acc)
+
+    num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
+    num_side = num_central // 2
+    num_coef = num_central + 1 if deriv % 2 == 0 else num_central
+
+    N = len(coords)
+
+    fwd_indices = np.arange(min(num_side, N))
+    fwd_weights = _solve_non_uni_batched(coords, fwd_indices, 0, num_coef - 1, deriv)
+
+    bwd_start = max(num_side, N - num_side)
+    bwd_indices = np.arange(bwd_start, N)
+    bwd_weights = _solve_non_uni_batched(coords, bwd_indices, num_coef - 1, 0, deriv)
+
+    ctr_indices = np.arange(num_side, max(num_side, N - num_side))
+    ctr_weights = _solve_non_uni_batched(coords, ctr_indices, num_side, num_side, deriv)
+
+    return {
+        "forward": {
+            "coefficients": fwd_weights,
+            "offsets": np.arange(num_coef),
+        },
+        "backward": {
+            "coefficients": bwd_weights,
+            "offsets": np.arange(-num_coef + 1, 1),
+        },
+        "center": {
+            "coefficients": ctr_weights,
+            "offsets": np.arange(-num_side, num_side + 1),
+        },
+        "num_bndry": num_side,
+    }
+
+
+def _solve_non_uni_batched(coords, indices, p, q, deriv):
+    """Solve for FD coefficients for multiple points with the same stencil structure.
+
+    Builds all Vandermonde-like matrices at once and calls ``np.linalg.solve``
+    with a 3-D array of matrices and a 2-D array of right-hand sides.
+
+    :param coords: 1D coordinate array.
+    :param indices: 1D integer array of grid-point indices to compute for.
+    :param p: number of stencil points to the left.
+    :param q: number of stencil points to the right.
+    :param deriv: derivative order.
+    :return: 2D array of shape (len(indices), stencil_size).
+    """
+    n = len(indices)
+    stencil_size = p + q + 1
+
+    if n == 0:
+        return np.empty((0, stencil_size))
+
+    j_offsets = np.arange(-p, q + 1)
+
+    # Coordinate differences: shape (n, stencil_size)
+    idx_matrix = indices[:, None] + j_offsets[None, :]
+    coord_diffs = coords[idx_matrix] - coords[indices, None]
+
+    # Build Vandermonde-like matrices: shape (n, stencil_size, stencil_size)
+    # matrices[i, row, col] = coord_diffs[i, col] ** row
+    powers = np.arange(stencil_size)
+    matrices = coord_diffs[:, None, :] ** powers[None, :, None]
+
+    # Build RHS: only position `deriv` is non-zero (= deriv!)
+    rhs = _build_rhs(list(j_offsets), deriv, alphas={0: 1})
+    # np.linalg.solve with 3D A expects b to have shape (..., m, k), not (..., m)
+    rhs_col = rhs[:, np.newaxis]  # (stencil_size, 1)
+    rhs_batch = np.broadcast_to(rhs_col, (n, stencil_size, 1)).copy()
+
+    return np.linalg.solve(matrices, rhs_batch)[:, :, 0]
+
+
 def vandermonde_matrix(values):
     A = [([1 for _ in values])]
     for i in range(1, len(values)):
