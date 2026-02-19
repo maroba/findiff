@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://img.shields.io/pypi/v/findiff.png?style=flat-square&color=brightgreen)
 ![build](https://github.com/maroba/findiff/actions/workflows/check.yml/badge.svg)
 ![Coverage](https://img.shields.io/codecov/c/github/maroba/findiff/master.svg)
-[![Doc Status](https://readthedocs.org/projects/findiff/badge/?version=latest)](https://findiff.readthedocs.io/en/latest/index.html)
+[![Doc Status](https://github.com/maroba/findiff/actions/workflows/docs.yml/badge.svg)](https://maroba.github.io/findiff/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/findiff.svg)]()
 [![Downloads](https://static.pepy.tech/personalized-badge/findiff?period=total&units=international_system&left_color=black&right_color=blue&left_text=Downloads)](https://pepy.tech/project/findiff)
 
@@ -31,7 +31,7 @@ pip install --upgrade findiff
 
 ## Documentation and Examples
 
-You can find the documentation of the code including examples of application at https://findiff.readthedocs.io/en/stable/.
+You can find the documentation of the code including examples of application at https://maroba.github.io/findiff/.
 
 ## Taking Derivatives
 
@@ -110,7 +110,7 @@ d_dx = Diff(0)
 d_dx.set_grid({0: {"h": dx, "periodic": True}})
 ```
 
-More examples can be found [here](https://findiff.readthedocs.io/en/latest/source/examples.html) and in [this blog](https://medium.com/p/7e54132a73a3).
+More examples can be found [here](https://maroba.github.io/findiff/examples.html) and in [this blog](https://medium.com/p/7e54132a73a3).
 
 ### Accuracy Control
 
@@ -172,7 +172,7 @@ d2_dx2 = d_dx ** 2
 
 Non-periodic grids are handled automatically — findiff uses one-sided compact stencils near the
 boundaries. The `matrix()` method is also supported. For more details, see the
-[compact finite differences documentation](https://findiff.readthedocs.io/en/latest/source/compact.html).
+[compact finite differences documentation](https://maroba.github.io/findiff/compact.html).
 
 ## Finite Difference Coefficients
 
