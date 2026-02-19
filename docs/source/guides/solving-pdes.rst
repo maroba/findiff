@@ -108,3 +108,44 @@ Alternatively, you can construct the Robin operator yourself using
 
     robin_op = alpha * Identity() + beta * Diff(0, dx)
     bc[-1] = robin_op, g
+
+
+Eigenvalue Problems
+--------------------
+
+Differential operators can solve eigenvalue problems of the form
+:math:`L\,u = \lambda\,u` using the ``eigsh`` method (for symmetric
+operators) or ``eigs`` (for general operators). These are thin wrappers
+around ``scipy.sparse.linalg.eigsh`` / ``eigs``.
+
+**Example: vibration modes of a string**
+
+The eigenvalue problem :math:`u'' = \lambda\,u` on :math:`[0, \pi]` with
+:math:`u(0) = u(\pi) = 0` has exact eigenvalues :math:`\lambda_n = -n^2`:
+
+.. code:: python
+
+    x = np.linspace(0, np.pi, 200)
+    dx = x[1] - x[0]
+    L = Diff(0, dx)**2
+
+    bc = BoundaryConditions(x.shape)
+    bc[0] = 0
+    bc[-1] = 0
+
+    eigenvalues, eigenvectors = L.eigsh(x.shape, k=5, which='SM', bc=bc)
+    # eigenvalues ≈ [-1, -4, -9, -16, -25]
+
+Pass ``bc`` to eliminate boundary degrees of freedom (homogeneous
+Dirichlet). Eigenvectors are returned with shape ``(*grid_shape, k)``
+— access the *i*-th mode as ``eigenvectors[..., i]``.
+
+For generalized eigenvalue problems :math:`L\,u = \lambda\,M\,u`, pass a
+second operator via the ``M`` parameter:
+
+.. code:: python
+
+    eigenvalues, eigenvectors = L.eigsh(shape, k=5, which='SM', bc=bc, M=M_op)
+
+See the :doc:`matrix-representation` guide for a more detailed example
+with the Schrodinger equation.

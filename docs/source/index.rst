@@ -21,7 +21,8 @@ Features
 - Fully vectorized for speed
 - Calculate raw finite difference coefficients for any order and accuracy
 - Generate matrix representations of arbitrary linear differential operators
-- Solve partial differential equations with Dirichlet or Neumann boundary conditions
+- Solve partial differential equations with Dirichlet, Neumann or Robin boundary conditions
+- Solve eigenvalue problems (e.g. Schrodinger equation, vibration modes)
 - Generate differential operators for arbitrary stencils
 - Symbolic representation of finite difference schemes
 - Periodic boundary conditions for differential operators and PDEs

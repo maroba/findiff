@@ -100,6 +100,161 @@ class Expression(ABC):
         for child in self.children:
             child.set_accuracy(acc)
 
+    def _eliminate_boundary_dofs(self, mat, bc):
+        """Extract the interior submatrix by removing boundary DOFs.
+
+        Parameters
+        ----------
+        mat : scipy.sparse matrix of shape (N, N)
+        bc : BoundaryConditions
+
+        Returns
+        -------
+        interior_mat : scipy.sparse.csr_matrix
+        interior_inds : ndarray of int
+        """
+        N = mat.shape[0]
+        boundary_inds = np.unique(list(bc.row_inds()))
+        interior_mask = np.ones(N, dtype=bool)
+        interior_mask[boundary_inds] = False
+        interior_inds = np.where(interior_mask)[0]
+        return sparse.csr_matrix(mat[np.ix_(interior_inds, interior_inds)]), interior_inds
+
+    def _reconstruct_eigenvectors(self, vecs, interior_inds, N, shape, k):
+        """Pad interior eigenvectors with zeros at boundary DOFs and reshape."""
+        full = np.zeros((N, k), dtype=vecs.dtype)
+        full[interior_inds, :] = vecs
+        return full.reshape(*shape, k)
+
+    def eigs(self, shape, k=6, which='SR', sigma=None, bc=None, M=None, **kwargs):
+        r"""Compute k eigenvalues and eigenvectors of this operator.
+
+        Solves :math:`L u = \lambda u` (standard) or
+        :math:`L u = \lambda M u` (generalized) using
+        ``scipy.sparse.linalg.eigs`` for general (non-symmetric) matrices.
+
+        Parameters
+        ----------
+        shape : tuple of ints
+            Grid shape.
+        k : int
+            Number of eigenvalues to compute.
+        which : str
+            Which eigenvalues: 'SR' (smallest real), 'LR', 'SM', 'LM'.
+        sigma : float or None
+            Shift for shift-invert mode.
+        bc : BoundaryConditions or None
+            Boundary DOFs are eliminated (homogeneous Dirichlet).
+        M : Expression or None
+            RHS operator for generalized problem.
+        kwargs
+            Passed to ``scipy.sparse.linalg.eigs``.
+
+        Returns
+        -------
+        eigenvalues : ndarray of shape (k,)
+            Sorted by real part ascending.
+        eigenvectors : ndarray
+            Shape ``(\\*shape, k)``.  ``eigenvectors[..., i]`` is the
+            *i*-th eigenvector on the grid.
+        """
+        from scipy.sparse.linalg import eigs as _eigs
+
+        A = self.matrix(shape)
+        B = M.matrix(shape) if M is not None else None
+
+        if bc is not None:
+            A, interior_inds = self._eliminate_boundary_dofs(A, bc)
+            if B is not None:
+                B = self._eliminate_boundary_dofs(B, bc)[0]
+
+        eig_kwargs = dict(k=k, which=which, **kwargs)
+        if sigma is not None:
+            eig_kwargs['sigma'] = sigma
+        if B is not None:
+            eig_kwargs['M'] = B
+
+        eigenvalues, eigenvectors = _eigs(A, **eig_kwargs)
+
+        idx = np.argsort(eigenvalues.real)
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
+
+        N = np.prod(shape)
+        if bc is not None:
+            eigenvectors = self._reconstruct_eigenvectors(
+                eigenvectors, interior_inds, N, shape, k
+            )
+        else:
+            eigenvectors = eigenvectors.reshape(*shape, k)
+
+        return eigenvalues, eigenvectors
+
+    def eigsh(self, shape, k=6, which='SM', sigma=None, bc=None, M=None, **kwargs):
+        r"""Compute k eigenvalues and eigenvectors of this symmetric operator.
+
+        Like :meth:`eigs`, but uses ``scipy.sparse.linalg.eigsh`` which is
+        more efficient for symmetric/Hermitian operators (e.g. Laplacian).
+        Eigenvalues are guaranteed real.
+
+        Parameters
+        ----------
+        shape : tuple of ints
+            Grid shape.
+        k : int
+            Number of eigenvalues to compute.
+        which : str
+            Which eigenvalues: 'SM' (smallest magnitude), 'LM', 'SA'
+            (smallest algebraic), 'LA', 'BE'.
+        sigma : float or None
+            Shift for shift-invert mode.
+        bc : BoundaryConditions or None
+            Boundary DOFs are eliminated (homogeneous Dirichlet).
+        M : Expression or None
+            RHS operator for generalized problem.
+        kwargs
+            Passed to ``scipy.sparse.linalg.eigsh``.
+
+        Returns
+        -------
+        eigenvalues : ndarray of shape (k,)
+            Real eigenvalues sorted ascending.
+        eigenvectors : ndarray
+            Shape ``(\\*shape, k)``.  ``eigenvectors[..., i]`` is the
+            *i*-th eigenvector on the grid.
+        """
+        from scipy.sparse.linalg import eigsh as _eigsh
+
+        A = self.matrix(shape)
+        B = M.matrix(shape) if M is not None else None
+
+        if bc is not None:
+            A, interior_inds = self._eliminate_boundary_dofs(A, bc)
+            if B is not None:
+                B = self._eliminate_boundary_dofs(B, bc)[0]
+
+        eig_kwargs = dict(k=k, which=which, **kwargs)
+        if sigma is not None:
+            eig_kwargs['sigma'] = sigma
+        if B is not None:
+            eig_kwargs['M'] = B
+
+        eigenvalues, eigenvectors = _eigsh(A, **eig_kwargs)
+
+        idx = np.argsort(eigenvalues)
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
+
+        N = np.prod(shape)
+        if bc is not None:
+            eigenvectors = self._reconstruct_eigenvectors(
+                eigenvectors, interior_inds, N, shape, k
+            )
+        else:
+            eigenvectors = eigenvectors.reshape(*shape, k)
+
+        return eigenvalues, eigenvectors
+
 
 class FieldOperator(Expression):
     """An operator that multiplies an array pointwise."""

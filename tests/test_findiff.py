@@ -3,7 +3,7 @@ import pytest
 import warnings
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-from findiff import FinDiff, Coef, Identity
+from findiff import FinDiff, Coef, Identity, BoundaryConditions
 
 
 class TestFinDiffDeprecationWarning:
@@ -369,27 +369,23 @@ class TestFinDiff:
         expected = L(u).reshape(-1)
         np.testing.assert_array_almost_equal(expected, actual)
 
-    @pytest.mark.skip
     def test_eigs(self):
-
-        shape = (8,)
-        x = np.linspace(-10, 10, shape[0])
+        """Quantum harmonic oscillator eigenvalues via legacy API."""
+        shape = (200,)
+        x = np.linspace(-8, 8, shape[0])
         dx = x[1] - x[0]
 
-        hbar = 1
-        m = 1
-        omega = 1
-        T = Coef(-(hbar**2) / (2 * m)) * FinDiff(0, dx, 2)
-        V = Coef(0.5 * omega * x**2) * Identity()
+        T = Coef(-0.5) * FinDiff(0, dx, 2)
+        V = Coef(0.5 * x**2) * Identity()
         H = T + V
-        print("\n", T.matrix(shape).toarray())
-        print("\n", V.matrix(shape).toarray())
-        print("\n", H.matrix(shape).toarray())
 
-        print(H.matrix(shape).toarray())
-        vals, vecs = H.eigs(shape)
-        print(vals)
-        print(vecs)
+        bc = BoundaryConditions(shape)
+        bc[0] = 0
+        bc[-1] = 0
+
+        vals, vecs = H.eigsh(shape, k=4, which='SA', bc=bc)
+        expected = np.array([0.5, 1.5, 2.5, 3.5])
+        np.testing.assert_array_almost_equal(vals, expected, decimal=1)
 
 
 class TestFinDiffNonUniform:

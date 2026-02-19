@@ -199,6 +199,9 @@ yields
 
 This also works for general differential operators.
 
+Operators also have ``eigs`` and ``eigsh`` methods for solving eigenvalue
+problems directly — see the :doc:`../guides/matrix-representation` guide.
+
 
 Stencils
 ========
