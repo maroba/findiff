@@ -15,6 +15,7 @@ Practical how-to guides showing *findiff* in action for various use cases.
     matrix-representation
     compact-fd
     solving-pdes
+    time-dependent-pdes
     boundary-conditions
     error-estimation
     cookbook

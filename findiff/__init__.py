@@ -27,6 +27,7 @@ from .coefs import coefficients
 from .compact import CompactScheme
 from .compatible import Coef, Coefficient, FinDiff, Id
 from .interface import Diff
+from .ivp import MOLSolution, TimeDependentPDE
 from .operators import ErrorEstimate, Identity
 from .pde import PDE, BoundaryConditions
 from .symbolic import SymbolicDiff, SymbolicMesh
@@ -42,8 +43,10 @@ __all__ = [
     "Id",
     "Diff",
     "Identity",
+    "MOLSolution",
     "PDE",
     "BoundaryConditions",
+    "TimeDependentPDE",
     "SymbolicDiff",
     "SymbolicMesh",
     "Curl",

@@ -11,6 +11,7 @@ Complete reference for all public modules in *findiff*.
     coefs
     stencils
     pde
+    ivp
     compact
     vector
     symbolic

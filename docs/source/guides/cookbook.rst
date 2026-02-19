@@ -224,3 +224,68 @@ use less memory than the default direct solver:
 
     pde = PDE(L, f, bc)
     u = pde.solve(solver='cg', preconditioner='ilu', tol=1e-10)
+
+
+1D Heat Equation (Time-Dependent)
+------------------------------------
+
+Solve :math:`u_t = D\, u_{xx}` on :math:`[0, 1]` with
+:math:`u_0 = \sin(\pi x)` and homogeneous Dirichlet conditions:
+
+.. code:: python
+
+    import numpy as np
+    from findiff import Diff, TimeDependentPDE, BoundaryConditions
+
+    nx = 101
+    x = np.linspace(0, 1, nx)
+    dx = x[1] - x[0]
+    D = 0.01
+
+    L = D * Diff(0, dx)**2
+    u0 = np.sin(np.pi * x)
+
+    bc = BoundaryConditions((nx,))
+    bc[0] = 0
+    bc[-1] = 0
+
+    t = np.linspace(0, 1, 500)
+    u_final = TimeDependentPDE(L, u0, bc, t).solve()
+
+    u_exact = np.sin(np.pi * x) * np.exp(-D * np.pi**2 * t[-1])
+    print("Max error:", np.max(np.abs(u_final - u_exact)))
+
+
+2D Diffusion (Time-Dependent)
+-------------------------------
+
+Solve :math:`u_t = D\,(\nabla^2 u)` on a unit square with zero
+boundary conditions:
+
+.. code:: python
+
+    import numpy as np
+    from findiff import Diff, TimeDependentPDE, BoundaryConditions
+
+    nx, ny = 51, 51
+    x = np.linspace(0, 1, nx)
+    y = np.linspace(0, 1, ny)
+    dx, dy = x[1] - x[0], y[1] - y[0]
+    X, Y = np.meshgrid(x, y, indexing='ij')
+
+    D = 0.01
+    L = D * (Diff(0, dx)**2 + Diff(1, dy)**2)
+    u0 = np.sin(np.pi * X) * np.sin(np.pi * Y)
+
+    bc = BoundaryConditions((nx, ny))
+    bc[0, :] = 0
+    bc[-1, :] = 0
+    bc[:, 0] = 0
+    bc[:, -1] = 0
+
+    t = np.linspace(0, 0.5, 200)
+    u_final = TimeDependentPDE(L, u0, bc, t).solve()
+
+    u_exact = (np.sin(np.pi * X) * np.sin(np.pi * Y)
+               * np.exp(-2 * D * np.pi**2 * t[-1]))
+    print("Max error:", np.max(np.abs(u_final - u_exact)))

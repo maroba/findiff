@@ -28,6 +28,7 @@ Features
 - Periodic boundary conditions for differential operators and PDEs
 - Compact (implicit) finite differences with spectral-like resolution
 - Estimate truncation error by comparing accuracy orders
+- Solve time-dependent PDEs with the Method of Lines (Forward Euler, RK4, Backward Euler, Crank-Nicolson)
 
 .. versionadded:: 0.11
    Comfortable new API via ``Diff`` (the old ``FinDiff`` API remains available)
@@ -40,6 +41,9 @@ Features
 
 .. versionadded:: 0.14
    Error estimation via accuracy order comparison
+
+.. versionadded:: 0.15
+   Time-dependent PDE solving via Method of Lines
 
 
 Content

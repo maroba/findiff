@@ -26,10 +26,12 @@ any number of dimensions.
 * Generate differential operators for arbitrary stencils
 * Symbolic representation of finite difference schemes
 * Estimate truncation error by comparing accuracy orders
+* Solve time-dependent PDEs via Method of Lines (Forward Euler, RK4, Backward Euler, Crank-Nicolson)
 * **New in version 0.11**: More comfortable API (keeping the old API available)
 * **New in version 0.12**: Periodic boundary conditions for differential operators and PDEs.
 * **New in version 0.13**: Compact (implicit) finite differences with spectral-like resolution.
 * **New in version 0.14**: Error estimation via accuracy order comparison.
+* **New in version 0.15**: Time-dependent PDE solving via Method of Lines. (to be released)
 
 ## Installation
 
