@@ -2,6 +2,8 @@ import numbers
 
 import numpy as np
 
+from findiff.backend import is_array
+
 
 class GridAxis:
 
@@ -80,5 +82,5 @@ def make_axis(dim, config_or_axis, periodic=False):
         return config_or_axis
     if isinstance(config_or_axis, numbers.Number):
         return EquidistantAxis(dim, spacing=config_or_axis, periodic=periodic)
-    elif isinstance(config_or_axis, np.ndarray):
-        return NonEquidistantAxis(dim, coords=config_or_axis, periodic=periodic)
+    elif is_array(config_or_axis):
+        return NonEquidistantAxis(dim, coords=np.asarray(config_or_axis), periodic=periodic)

@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from .backend import get_namespace, is_array
 from .compatible import FinDiff
 from .interface import Diff as _Diff
 
@@ -91,18 +92,19 @@ class Gradient(VectorOperator):
 
         """
 
-        if not isinstance(f, np.ndarray):
-            raise TypeError("Function to differentiate must be numpy.ndarray")
+        if not is_array(f):
+            raise TypeError("Function to differentiate must be an array")
 
         if len(f.shape) != self.ndims:
             raise ValueError("Gradients can only be applied to scalar functions")
 
+        xp = get_namespace(f)
         result = []
         for k in range(self.ndims):
             d_dxk = self.components[k]
             result.append(d_dxk(f, acc=self.acc))
 
-        return np.array(result)
+        return xp.stack(result)
 
 
 class Divergence(VectorOperator):
@@ -142,9 +144,9 @@ class Divergence(VectorOperator):
                the divergence, which is a scalar function of N variables, so it's array dimension has N axes
 
         """
-        if not isinstance(f, np.ndarray) and not isinstance(f, list):
+        if not is_array(f) and not isinstance(f, list):
             raise TypeError(
-                "Function to differentiate must be numpy.ndarray or list of numpy.ndarrays"
+                "Function to differentiate must be an array or list of arrays"
             )
 
         if len(f.shape) != self.ndims + 1 and f.shape[0] != self.ndims:
@@ -152,10 +154,11 @@ class Divergence(VectorOperator):
                 "Divergence can only be applied to vector functions of the same dimension"
             )
 
-        result = np.zeros(f.shape[1:])
+        xp = get_namespace(f)
+        result = xp.zeros(f.shape[1:])
 
         for k in range(self.ndims):
-            result += self.components[k](f[k], acc=self.acc)
+            result = result + self.components[k](f[k], acc=self.acc)
 
         return result
 
@@ -209,9 +212,9 @@ class Curl(VectorOperator):
 
         """
 
-        if not isinstance(f, np.ndarray) and not isinstance(f, list):
+        if not is_array(f) and not isinstance(f, list):
             raise TypeError(
-                "Function to differentiate must be numpy.ndarray or list of numpy.ndarrays"
+                "Function to differentiate must be an array or list of arrays"
             )
 
         if self.ndims == 2:
@@ -239,19 +242,18 @@ class Curl(VectorOperator):
                 "In 3D, curl expects a vector function with shape (3, nx, ny, nz)"
             )
 
-        result = np.zeros(f.shape)
-
-        result[0] += self.components[1](f[2], acc=self.acc) - self.components[2](
+        xp = get_namespace(f)
+        comp0 = self.components[1](f[2], acc=self.acc) - self.components[2](
             f[1], acc=self.acc
         )
-        result[1] += self.components[2](f[0], acc=self.acc) - self.components[0](
+        comp1 = self.components[2](f[0], acc=self.acc) - self.components[0](
             f[2], acc=self.acc
         )
-        result[2] += self.components[0](f[1], acc=self.acc) - self.components[1](
+        comp2 = self.components[0](f[1], acc=self.acc) - self.components[1](
             f[0], acc=self.acc
         )
 
-        return result
+        return xp.stack([comp0, comp1, comp2])
 
 
 class Laplacian:
@@ -297,10 +299,11 @@ class Laplacian:
                the Laplacian of f, which is a scalar function of N variables, so it's array dimension has N axes
 
         """
-        laplace_f = np.zeros_like(f)
+        xp = get_namespace(f)
+        laplace_f = xp.zeros_like(f)
 
         for part in self._parts:
-            laplace_f += part(f)
+            laplace_f = laplace_f + part(f)
 
         return laplace_f
 

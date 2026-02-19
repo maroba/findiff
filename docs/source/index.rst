@@ -19,6 +19,7 @@ Features
 - Can handle uniform and non-uniform grids
 - Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 - Fully vectorized for speed
+- GPU / JAX / CuPy support for operator application — combine with ``jax.jit`` for acceleration
 - Calculate raw finite difference coefficients for any order and accuracy
 - Generate matrix representations of arbitrary linear differential operators
 - Solve partial differential equations with Dirichlet, Neumann or Robin boundary conditions
@@ -44,6 +45,9 @@ Features
 
 .. versionadded:: 0.15
    Time-dependent PDE solving via Method of Lines
+
+.. versionadded:: 0.16
+   GPU / JAX / CuPy backend support for operator application
 
 
 Content

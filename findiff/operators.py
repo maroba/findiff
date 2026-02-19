@@ -5,6 +5,7 @@ from collections import namedtuple
 import numpy as np
 from scipy import sparse
 
+from findiff.backend import get_namespace, is_array
 from findiff.compact import CompactScheme
 from findiff.findiff import build_differentiator
 from findiff.grids import GridAxis, make_grid
@@ -157,7 +158,8 @@ class Expression(ABC):
         # Restore operator to its original accuracy
         self.set_accuracy(original_acc)
 
-        error = np.abs(result_low - result_high)
+        xp = get_namespace(result_low)
+        error = xp.abs(result_low - result_high)
         return ErrorEstimate(result_low, error, result_high)
 
     def _has_compact_scheme(self):
@@ -330,21 +332,21 @@ class FieldOperator(Expression):
         self.value = value
 
     def __str__(self):
-        if isinstance(self.value, np.ndarray):
+        if is_array(self.value):
             return "f(x)"
         return str(self.value)
 
     def __call__(self, f, *args, **kwargs):
-        if isinstance(f, (numbers.Number, np.ndarray)):
+        if isinstance(f, numbers.Number) or is_array(f):
             return self.value * f
         return self.value * super().__call__(f, *args, **kwargs)
 
     def matrix(self, shape):
-        if isinstance(self.value, np.ndarray):
-            diag_values = self.value.reshape(-1)
+        if is_array(self.value):
+            diag_values = np.asarray(self.value).reshape(-1)
             return sparse.diags(diag_values)
         elif isinstance(self.value, numbers.Number):
-            siz = np.prod(shape)
+            siz = int(np.prod(shape))
             return sparse.diags(self.value * np.ones(siz))
 
 
@@ -390,9 +392,9 @@ class BinaryOperation(Expression):
 
 class Add(BinaryOperation):
     def __init__(self, left, right):
-        if isinstance(left, (numbers.Number, np.ndarray)):
+        if isinstance(left, numbers.Number) or is_array(left):
             left = FieldOperator(left)
-        if isinstance(right, (numbers.Number, np.ndarray)):
+        if isinstance(right, numbers.Number) or is_array(right):
             right = FieldOperator(right)
         super().__init__()
         self.children = [left, right]
@@ -409,9 +411,9 @@ class Add(BinaryOperation):
 
 class Mul(BinaryOperation):
     def __init__(self, left, right):
-        if isinstance(left, (numbers.Number, np.ndarray)):
+        if isinstance(left, numbers.Number) or is_array(left):
             left = FieldOperator(left)
-        if isinstance(right, (numbers.Number, np.ndarray)):
+        if isinstance(right, numbers.Number) or is_array(right):
             right = FieldOperator(right)
         super().__init__()
         self.children = [left, right]

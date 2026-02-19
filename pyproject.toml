@@ -49,7 +49,8 @@ version = { attr = "findiff.__version__" }
 
 [tool.pytest.ini_options]
 addopts = [
-    "--strict-markers"
+    "--strict-markers",
+    "-m", "not benchmark"
 ]
 testpaths = "tests"
 markers = [
@@ -58,7 +59,8 @@ markers = [
     "periodic: Tests for periodic boundary conditions",
     "invalid_args: Tests for invalid argument handling",
     "default_args: Tests for default argument handling",
-    "grid_spec: Marker to construct grid data by fixtures"
+    "grid_spec: Marker to construct grid data by fixtures",
+    "benchmark: Performance benchmarks (deselected by default, run with -m benchmark)"
 ]
 
 [tool.coverage]

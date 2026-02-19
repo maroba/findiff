@@ -18,4 +18,5 @@ Practical how-to guides showing *findiff* in action for various use cases.
     time-dependent-pdes
     boundary-conditions
     error-estimation
+    gpu-backends
     cookbook

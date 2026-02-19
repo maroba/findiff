@@ -17,6 +17,7 @@ any number of dimensions.
 * Can handle uniform and non-uniform grids
 * Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 * Fully vectorized for speed
+* **GPU / JAX / CuPy support** — pass JAX or CuPy arrays directly, combine with `jax.jit` for acceleration
 * Standard operators from vector calculus: gradient, divergence, curl, Laplacian
 * Matrix representations of arbitrary linear differential operators
 * Solve partial differential equations with Dirichlet, Neumann or Robin boundary conditions
@@ -31,12 +32,25 @@ any number of dimensions.
 * **New in version 0.12**: Periodic boundary conditions for differential operators and PDEs.
 * **New in version 0.13**: Compact (implicit) finite differences with spectral-like resolution.
 * **New in version 0.14**: Error estimation via accuracy order comparison.
-* **New in version 0.15**: Time-dependent PDE solving via Method of Lines. (to be released)
+* **New in version 0.15**: Time-dependent PDE solving via Method of Lines. GPU / JAX / CuPy backend support for operator application. (to be released)
 
 ## Installation
 
 ```
 pip install --upgrade findiff
+```
+
+For **GPU / JAX** support, install JAX separately (findiff detects it automatically):
+
+```
+pip install jax          # CPU-only
+pip install jax[cuda12]  # NVIDIA GPU
+```
+
+For **CuPy** support:
+
+```
+pip install cupy-cuda12x
 ```
 
 ## Documentation and Examples
@@ -45,8 +59,8 @@ You can find the documentation of the code including examples of application at 
 
 ## Taking Derivatives
 
-*findiff* allows to easily define derivative operators that you can apply to *numpy* arrays of 
-any dimension. 
+*findiff* allows to easily define derivative operators that you can apply to *numpy* arrays of
+any dimension. JAX and CuPy arrays work too — see [GPU / JAX Support](#gpu--jax-support) below.
 
 Consider the simple 1D case of a equidistant grid
 with a first derivative $\displaystyle \frac{\partial}{\partial x}$ along the only axis (0):
@@ -121,6 +135,42 @@ d_dx.set_grid({0: {"h": dx, "periodic": True}})
 ```
 
 More examples can be found in the [documentation](https://maroba.github.io/findiff/) and in [this blog](https://medium.com/p/7e54132a73a3).
+
+### GPU / JAX Support
+
+All operators (`Diff`, `Gradient`, `Divergence`, `Curl`, `Laplacian`) accept JAX and CuPy arrays
+directly. Just pass the array — findiff detects the backend automatically:
+
+```python
+import jax
+import jax.numpy as jnp
+from findiff import Diff, Laplacian
+
+jax.config.update("jax_enable_x64", True)
+
+x = jnp.linspace(0, 2 * jnp.pi, 1000)
+dx = x[1] - x[0]
+f = jnp.sin(x)
+
+d_dx = Diff(0, dx)
+df_dx = d_dx(f)  # returns a JAX array
+```
+
+For best performance, wrap operators with `jax.jit` to fuse all slice operations into a single
+compiled kernel:
+
+```python
+d_dx_jit = jax.jit(d_dx)
+df_dx = d_dx_jit(f)  # first call compiles, subsequent calls are fast
+
+# Works for any operator, including higher-order and vector calculus:
+lap = Laplacian(h=[dx, dy, dz])
+lap_jit = jax.jit(lap)
+result = lap_jit(f_3d)
+```
+
+> **Note:** The matrix-based path (`.matrix()`, PDE solving, eigenvalue problems) remains
+> NumPy/SciPy only. GPU support applies to the operator application path (`operator(array)`).
 
 ### Accuracy Control
 

@@ -9,6 +9,19 @@ Installation
 
     pip install --upgrade findiff
 
+For **GPU / JAX** support, install JAX separately (findiff detects it automatically):
+
+.. code-block:: shell
+
+    pip install jax          # CPU-only
+    pip install jax[cuda12]  # NVIDIA GPU
+
+For **CuPy** support:
+
+.. code-block:: shell
+
+    pip install cupy-cuda12x
+
 
 Taking Derivatives
 ==================
@@ -53,7 +66,7 @@ Let's initialize a one-dimensional array ``f`` with some values, for example:
     f = np.sin(x)
 
 ``Diff`` objects behave like operators — call them on a *numpy* ``ndarray``
-of any shape:
+(or a JAX / CuPy array) of any shape:
 
 .. code-block:: python
 
