@@ -36,19 +36,58 @@ class PDE:
         self.bcs = bcs
         self._L = None
 
-    def solve(self):
+    def solve(self, solver=None, **solver_options):
         """
         Solves the PDE.
 
+        Parameters
+        ----------
+        solver : str, callable, or None
+            Which linear solver to use.
+
+            - ``None`` or ``'direct'``: use ``scipy.sparse.linalg.spsolve``
+              (default, backward compatible).
+            - ``'cg'``: Conjugate Gradient (requires symmetric positive
+              definite system).
+            - ``'gmres'``: Generalized Minimal Residual (general systems).
+            - ``'bicgstab'``: BiConjugate Gradient Stabilized (general
+              non-symmetric systems).
+            - ``'lgmres'``: LGMRES variant of GMRES.
+            - ``'minres'``: Minimal Residual (symmetric indefinite systems).
+            - A callable with signature ``f(A, b, **kw) -> x`` or
+              ``f(A, b, **kw) -> (x, info)``.  If the callable returns a
+              2-tuple the second element is treated as a convergence flag
+              (0 = success).
+
+        **solver_options
+            Additional keyword arguments passed to the iterative solver.
+            Common options include:
+
+            - ``rtol`` (float): Relative convergence tolerance.
+            - ``maxiter`` (int): Maximum number of iterations.
+            - ``x0`` (ndarray): Initial guess for the solution.
+            - ``preconditioner`` (str or LinearOperator): If ``'ilu'``,
+              an incomplete LU preconditioner is built automatically.
+              Otherwise pass a ``scipy.sparse.linalg.LinearOperator``
+              to use as the preconditioner ``M``.
+
         Returns
         -------
-        out: numpy.ndarray
+        out : numpy.ndarray
             Array with the solution of the PDE.
+
+        Raises
+        ------
+        RuntimeError
+            If an iterative solver fails to converge.
+        ValueError
+            If an unknown solver name is given or if solver_options are
+            passed with the direct solver.
         """
 
         shape = self.bcs.shape
         if self._L is None:
-            self._L = self.lhs.matrix(shape) # expensive operation, so cache it
+            self._L = self.lhs.matrix(shape)  # expensive operation, so cache it
 
         L = sparse.lil_matrix(self._L)
         f = self.rhs.reshape(-1, 1)
@@ -59,7 +98,87 @@ class PDE:
         f[nz] = np.array(self.bcs.rhs[nz].toarray()).reshape(-1, 1)
 
         L = sparse.csr_matrix(L)
-        return spsolve(L, f).reshape(shape)
+
+        # Direct solver (default, backward compatible)
+        if solver is None or solver == 'direct':
+            if solver_options:
+                raise ValueError(
+                    "solver_options are not supported with the direct solver"
+                )
+            return spsolve(L, f).reshape(shape)
+
+        # Iterative solvers need f as a 1D array
+        f_flat = np.asarray(f).ravel()
+
+        # Handle preconditioner shorthand
+        preconditioner = solver_options.pop('preconditioner', None)
+        if preconditioner == 'ilu':
+            from scipy.sparse.linalg import spilu, LinearOperator
+            ilu = spilu(sparse.csc_matrix(L))
+            solver_options['M'] = LinearOperator(L.shape, matvec=ilu.solve)
+        elif preconditioner is not None:
+            solver_options['M'] = preconditioner
+
+        if callable(solver):
+            result = solver(L, f_flat, **solver_options)
+            if isinstance(result, tuple):
+                x, info = result
+                if info != 0:
+                    raise RuntimeError(
+                        f"Custom solver did not converge (info={info})"
+                    )
+            else:
+                x = result
+            return x.reshape(shape)
+
+        if isinstance(solver, str):
+            solve_func = self._get_iterative_solver(solver)
+            x, info = solve_func(L, f_flat, **solver_options)
+            if info > 0:
+                raise RuntimeError(
+                    f"Solver '{solver}' did not converge within "
+                    f"the maximum number of iterations"
+                )
+            elif info < 0:
+                raise RuntimeError(
+                    f"Solver '{solver}' encountered an illegal input "
+                    f"or breakdown (info={info})"
+                )
+            return x.reshape(shape)
+
+        raise ValueError(
+            f"solver must be None, 'direct', a solver name string, "
+            f"or a callable, got {type(solver)}"
+        )
+
+    @staticmethod
+    def _get_iterative_solver(name):
+        """Resolve a solver name to a scipy function.
+
+        Parameters
+        ----------
+        name : str
+
+        Returns
+        -------
+        callable
+        """
+        from scipy.sparse.linalg import (
+            cg, gmres, bicgstab, lgmres, minres,
+        )
+        solvers = {
+            'cg': cg,
+            'gmres': gmres,
+            'bicgstab': bicgstab,
+            'lgmres': lgmres,
+            'minres': minres,
+        }
+        if name not in solvers:
+            raise ValueError(
+                f"Unknown solver '{name}'. "
+                f"Supported: {sorted(solvers.keys())}"
+            )
+        return solvers[name]
 
 
 class BoundaryConditions:

@@ -149,3 +149,81 @@ second operator via the ``M`` parameter:
 
 See the :doc:`matrix-representation` guide for a more detailed example
 with the Schrodinger equation.
+
+
+Iterative Solvers
+------------------
+
+By default, ``PDE.solve()`` uses the direct solver
+``scipy.sparse.linalg.spsolve``.  For large problems (especially in 3D),
+iterative solvers can be more memory-efficient and faster.  Pass the
+``solver`` keyword to select an iterative method:
+
+.. code:: python
+
+    u = pde.solve(solver='gmres')
+
+The following solver names are supported:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 40 45
+
+   * - Name
+     - Method
+     - When to use
+   * - ``'direct'``
+     - ``scipy.sparse.linalg.spsolve``
+     - Default. Reliable for small to medium problems.
+   * - ``'cg'``
+     - Conjugate Gradient
+     - Symmetric positive definite systems only.
+   * - ``'gmres'``
+     - Generalized Minimal Residual
+     - General (non-symmetric) systems. Good default iterative choice.
+   * - ``'bicgstab'``
+     - BiConjugate Gradient Stabilized
+     - General non-symmetric systems.
+   * - ``'lgmres'``
+     - LGMRES
+     - Variant of GMRES with improved convergence in some cases.
+   * - ``'minres'``
+     - Minimal Residual
+     - Symmetric indefinite systems.
+
+**Solver options** such as tolerance, maximum iterations, and initial
+guess are passed as additional keyword arguments:
+
+.. code:: python
+
+    u = pde.solve(solver='gmres', tol=1e-10, maxiter=1000)
+
+    # Provide an initial guess close to the expected solution
+    u = pde.solve(solver='bicgstab', x0=u_previous)
+
+**Preconditioners** can dramatically improve convergence.  Use the
+``preconditioner='ilu'`` shorthand for an incomplete LU factorization:
+
+.. code:: python
+
+    u = pde.solve(solver='gmres', preconditioner='ilu')
+
+Or pass a custom ``scipy.sparse.linalg.LinearOperator``:
+
+.. code:: python
+
+    from scipy.sparse.linalg import LinearOperator
+
+    M = LinearOperator(...)  # your custom preconditioner
+    u = pde.solve(solver='gmres', preconditioner=M)
+
+**Custom solver callables** are also supported.  Any function with
+signature ``f(A, b, **kw) -> x`` or ``f(A, b, **kw) -> (x, info)``
+can be used:
+
+.. code:: python
+
+    from scipy.sparse.linalg import spsolve
+    u = pde.solve(solver=lambda A, b: spsolve(A, b))
+
+If an iterative solver fails to converge, a ``RuntimeError`` is raised.
