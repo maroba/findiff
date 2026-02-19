@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from findiff import FinDiff
+from findiff import Diff
 
 
 def get_started_plot_1():
     x = np.linspace(-np.pi, np.pi, 31)
     dx = x[1] - x[0]
     f = np.sin(x)
-    d_dx = FinDiff(0, dx)
+    d_dx = Diff(0, dx)
     df_dx = d_dx(f)
 
     plt.xlabel('x')

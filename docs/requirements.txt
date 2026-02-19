@@ -1,7 +1,6 @@
 numpy
 scipy
 matplotlib
-sphinxcontrib.bibtex>=2.0
 sphinx_rtd_theme
 ipython
 ipykernel

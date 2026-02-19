@@ -1,4 +1,4 @@
-# <img src="docs/frontpage/findiff_logo.png" width="100px"> findiff
+# <img src="docs/assets/findiff_logo.png" width="100px"> findiff
 
 [![PyPI version](https://badge.fury.io/py/findiff.svg)](https://img.shields.io/pypi/v/findiff.png?style=flat-square&color=brightgreen)
 ![build](https://github.com/maroba/findiff/actions/workflows/check.yml/badge.svg)
@@ -261,7 +261,7 @@ However, you can design your own stencil. A picture says more than a thousand wo
 look at the following example for a standard second order accurate stencil for the
 2D Laplacian $\displaystyle \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2}$:
 
-<img src="docs/frontpage/laplace2d.png" width="400">
+<img src="docs/assets/laplace2d.png" width="400">
 
 This can be reproduced by *findiff* writing
 
@@ -278,7 +278,7 @@ The attribute `stencil.values` contains the coefficients
 
 Now for a some more exotic stencil. Consider this one:
 
-<img src="docs/frontpage/laplace2d-x.png" width="400">
+<img src="docs/assets/laplace2d-x.png" width="400">
 
 With *findiff* you can get it easily:
 
@@ -369,7 +369,7 @@ u = pde.solve()
 Result:
 
 <p align="center">
-<img src="docs/frontpage/ho_bvp.jpg" alt="ResultHOBVP" height="300"/>
+<img src="docs/assets/ho_bvp.jpg" alt="ResultHOBVP" height="300"/>
 </p>
 
 #### Example 2: 2D heat conduction
@@ -421,7 +421,7 @@ u = pde.solve()
 Result:
 
 <p align="center">
-<img src="docs/frontpage/heat.png"/>
+<img src="docs/assets/heat.png"/>
 </p>
 
 ## Citations

@@ -5,7 +5,6 @@
 A Python package for finite difference numerical derivatives
 and partial differential equations in any number of dimensions.
 
-
 .. image:: images/findiff_logo.png
     :width: 300
     :align: center
@@ -20,25 +19,35 @@ Features
 - Can handle uniform and non-uniform grids
 - Can handle arbitrary linear combinations of derivatives with constant and variable coefficients
 - Fully vectorized for speed
-- Calculate raw finite difference coefficients for any order and accuracy for uniform and non-uniform grids
+- Calculate raw finite difference coefficients for any order and accuracy
 - Generate matrix representations of arbitrary linear differential operators
 - Solve partial differential equations with Dirichlet or Neumann boundary conditions
 - Generate differential operators for arbitrary stencils
-- _New in version 0.10:_ Symbolic representation of finite difference schemes
+- Symbolic representation of finite difference schemes
+- Periodic boundary conditions for differential operators and PDEs
+- Compact (implicit) finite differences with spectral-like resolution
+
+.. versionadded:: 0.11
+   Comfortable new API via ``Diff`` (the old ``FinDiff`` API remains available)
+
+.. versionadded:: 0.12
+   Periodic boundary conditions for differential operators and PDEs
+
+.. versionadded:: 0.13
+   Compact (implicit) finite differences with spectral-like resolution
 
 
 Content
 -------
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
-    getstarted
-    examples
-    compact
-    theory
+    getting-started/index
+    guides/index
+    theory/index
+    api/index
     citation
-    modules
 
 
 Indices and tables
