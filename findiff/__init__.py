@@ -17,12 +17,14 @@ Features:
 - Create symbolic representations of finite difference schemes
 - Version 0.11.*: Completely remodeled API (backward compatibility is maintained, though)
 - Version 0.12.*: Periodic boundary conditions for differential operators and PDEs
+- Version 0.13.*: Compact finite difference schemes for interior and boundary points
 """
 
-__version__ = "0.12.1"
+__version__ = "0.13.0"
 
 
 from .coefs import coefficients
+from .compact import CompactScheme
 from .compatible import Coef, Coefficient, FinDiff, Id
 from .interface import Diff
 from .operators import Identity
@@ -31,6 +33,7 @@ from .vector import Curl, Divergence, Gradient, Laplacian
 
 __all__ = [
     "coefficients",
+    "CompactScheme",
     "Coef",
     "Coefficient",
     "FinDiff",

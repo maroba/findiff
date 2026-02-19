@@ -35,6 +35,7 @@ Content
 
     source/getstarted
     source/examples
+    source/compact
     source/theory
     source/citation
     source/modules

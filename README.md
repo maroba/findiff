@@ -21,6 +21,7 @@ any number of dimensions.
 * Symbolic representation of finite difference schemes
 * **New in version 0.11**: More comfortable API (keeping the old API available)
 * **New in version 0.12**: Periodic boundary conditions for differential operators and PDEs.
+* **New in version 0.13**: Compact (implicit) finite differences with spectral-like resolution.
 
 ## Installation
 
@@ -133,6 +134,45 @@ which comes in handy if you have a complicated expression of differential operat
 can specify it on the whole expression and it will be passed down to all basic operators.
 
 If not specified, second order accuracy will be taken by default.
+
+### Compact Finite Differences
+
+Standard finite differences only use function values to approximate a derivative. Compact (or implicit)
+finite differences also couple derivative values at neighboring points, which gives you spectral-like
+resolution from small stencils. The tradeoff is that applying the operator requires solving a banded linear
+system — but for tridiagonal systems that's $O(N)$ and very fast.
+
+You can define a compact scheme explicitly by specifying the left-hand side coefficients and right-hand side offsets:
+
+```python
+from findiff import Diff, CompactScheme
+
+scheme = CompactScheme(
+    deriv=1,
+    left={-1: 1/3, 0: 1, 1: 1/3},     # tridiagonal LHS
+    right=[-3, -2, -1, 0, 1, 2, 3],    # RHS offsets (coefficients computed automatically)
+)
+
+d_dx = Diff(0, dx, scheme=scheme, periodic=True)
+df_dx = d_dx(np.sin(x))  # 6th-order accurate first derivative
+```
+
+Or let findiff pick a scheme for you:
+
+```python
+d_dx = Diff(0, dx, compact=3, acc=6, periodic=True)
+```
+
+Here `compact=3` sets the LHS bandwidth (must be odd), and findiff widens the RHS stencil until
+the requested accuracy is reached. Higher derivatives work the same as usual:
+
+```python
+d2_dx2 = d_dx ** 2
+```
+
+Non-periodic grids are handled automatically — findiff uses one-sided compact stencils near the
+boundaries. The `matrix()` method is also supported. For more details, see the
+[compact finite differences documentation](https://findiff.readthedocs.io/en/latest/source/compact.html).
 
 ## Finite Difference Coefficients
 

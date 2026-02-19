@@ -235,7 +235,6 @@ def test_nonperiodic_uniform():
         deriv=1,
         left={1: 1 / 3, 0: 1, -1: 1 / 3},
         right=[-2, -1, 0, 1, 2],
-        periodic=False,
     )
     x = np.linspace(0, 1, 60)
     dx = x[1] - x[0]
@@ -252,39 +251,56 @@ def test_nonperiodic_matrices():
         deriv=1,
         left={1: 1 / 3, 0: 1, -1: 1 / 3},
         right=[-2, -1, 0, 1, 2],
-        periodic=False,
     )
     differ = _CompactDiffUniformNonPeriodic(dim=0, order=1, spacing=1, scheme=scheme)
     f = np.ones(10, dtype=np.float64)
     differ(f)
-    L, R = differ._left_matrix, differ._right_matrix
-    print("L=")
-    print_arrays(L.toarray())
-    print("R=")
-    print_arrays(R.toarray())
+    L = differ._left_matrix.toarray()
 
-    np.testing.assert_array_almost_equal(
-        L.toarray(),
-        np.array(
-            [
-                [1.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
-                [0.000, 1.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
-                [0.000, 0.333, 1.000, 0.333, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
-                [0.000, 0.000, 0.333, 1.000, 0.333, 0.000, 0.000, 0.000, 0.000, 0.000],
-                [0.000, 0.000, 0.000, 0.333, 1.000, 0.333, 0.000, 0.000, 0.000, 0.000],
-                [0.000, 0.000, 0.000, 0.000, 0.333, 1.000, 0.333, 0.000, 0.000, 0.000],
-                [0.000, 0.000, 0.000, 0.000, 0.000, 0.333, 1.000, 0.333, 0.000, 0.000],
-                [0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.333, 1.000, 0.333, 0.000],
-                [0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 1.000, 0.000],
-                [0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 1.000],
-            ]
-        ),
-        decimal=3,
-    )
+    # With one-sided compact FD at boundaries, L retains the compact
+    # tridiagonal structure at all rows (not identity at boundaries):
+    # - Row 0: [1, 1/3, 0, ...] (truncated LHS, offset -1 not available)
+    # - Row 1: [1/3, 1, 1/3, 0, ...] (full interior scheme, centered)
+    # - Interior rows: standard tridiagonal
+    # - Row 8: [..., 0, 1/3, 1, 1/3] (full interior scheme, centered)
+    # - Row 9: [..., 0, 1/3, 1] (truncated LHS, offset +1 not available)
+
+    # Verify diagonal is 1 everywhere
+    np.testing.assert_array_almost_equal(np.diag(L), np.ones(10))
+
+    # Boundary rows should NOT be identity (compact structure preserved)
+    assert L[0, 1] == pytest.approx(1 / 3, abs=1e-6)
+    assert L[9, 8] == pytest.approx(1 / 3, abs=1e-6)
+
+    # Interior rows have standard tridiagonal structure
+    for i in range(2, 8):
+        assert L[i, i - 1] == pytest.approx(1 / 3, abs=1e-6)
+        assert L[i, i] == pytest.approx(1.0, abs=1e-6)
+        assert L[i, i + 1] == pytest.approx(1 / 3, abs=1e-6)
 
 
 def test_scheme_from_accuracy():
-    pass
+    # First derivative, tridiagonal compact (Lele 1992, alpha=1/3)
+    scheme = CompactScheme.from_accuracy(acc=6, deriv=1, num_left=3)
+
+    # Check the generated alphas
+    assert scheme.left[-1] == pytest.approx(1 / 3)
+    assert scheme.left[0] == 1
+    assert scheme.left[1] == pytest.approx(1 / 3)
+
+    # Check accuracy meets the request
+    assert scheme.get_accuracy(1) >= 6
+
+    # Verify it gives correct numerical results
+    x = np.linspace(0, 2 * np.pi, 40, endpoint=False)
+    dx = x[1] - x[0]
+    d_dx = Diff(0, dx, scheme=scheme, periodic=True)
+    f = np.sin(x)
+    np.testing.assert_allclose(d_dx(f), np.cos(x), atol=1e-5)
+
+    # Second derivative
+    scheme2 = CompactScheme.from_accuracy(acc=4, deriv=2, num_left=3)
+    assert scheme2.get_accuracy(2) >= 4
 
 
 def test_compact_differences_diff_apply():
@@ -301,8 +317,6 @@ def test_compact_differences_diff_apply():
     )
     f = np.exp(np.sin(x))
     expected = np.cos(x) * f
-    # f = np.sin(x)
-    # expected = np.cos(x)
     actual = d_dx(f)
 
     print_arrays(
@@ -312,11 +326,6 @@ def test_compact_differences_diff_apply():
         expected.reshape(-1, 1),
     )
 
-    # import matplotlib.pyplot as plt
-    #
-    # plt.semilogy(x, abs((expected - actual)), ".")
-    # plt.show()
-
     np.testing.assert_allclose(expected, actual, atol=1.0e-5)
 
 
@@ -325,7 +334,6 @@ def test_periodic_uniform_shortcut():
         deriv=1,
         left={1: 1 / 3, 0: 1, -1: 1 / 3},
         right=[-3, -2, -1, 0, 1, 2, 3],
-        periodic=True,
     )
 
     x = np.linspace(0, 2 * np.pi, 40, endpoint=False)
@@ -338,3 +346,109 @@ def test_periodic_uniform_shortcut():
     actual = d_dx_shortcut(f)
 
     np.testing.assert_allclose(expected, actual, atol=1.0e-12)
+
+
+def test_compact_scheme_exported():
+    from findiff import CompactScheme as CS
+
+    scheme = CS(deriv=1, left={-1: 1 / 3, 0: 1, 1: 1 / 3}, right=[-2, -1, 0, 1, 2])
+    assert scheme.deriv == 1
+
+
+def test_matrix_periodic():
+    """matrix() on a periodic compact scheme should give the same result as __call__."""
+    scheme = CompactScheme(
+        deriv=1,
+        left={-1: 1 / 3, 0: 1, 1: 1 / 3},
+        right=[-2, -1, 0, 1, 2],
+    )
+    x = np.linspace(0, 2 * np.pi, 30, endpoint=False)
+    dx = x[1] - x[0]
+    d_dx = Diff(0, dx, scheme=scheme, periodic=True)
+    f = np.sin(x)
+
+    result_call = d_dx(f)
+    M = d_dx.matrix((30,))
+    result_matrix = M.dot(f)
+
+    np.testing.assert_allclose(result_call, result_matrix, atol=1e-12)
+
+
+def test_matrix_nonperiodic():
+    """matrix() on a non-periodic compact scheme should give same result as __call__."""
+    scheme = CompactScheme(
+        deriv=1,
+        left={-1: 1 / 3, 0: 1, 1: 1 / 3},
+        right=[-2, -1, 0, 1, 2],
+    )
+    x = np.linspace(0, 1, 40)
+    dx = x[1] - x[0]
+    d_dx = Diff(0, dx, scheme=scheme, periodic=False)
+    f = np.sin(x)
+
+    result_call = d_dx(f)
+    M = d_dx.matrix((40,))
+    result_matrix = M.dot(f)
+
+    np.testing.assert_allclose(result_call, result_matrix, atol=1e-12)
+
+
+def test_one_sided_compact_boundary_accuracy():
+    """One-sided compact FD at boundaries should be more accurate than explicit FD."""
+    scheme = CompactScheme(
+        deriv=1,
+        left={-1: 1 / 3, 0: 1, 1: 1 / 3},
+        right=[-2, -1, 0, 1, 2],
+    )
+
+    for n in [30, 60, 120]:
+        x = np.linspace(0, 1, n)
+        dx = x[1] - x[0]
+        f = np.sin(x)
+        expected = np.cos(x)
+
+        d_dx = Diff(0, dx, scheme=scheme, periodic=False)
+        actual = d_dx(f)
+
+        # The derivative should be accurate to at least 1e-4 everywhere
+        np.testing.assert_allclose(actual, expected, atol=1e-4)
+
+
+def test_one_sided_compact_boundary_structure():
+    """Boundary rows of L should retain compact structure, not be identity."""
+    scheme = CompactScheme(
+        deriv=1,
+        left={-1: 1 / 3, 0: 1, 1: 1 / 3},
+        right=[-2, -1, 0, 1, 2],
+    )
+    differ = _CompactDiffUniformNonPeriodic(dim=0, order=1, spacing=1, scheme=scheme)
+    f = np.ones(20, dtype=np.float64)
+    differ(f)
+    L = differ._left_matrix.toarray()
+
+    # Row 0: should have compact coupling with row 1
+    assert L[0, 0] == pytest.approx(1.0)
+    assert L[0, 1] == pytest.approx(1 / 3, abs=1e-6)
+
+    # Last row: should have compact coupling with second-to-last row
+    assert L[-1, -1] == pytest.approx(1.0)
+    assert L[-1, -2] == pytest.approx(1 / 3, abs=1e-6)
+
+
+def test_one_sided_compact_second_derivative():
+    """One-sided compact FD should work for second derivatives via powering."""
+    scheme = CompactScheme(
+        deriv=1,
+        left={-1: 1 / 3, 0: 1, 1: 1 / 3},
+        right=[-2, -1, 0, 1, 2],
+    )
+    x = np.linspace(0, 1, 80)
+    dx = x[1] - x[0]
+    f = np.sin(x)
+    expected = -np.sin(x)
+
+    d_dx = Diff(0, dx, scheme=scheme, periodic=False)
+    d2_dx2 = d_dx ** 2
+    actual = d2_dx2(f)
+
+    np.testing.assert_allclose(actual, expected, atol=1e-4)

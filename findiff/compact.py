@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import spsolve
+from scipy.sparse import csc_matrix, csr_matrix
+from scipy.sparse.linalg import splu, spsolve
 
 from findiff.coefs import calc_coefs, coefficients, CoefficientCalculator, Solver
 from findiff.utils import (
@@ -32,7 +32,7 @@ class CompactScheme:
     fewer neighboring points than in the explicit schemes.
     """
 
-    def __init__(self, deriv, left: dict, right: list, periodic=True):
+    def __init__(self, deriv, left: dict, right: list):
         r"""
         Initializes a CompactScheme instance.
 
@@ -48,13 +48,10 @@ class CompactScheme:
                 Defines the alphas in the formula above. Keys: k, Values: alpha_k
             right: list|tuple
                 Which neighboring points to use (the k's in the formula above)
-            periodic: bool
-                Whether to use periodic or non-periodic boundary conditions.
         """
         self.deriv = deriv
         self.left = left
         self.right = right
-        self.periodic = periodic
 
     def get_accuracy(self, deriv):
         calculator = CoefficientCalculator(deriv, self.right, self.left, Solver())
@@ -108,6 +105,21 @@ class _CompactDiffUniform:
         )
         return result.reshape(self._shape)
 
+    def matrix(self, shape):
+        r"""Returns the matrix representation :math:`L^{-1} R` of the compact FD operator.
+
+        Note: For compact schemes the matrix is generally denser than for
+        explicit finite differences because inverting the banded L matrix
+        introduces fill-in.
+        """
+        if self._shape is None or self._shape != tuple(shape):
+            self._shape = tuple(shape)
+            self._calculate_diff_matrix()
+
+        lu = splu(csc_matrix(self._left_matrix))
+        M = lu.solve(self._right_matrix.toarray())
+        return csr_matrix(M)
+
     def _calculate_diff_matrix(self):
         offsets = list(self.scheme.left.keys())
         values = list(self.scheme.left.values())
@@ -142,35 +154,115 @@ class _CompactDiffUniformNonPeriodic(_CompactDiffUniform):
     creator_function = create_band_diagonal
 
     def _modify_boundary_rows(self, L, R, offsets, coefs, h):
+        n = L.shape[0]
 
-        left_boundary_size = max(abs(min(offsets)), abs(min(coefs["offsets"])))
-        right_boundary_size = max(max(offsets), max(coefs["offsets"]))
-        L[:left_boundary_size, : len(offsets) + left_boundary_size] = 0
-        L[-right_boundary_size:, -(len(offsets) + right_boundary_size) :] = 0
+        interior_lhs_offsets = sorted(self.scheme.left.keys())
+        interior_rhs_offsets = sorted(self.scheme.right)
 
+        left_boundary_size = max(abs(min(interior_lhs_offsets)),
+                                 abs(min(interior_rhs_offsets)))
+        right_boundary_size = max(max(interior_lhs_offsets),
+                                  max(interior_rhs_offsets))
+
+        processed = set()
+
+        # Left boundary: one-sided compact FD (Visbal & Gaitonde, 2002)
         for irow in range(left_boundary_size):
-            L[irow, irow] = 1.0
+            L[irow, :] = 0
+            R[irow, :] = 0
+            processed.add(irow)
 
-        for irow in range(right_boundary_size):
-            L[-irow - 1, -irow - 1] = 1.0
+            boundary_alphas, boundary_offsets = self._boundary_scheme(irow, n)
+            try:
+                boundary_coefs = calc_coefs(
+                    self.order, boundary_offsets, alphas=boundary_alphas
+                )
+                for off, val in boundary_alphas.items():
+                    L[irow, irow + off] = val
+                for off, val in zip(
+                    boundary_coefs["offsets"], boundary_coefs["coefficients"]
+                ):
+                    R[irow, irow + off] = val * h
+            except (np.linalg.LinAlgError, Exception):
+                # Fallback to explicit one-sided FD
+                L[irow, irow] = 1.0
+                explicit = coefficients(self.order, coefs["accuracy"])
+                for col_off, value in zip(
+                    explicit["forward"]["offsets"],
+                    explicit["forward"]["coefficients"],
+                ):
+                    R[irow, irow + col_off] = value * h
 
-        R[:left_boundary_size, : len(coefs["offsets"]) + left_boundary_size] = 0
-        R[-right_boundary_size:, -(len(coefs["offsets"]) + right_boundary_size) :] = 0
+        # Right boundary: one-sided compact FD (mirrored)
+        for i in range(right_boundary_size):
+            irow = n - 1 - i
+            if irow in processed:
+                continue
+            L[irow, :] = 0
+            R[irow, :] = 0
 
-        coefs = coefficients(self.order, coefs["accuracy"])
+            boundary_alphas, boundary_offsets = self._boundary_scheme(irow, n)
+            try:
+                boundary_coefs = calc_coefs(
+                    self.order, boundary_offsets, alphas=boundary_alphas
+                )
+                for off, val in boundary_alphas.items():
+                    L[irow, irow + off] = val
+                for off, val in zip(
+                    boundary_coefs["offsets"], boundary_coefs["coefficients"]
+                ):
+                    R[irow, irow + off] = val * h
+            except (np.linalg.LinAlgError, Exception):
+                # Fallback to explicit one-sided FD
+                L[irow, irow] = 1.0
+                explicit = coefficients(self.order, coefs["accuracy"])
+                for col_off, value in zip(
+                    explicit["backward"]["offsets"],
+                    explicit["backward"]["coefficients"],
+                ):
+                    R[irow, irow + col_off] = value * h
 
-        for irow in range(left_boundary_size):
-            for col_off, value in zip(
-                coefs["forward"]["offsets"], coefs["forward"]["coefficients"]
-            ):
-                R[irow, irow + col_off] = value * h
-
-        for irow in range(right_boundary_size):
-            for col_off, value in zip(
-                coefs["backward"]["offsets"], coefs["backward"]["coefficients"]
-            ):
-                R[-irow - 1, -irow - 1 + col_off] = value * h
         return L, R
+
+    def _boundary_scheme(self, irow, n):
+        """Compute one-sided compact FD alphas and offsets for a boundary row.
+
+        At boundary rows the interior stencil extends beyond the grid.
+        This method keeps only the valid LHS alphas and builds a set of
+        RHS offsets that stay within the grid, matching the width of the
+        interior stencil so that accuracy is preserved.
+        """
+        interior_alphas = self.scheme.left
+        interior_offsets = self.scheme.right
+
+        # Valid offset range from this row
+        min_valid = -irow
+        max_valid = n - 1 - irow
+
+        # Keep interior alphas that fall inside the grid
+        alphas = {}
+        for off, val in interior_alphas.items():
+            if min_valid <= off <= max_valid:
+                alphas[off] = val
+        if 0 not in alphas:
+            alphas[0] = 1
+
+        # Build RHS offsets within valid range
+        rhs = [off for off in interior_offsets if min_valid <= off <= max_valid]
+
+        # Extend to match interior stencil width
+        target = len(interior_offsets)
+        while len(rhs) < target:
+            rmin, rmax = min(rhs), max(rhs)
+            if rmax + 1 <= max_valid:
+                rhs.append(rmax + 1)
+            elif rmin - 1 >= min_valid:
+                rhs.append(rmin - 1)
+            else:
+                break
+            rhs.sort()
+
+        return alphas, rhs
 
 
 class _CompactDiffUniformPeriodic(_CompactDiffUniform):
