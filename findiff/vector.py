@@ -262,26 +262,25 @@ class Laplacian:
 
        {\rm \bf \nabla^2} = \sum_{k=0}^{N-1} \frac{\partial^2}{\partial x_k^2}
 
-    :param kwargs:  exactly one of *h* and *coords* must be specified
+    :param h: list of grid spacings for a uniform grid
+    :param coords: list of 1D coordinate arrays for a non-uniform grid
+    :param acc: accuracy order, must be positive integer, default is 2
 
-         *h*
-                 list with the grid spacings of an N-dimensional uniform grid
-         *coords*
-                 list of 1D arrays with the coordinate values along the N axes.
-                 This is used for non-uniform grids.
-
-         *acc*
-                 accuracy order, must be positive integer, default is 2
-
+    Exactly one of *h* and *coords* must be specified.
     """
 
-    """A representation of the Laplace operator in arbitrary dimensions using finite difference schemes"""
+    def __init__(self, h=None, acc=2, coords=None):
+        if h is not None and coords is not None:
+            raise ValueError("Specify either 'h' or 'coords', not both.")
 
-    def __init__(self, h=None, acc=2):
-        h = h or [1.0]
-        h = wrap_in_ndarray(h)
+        if coords is not None:
+            ndims = len(coords)
+            self._parts = [_Diff(k, coords[k]) ** 2 for k in range(ndims)]
+        else:
+            h = h or [1.0]
+            h = wrap_in_ndarray(h)
+            self._parts = [_Diff(k, h[k]) ** 2 for k in range(len(h))]
 
-        self._parts = [_Diff(k, h[k]) ** 2 for k in range(len(h))]
         for part in self._parts:
             part.set_accuracy(acc)
 

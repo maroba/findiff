@@ -48,6 +48,13 @@ The Laplacian of a scalar field yields a scalar field:
     laplace_f = laplace(f)
     laplace_f.shape  # (100, 100, 100)
 
+For non-uniform grids, pass coordinate arrays instead:
+
+.. code:: python
+
+    laplace = Laplacian(coords=[x, y, z])
+    laplace_f = laplace(f)
+
 
 Divergence
 ----------
