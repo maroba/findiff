@@ -1,7 +1,8 @@
+import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from findiff.operators import Add, FieldOperator
+from findiff.operators import Add, FieldOperator, ScalarOperator
 from findiff import Diff, Identity
 
 
@@ -316,3 +317,61 @@ class TestRepr:
         d_dy = Diff(1, 0.1)
         op = d_dx * (d_dy + d_dx)
         assert str(op) == "d/dx * (d/dy + d/dx)"
+
+
+def test_rsub_operator():
+    dx = 0.1
+    d_dx = Diff(0, dx)
+    result = 2 - d_dx
+    x = np.linspace(0, 1, 30)
+    f = x ** 2
+    val = result(f)
+    assert val.shape == f.shape
+
+
+def test_scalar_operator_invalid_type_raises():
+    with pytest.raises(ValueError):
+        ScalarOperator("not a number")
+
+
+def test_scalar_operator_str():
+    s = ScalarOperator(3)
+    assert str(s) == "3"
+
+
+def test_mul_str_with_add_as_left():
+    d_dx = Diff(0, 0.1)
+    d_dy = Diff(1, 0.1)
+    d_dz = Diff(2, 0.1)
+    op = (d_dx + d_dy) * d_dz
+    s = str(op)
+    assert s.startswith("(")
+
+
+def test_eigs_with_sigma():
+    n = 20
+    dx = 1.0 / (n - 1)
+    L = Diff(0, dx) ** 2
+    vals, vecs = L.eigs((n,), k=3, which='LM', sigma=0)
+    assert len(vals) == 3
+
+
+def test_eigsh_with_sigma():
+    n = 20
+    dx = 1.0 / (n - 1)
+    L = Diff(0, dx) ** 2
+    vals, vecs = L.eigsh((n,), k=3, which='LM', sigma=0)
+    assert len(vals) == 3
+
+
+def test_diff_compact_and_scheme_raises():
+    from findiff import Diff
+    from findiff.compact import CompactScheme
+    scheme = CompactScheme.from_accuracy(2, 1, 3)
+    with pytest.raises(ValueError):
+        Diff(0, compact=3, scheme=scheme)
+
+
+def test_diff_compact_even_raises():
+    with pytest.raises(ValueError):
+        Diff(0, compact=2)

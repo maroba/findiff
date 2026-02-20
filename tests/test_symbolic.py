@@ -1,3 +1,4 @@
+import pytest
 from sympy import IndexedBase, Symbol, symbols, latex
 
 from findiff.symbolic import SymbolicMesh, SymbolicDiff
@@ -95,3 +96,27 @@ class TestDiff:
         expected = (u[n, m + 1] - u[n, m - 1]) / (2 * mesh.spacing[1])
 
         self.assertEqual(0, (expected - actual).simplify())
+
+
+def test_non_equidistant_spacing_raises():
+    mesh = SymbolicMesh("x", equidistant=False)
+    with pytest.raises(Exception):
+        _ = mesh.spacing
+
+
+def test_dim_mismatch_raises():
+    mesh = SymbolicMesh("x,y")
+    u = mesh.create_symbol("u")
+    d = SymbolicDiff(mesh, axis=0)
+    n = Symbol("n")
+    with pytest.raises(ValueError):
+        d(u, at=n, offsets=[-1, 0, 1])
+
+
+def test_non_equidistant_symbolic_diff():
+    mesh = SymbolicMesh("x", equidistant=False)
+    u = mesh.create_symbol("u")
+    d = SymbolicDiff(mesh, axis=0)
+    n = Symbol("n")
+    result = d(u, at=[n], offsets=[-1, 0, 1])
+    assert result is not None
