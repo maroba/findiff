@@ -10,7 +10,7 @@ Covers:
 
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_allclose, assert_array_almost_equal
 
 from findiff import Diff
 from findiff.coefs import (
@@ -81,7 +81,7 @@ class TestBatchedCoefficients:
             else:
                 j = i - result["num_bndry"]
                 actual = result["center"]["coefficients"][j]
-            assert_array_almost_equal(actual, expected["coefficients"], decimal=10)
+            assert_allclose(actual, expected["coefficients"], rtol=1e-12, atol=1e-12)
 
     def test_batched_result_structure(self):
         """Result dict has the expected keys and array shapes."""
