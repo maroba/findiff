@@ -393,6 +393,17 @@ class TestJAXBackend:
         assert self._is_jax(result)
         assert_array_almost_equal(np.asarray(result), np.cos(x), decimal=2)
 
+    def test_jax_scalar_spacing(self):
+        x = self.jnp.linspace(0, 2 * np.pi, 1000)
+        dx = x[1] - x[0]
+        assert dx.ndim == 0
+        f = self.jnp.sin(x)
+        result = Diff(0, dx)(f)
+        assert self._is_jax(result)
+        assert_array_almost_equal(
+            np.asarray(result), np.cos(np.asarray(x)), decimal=3
+        )
+
 
 # ---------------------------------------------------------------------------
 # CuPy backend tests (skipped when CuPy is not installed)
