@@ -7,6 +7,7 @@
 - Iterative solvers for PDEs (CG, GMRES, BiCGSTAB, LGMRES, MINRES) with preconditioner support
 - Eigenvalue problem support (eigs and eigsh methods)
 - Robin (mixed) boundary conditions for PDEs
+- Fix order-of-accuracy loss for even-order derivatives on non-uniform grids (central stencil was undersized)
 
 ## Version 0.13.x
 

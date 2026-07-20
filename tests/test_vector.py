@@ -196,13 +196,24 @@ class TestLaplacianNonUniform:
         laplace = Laplacian(coords=[x], acc=4)
         assert_array_almost_equal(laplace(f), expected, decimal=4)
 
-    def test_matches_uniform_result(self):
-        """Non-uniform Laplacian on a uniform grid should match the uniform version."""
+    def test_uniform_grid_gives_correct_laplacian(self):
+        """On a uniform grid the coords= Laplacian is correct and at least as
+        accurate as the h= path. Its central stencils are wider (the non-uniform
+        scheme cannot rely on the symmetry bonus), so the two paths agree only to
+        the uniform scheme's order, not bit-for-bit."""
         axes, h, [X, Y] = init_mesh(2, (50, 50))
         f = np.sin(X) * np.cos(Y)
+        expected = -2 * np.sin(X) * np.cos(Y)
         result_uniform = Laplacian(h=h, acc=2)(f)
         result_nonuniform = Laplacian(coords=axes, acc=2)(f)
-        assert_array_almost_equal(result_nonuniform, result_uniform)
+
+        interior = (slice(2, -2), slice(2, -2))
+        assert_array_almost_equal(
+            result_nonuniform[interior], expected[interior], decimal=3
+        )
+        err_uniform = np.max(np.abs(result_uniform[interior] - expected[interior]))
+        err_nonuniform = np.max(np.abs(result_nonuniform[interior] - expected[interior]))
+        assert err_nonuniform <= err_uniform
 
     def test_h_and_coords_raises(self):
         axes, h, _ = init_mesh(2, (10, 10))
