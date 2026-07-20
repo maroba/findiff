@@ -101,15 +101,17 @@ class TestBatchedCoefficients:
         assert result["center"]["coefficients"].shape[0] == len(x) - 2 * num_bndry
 
     def test_batched_even_derivative(self):
-        """Even derivatives have forward/backward stencils wider than central."""
+        """Even-derivative central stencils get no symmetry bonus on a
+        non-uniform grid, so they carry deriv+acc points (one more than the
+        one-sided schemes) to reach order acc."""
         x = np.linspace(0, 5, 20)
         result = calc_coefs_non_uni_batched(deriv=2, acc=2, coords=x)
 
         central_size = result["center"]["coefficients"].shape[1]
         forward_size = result["forward"]["coefficients"].shape[1]
 
-        # For even derivatives, forward/backward have one more point
-        assert forward_size == central_size + 1
+        assert central_size == forward_size + 1
+        assert central_size >= 2 + 2  # deriv + acc points needed for order acc
 
     def test_batched_invalid_inputs(self):
         """Invalid deriv/acc raise ValueError."""
