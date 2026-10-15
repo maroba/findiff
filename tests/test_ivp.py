@@ -15,6 +15,7 @@ Covers:
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
+from scipy.linalg import expm
 
 from findiff import BoundaryConditions, Diff, TimeDependentPDE
 from findiff.ivp import MOLSolution
@@ -23,6 +24,34 @@ from findiff.ivp import MOLSolution
 # ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "method", ["forward-euler", "rk4", "backward-euler", "crank-nicolson"]
+)
+def test_initial_dirichlet_values(method):
+    n = 11
+    dx, diffusion, dt = 0.1, 0.1, 1e-5
+    u0 = np.zeros(n)
+    bc = BoundaryConditions(u0.shape)
+    bc[0], bc[-1] = 1.0, 0.25
+    problem = TimeDependentPDE(diffusion * Diff(0, dx) ** 2, u0, bc, [0, dt])
+
+    solution = problem.solve(method=method, store_every=1)
+
+    initial = u0.copy()
+    initial[0], initial[-1] = 1.0, 0.25
+    np.testing.assert_array_equal(solution.u[0], initial)
+    # Exact evolution of the interior finite-difference heat equation.
+    matrix = diffusion / dx**2 * (
+        np.diag(np.full(n - 2, -2.0))
+        + np.diag(np.ones(n - 3), 1)
+        + np.diag(np.ones(n - 3), -1)
+    )
+    steady = np.linspace(1.0, 0.25, n)[1:-1]
+    expected = steady + expm(dt * matrix) @ (initial[1:-1] - steady)
+    np.testing.assert_allclose(solution.final[1:-1], expected, atol=2e-8)
+    np.testing.assert_array_equal(u0, np.zeros(n))
+
 
 def _make_1d_heat_problem(nx=101, nt=200, D=0.01, t_final=0.1):
     """1D heat equation with exact solution.
