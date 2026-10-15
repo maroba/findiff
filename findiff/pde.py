@@ -90,7 +90,10 @@ class PDE:
             self._L = self.lhs.matrix(shape)  # expensive operation, so cache it
 
         L = sparse.lil_matrix(self._L)
-        f = self.rhs.reshape(-1, 1)
+        # Boundary values may require a wider dtype; keep the caller's rhs intact.
+        f = np.array(
+            self.rhs, dtype=np.result_type(self.rhs.dtype, self.bcs.rhs.dtype), copy=True
+        ).reshape(-1, 1)
 
         nz = list(self.bcs.row_inds())
 
