@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from findiff.grids import EquidistantAxis, make_grid, make_axis
@@ -37,3 +38,9 @@ def test_makegrid_with_invalid_arg_raises_exception():
 def test_makeaxis_with_gridaxis_returns_axis():
     axis = EquidistantAxis(1, 1)
     assert make_axis(1, axis) is axis
+
+
+def test_makeaxis_with_0d_array_returns_equidistant_axis():
+    axis = make_axis(0, np.asarray(0.1))
+    assert isinstance(axis, EquidistantAxis)
+    assert axis.spacing == 0.1
