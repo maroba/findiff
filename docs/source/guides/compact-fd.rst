@@ -69,8 +69,23 @@ matching :math:`c_k`:
     d_dx = Diff(0, dx, compact=3, acc=6, periodic=True)
 
 The ``compact`` parameter sets the number of left-hand side points (must be an
-odd integer). *findiff* will widen the right-hand side stencil until the
-requested accuracy is reached.
+odd integer). *findiff* determines the left-hand side :math:`\alpha_k` and the
+right-hand side :math:`c_k` jointly, so that the accuracy order is maximal for
+the given stencil widths (Lele, 1992), and uses the narrowest right-hand side
+stencil that reaches the requested accuracy. This yields the classical schemes,
+for example:
+
+=====================  ========================================  ===============
+Parameters             Left-hand side                            Right-hand side
+=====================  ========================================  ===============
+``compact=3, acc=4``   :math:`\alpha_1 = 1/4` (Padé)             3 points
+``compact=3, acc=6``   :math:`\alpha_1 = 1/3`                    5 points
+``compact=5, acc=8``   :math:`\alpha_1 = 4/9,\ \alpha_2 = 1/36`  5 points
+``compact=5, acc=10``  :math:`\alpha_1 = 1/2,\ \alpha_2 = 1/20`  7 points
+=====================  ========================================  ===============
+
+As with explicit finite differences, ``acc`` is the minimum accuracy order;
+the scheme may be more accurate if no narrower stencil exists.
 
 
 Higher derivatives

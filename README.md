@@ -222,8 +222,10 @@ Or let findiff pick a scheme for you:
 d_dx = Diff(0, dx, compact=3, acc=6, periodic=True)
 ```
 
-Here `compact=3` sets the LHS bandwidth (must be odd), and findiff widens the RHS stencil until
-the requested accuracy is reached. Higher derivatives work the same as usual:
+Here `compact=3` sets the LHS bandwidth (must be odd). findiff determines the LHS and RHS
+coefficients jointly (as in Lele, 1992) and picks the narrowest RHS stencil that reaches the
+requested accuracy — e.g. `compact=3, acc=6` gives Lele's classic tridiagonal scheme and
+`compact=5, acc=10` his pentadiagonal 10th-order scheme. Higher derivatives work the same as usual:
 
 ```python
 d2_dx2 = d_dx ** 2

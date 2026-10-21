@@ -551,9 +551,49 @@ def test_boundary_convergence_order_matches_interior():
 
 @pytest.mark.parametrize("periodic", [False, True])
 def test_grid_too_small_gives_clear_error(periodic):
-    d_dx = Diff(0, 0.1, compact=5, acc=8, periodic=periodic)
+    d_dx = Diff(0, 0.1, compact=5, acc=10, periodic=periodic)
+    reach = max(abs(off) for off in d_dx.scheme.right)
 
-    with pytest.raises(ValueError, match="Grid has 3 points along axis 0"):
-        d_dx(np.ones(3))
+    with pytest.raises(ValueError, match=f"Grid has {reach - 1} points along axis 0"):
+        d_dx(np.ones(reach - 1))
 
-    assert np.all(np.isfinite(d_dx(np.ones(4))))
+    assert np.all(np.isfinite(d_dx(np.ones(reach))))
+
+
+@pytest.mark.parametrize(
+    "deriv, compact, acc, alphas, rhs_width",
+    [
+        (1, 3, 4, {1: 1 / 4}, 3),  # Pade
+        (1, 3, 6, {1: 1 / 3}, 5),  # Lele (1992)
+        (1, 5, 8, {1: 4 / 9, 2: 1 / 36}, 5),  # Lele (1992)
+        (1, 5, 10, {1: 1 / 2, 2: 1 / 20}, 7),  # Lele (1992)
+        (2, 3, 4, {1: 1 / 10}, 3),
+        (2, 3, 6, {1: 2 / 11}, 5),  # Lele (1992)
+    ],
+)
+def test_from_accuracy_reproduces_classical_schemes(
+    deriv, compact, acc, alphas, rhs_width
+):
+    scheme = CompactScheme.from_accuracy(acc=acc, deriv=deriv, num_left=compact)
+
+    assert len(scheme.right) == rhs_width
+    assert scheme.get_accuracy(deriv) == acc
+    for k, alpha in alphas.items():
+        assert scheme.left[k] == pytest.approx(alpha, rel=1e-10)
+        assert scheme.left[-k] == pytest.approx(alpha, rel=1e-10)
+
+
+def test_wider_lhs_needs_narrower_rhs():
+    widths = [
+        len(CompactScheme.from_accuracy(acc=10, deriv=1, num_left=c).right)
+        for c in (1, 3, 5)
+    ]
+    assert widths == sorted(widths, reverse=True)
+    assert widths[0] > widths[1] > widths[2]
+
+
+def test_accuracy_of_high_order_scheme_does_not_overflow():
+    scheme = CompactScheme(
+        deriv=2, left={-1: 1 / 3, 0: 1, 1: 1 / 3}, right=list(range(-7, 8))
+    )
+    assert scheme.get_accuracy(2) == 14

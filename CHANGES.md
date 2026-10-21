@@ -12,6 +12,17 @@
 - Compact schemes: boundary fallback to explicit differences now only catches
   `LinAlgError` and emits a `RuntimeWarning` instead of silently swallowing all errors
 - Compact schemes: clear error message if the grid is too small for the stencil
+- Compact schemes: `compact=..., acc=...` now determines the LHS alphas and RHS coefficients
+  jointly (as in Lele, 1992) instead of using fixed heuristic alphas, and picks the narrowest
+  RHS stencil reaching `acc`. This yields the classical schemes (Padé, Lele's tridiagonal and
+  pentadiagonal schemes); `compact=5` and `compact=7` now actually pay off (e.g. `compact=5,
+  acc=10` needs 7 instead of 11 RHS points and is ~85x more accurate).
+  **Note:** results change for all `compact=` settings except `compact=3, acc=6`.
+  `acc` is now the minimum order, as for explicit differences: `compact=3, acc=4` gives the
+  4th-order Padé scheme (previously 6th order by accident), while the default `acc=2` now
+  gives 4th instead of 2nd order.
+- Fix accuracy order detection for high-order schemes (truncation error was compared with an
+  absolute tolerance, causing an `OverflowError` from about order 12 on)
 
 ## Version 0.14.x
 

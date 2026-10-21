@@ -1,3 +1,4 @@
+import math
 import warnings
 
 import numpy as np
@@ -62,25 +63,57 @@ class CompactScheme:
 
     @classmethod
     def from_accuracy(cls, acc, deriv, num_left):
-        alphas = {
-            off: (1 / num_left) ** abs(off)
-            for off in range(-(num_left // 2), (num_left // 2) + 1)
-        }
-        alphas[0] = 1
-        offsets = [-1, 0, 1]
-        max_offsets = 99
-        while len(offsets) < max_offsets:
-            calculator = CoefficientCalculator(deriv, offsets, alphas, Solver())
+        """Creates the compact scheme with the narrowest right-hand side that
+        reaches accuracy order `acc` for an LHS bandwidth of `num_left`.
+
+        The LHS alphas and the RHS coefficients are determined jointly to
+        maximize the accuracy order for the given stencil widths, as in
+        Lele, J. Comp. Phys 103, 16-42 (1992).
+        """
+        p = num_left // 2
+        max_q = 49
+        for q in range(1, max_q + 1):
             try:
-                calculator.solve()
-                if calculator.acc >= acc:
-                    return CompactScheme(deriv, alphas, offsets)
+                scheme = cls._solve_jointly(deriv, p, q)
             except np.linalg.LinAlgError:
-                pass
-            n = len(offsets) // 2 + 1
-            offsets = [-n] + offsets + [n]
+                continue
+            if scheme.get_accuracy(deriv) >= acc:
+                return scheme
 
         raise Exception(f"Unable to solve compact scheme for given accuracy: {acc}")
+
+    @classmethod
+    def _solve_jointly(cls, deriv, p, q):
+        """Solves for symmetric LHS alphas (offsets -p..p, alpha_0 = 1) and RHS
+        coefficients (offsets -q..q) by matching as many Taylor terms as there
+        are unknowns."""
+        lhs_offsets = [k for k in range(-p, p + 1) if k != 0]
+        rhs_offsets = list(range(-q, q + 1))
+        num_unknowns = len(rhs_offsets) + len(lhs_offsets)
+
+        # Taylor condition for f^(m) h^(m - deriv):
+        #   sum_j c_j j^m / m! - sum_{k != 0} alpha_k k^(m-deriv) / (m-deriv)!
+        #       = alpha_0 * [m == deriv]
+        A = np.zeros((num_unknowns, num_unknowns))
+        b = np.zeros(num_unknowns)
+        for m in range(num_unknowns):
+            for j, off in enumerate(rhs_offsets):
+                A[m, j] = off**m / math.factorial(m)
+            if m >= deriv:
+                s = m - deriv
+                for j, off in enumerate(lhs_offsets):
+                    A[m, len(rhs_offsets) + j] = -(off**s) / math.factorial(s)
+                b[m] = 1.0 if s == 0 else 0.0
+
+        sol = np.linalg.solve(A, b)
+        solved = dict(zip(lhs_offsets, sol[len(rhs_offsets) :]))
+        # symmetrize to remove round-off asymmetry:
+        alphas = {0: 1}
+        for k in range(1, p + 1):
+            alphas[k] = alphas[-k] = (solved[k] + solved[-k]) / 2
+        alphas = dict(sorted(alphas.items()))
+
+        return CompactScheme(deriv, alphas, rhs_offsets)
 
 
 class _CompactDiffUniform:
