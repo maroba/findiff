@@ -93,7 +93,9 @@ For non-periodic grids the interior stencil extends past the boundary at the
 first and last few grid points. *findiff* handles this with one-sided compact
 stencils (Visbal & Gaitonde, 2002): the left-hand side alphas and right-hand
 side offsets are restricted to points that exist, and the system is re-solved for
-the boundary rows.
+the boundary rows. Since one-sided stencils lack the symmetry of the interior
+scheme, the right-hand side stencil is widened at the boundary until it reaches
+the interior accuracy order (as far as the grid size permits).
 
 .. code:: python
 
@@ -137,7 +139,9 @@ the usual ``matrix()`` call:
     df = M.dot(f)
 
 Note that inverting the banded :math:`L` introduces fill-in, so the matrix is
-denser than for explicit finite differences.
+denser than for explicit finite differences: each row couples all points on its
+grid line along the differentiation axis. On an :math:`n \times n` grid the
+matrix therefore has :math:`n^3` non-zero entries.
 
 
 Limitations
@@ -146,6 +150,12 @@ Limitations
 - Only equidistant grids are supported. Passing a non-uniform grid raises
   ``NotImplementedError``.
 - The ``stencil()`` method is not supported for compact schemes.
+- ``estimate_error()`` does not support compact schemes and raises an error.
+- Compact schemes run on NumPy / SciPy only. JAX or CuPy arrays are converted
+  to NumPy arrays (see :doc:`gpu-backends`).
+- The grid must have at least as many points along the differentiation axis as
+  the stencil reaches away from a point; otherwise a ``ValueError`` explains
+  the required size.
 
 
 References

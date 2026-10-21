@@ -1,5 +1,18 @@
 # Change Log
 
+## Unreleased
+
+- Compact schemes: much faster application (LU factorization is computed once and
+  reused) and `matrix()` no longer builds a dense intermediate matrix, which made
+  compact schemes unusable in `PDE` / `TimeDependentPDE` on medium-sized 2D grids
+- Compact schemes: one-sided boundary stencils on non-periodic grids now reach the
+  interior accuracy order (previously one to two orders lower).
+  **Note:** results at the boundary points of non-periodic compact schemes change
+  (they become more accurate).
+- Compact schemes: boundary fallback to explicit differences now only catches
+  `LinAlgError` and emits a `RuntimeWarning` instead of silently swallowing all errors
+- Compact schemes: clear error message if the grid is too small for the stencil
+
 ## Version 0.14.x
 
 - Time-dependent PDEs via Method of Lines (Forward Euler, RK4, Backward Euler, Crank-Nicolson)

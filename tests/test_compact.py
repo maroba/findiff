@@ -452,3 +452,108 @@ def test_one_sided_compact_second_derivative():
     actual = d2_dx2(f)
 
     np.testing.assert_allclose(actual, expected, atol=1e-4)
+
+
+@pytest.mark.parametrize("periodic", [False, True])
+@pytest.mark.parametrize("dim", [0, 1, 2])
+def test_compact_call_matches_matrix_3d(dim, periodic):
+    shape = (12, 9, 7)
+    f = np.random.default_rng(0).standard_normal(shape)
+    d = Diff(dim, 0.1, compact=3, acc=4, periodic=periodic)
+
+    for op in (d, d**2):
+        expected = op.matrix(shape).dot(f.reshape(-1)).reshape(shape)
+        np.testing.assert_allclose(op(f), expected, rtol=1e-10, atol=1e-10)
+
+
+def test_compact_complex_input():
+    x = np.linspace(0, 1, 40)
+    dx = x[1] - x[0]
+    f = np.exp(1j * x)
+    d_dx = Diff(0, dx, compact=3, acc=6)
+
+    np.testing.assert_allclose(d_dx(f), 1j * f, atol=1e-6)
+
+
+def test_compact_matrix_only_couples_along_axis():
+    """The N-D matrix must stay block-structured instead of being built densely."""
+    shape = (200, 200)
+    x = np.linspace(0, 1, shape[0])
+    d = Diff(1, x[1] - x[0], compact=3, acc=6)
+
+    M = d.matrix(shape)
+
+    assert M.shape == (40000, 40000)
+    assert M.nnz <= shape[0] * shape[1] * shape[1]
+    X, Y = np.meshgrid(x, x, indexing="ij")
+    np.testing.assert_allclose(
+        M.dot(np.sin(Y).reshape(-1)).reshape(shape), np.cos(Y), atol=1e-6
+    )
+
+
+def test_boundary_fallback_warns_and_stays_accurate(monkeypatch):
+    import findiff.compact as compact_module
+
+    original = compact_module.calc_coefs
+
+    def failing_for_boundary(deriv, offsets, **kwargs):
+        if min(offsets) >= 0 or max(offsets) <= 0:  # one-sided boundary stencil
+            raise np.linalg.LinAlgError("singular")
+        return original(deriv, offsets, **kwargs)
+
+    monkeypatch.setattr(compact_module, "calc_coefs", failing_for_boundary)
+
+    x = np.linspace(0, 1, 40)
+    d_dx = Diff(0, x[1] - x[0], compact=3, acc=4)
+    with pytest.warns(RuntimeWarning, match="falling back to explicit"):
+        actual = d_dx(np.sin(x))
+
+    np.testing.assert_allclose(actual, np.cos(x), atol=1e-5)
+
+
+def test_boundary_errors_are_not_swallowed(monkeypatch):
+    import findiff.compact as compact_module
+
+    original = compact_module.calc_coefs
+
+    def broken_for_boundary(deriv, offsets, **kwargs):
+        if min(offsets) >= 0 or max(offsets) <= 0:  # one-sided boundary stencil
+            raise TypeError("unexpected")
+        return original(deriv, offsets, **kwargs)
+
+    monkeypatch.setattr(compact_module, "calc_coefs", broken_for_boundary)
+
+    with pytest.raises(TypeError, match="unexpected"):
+        Diff(0, 0.1, compact=3, acc=4)(np.ones(20))
+
+
+@pytest.mark.parametrize("deriv, compact, acc", [(1, 3, 6), (2, 3, 6), (1, 5, 8)])
+def test_boundary_rows_reach_interior_accuracy(deriv, compact, acc):
+    scheme = CompactScheme.from_accuracy(acc, deriv, compact)
+    differ = _CompactDiffUniformNonPeriodic(0, deriv, 1, scheme)
+    interior_acc = calc_coefs(deriv, scheme.right, alphas=scheme.left)["accuracy"]
+
+    for irow in range(max(max(scheme.left), max(scheme.right))):
+        alphas, offsets = differ._boundary_scheme(irow, 40, target_acc=interior_acc)
+        assert calc_coefs(deriv, offsets, alphas=alphas)["accuracy"] >= interior_acc
+
+
+def test_boundary_convergence_order_matches_interior():
+    def boundary_error(n):
+        x = np.linspace(0, 2, n)
+        f = np.exp(np.sin(x))
+        d_dx = Diff(0, x[1] - x[0], compact=3, acc=6)
+        return np.abs(d_dx(f) - np.cos(x) * f)[:2].max()
+
+    order = np.log2(boundary_error(41) / boundary_error(81))
+    assert order > 5.5
+
+
+@pytest.mark.parametrize("periodic", [False, True])
+def test_grid_too_small_gives_clear_error(periodic):
+    d_dx = Diff(0, 0.1, compact=5, acc=8, periodic=periodic)
+
+    with pytest.raises(ValueError, match="Grid has 3 points along axis 0"):
+        d_dx(np.ones(3))
+
+    assert np.all(np.isfinite(d_dx(np.ones(4))))
