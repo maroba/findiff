@@ -170,11 +170,17 @@ def test_non_uniform(analytic_inv):
     x = np.linspace(0, 10, 100)
     dx = x[1] - x[0]
 
-    c_uni = coefficients(deriv=2, acc=2, analytic_inv=analytic_inv)
-    coefs_uni = c_uni["center"]["coefficients"] / dx**2
-
     c_non_uni = coefficients_non_uni(deriv=2, acc=2, coords=x, idx=5)
     coefs_non_uni = c_non_uni["coefficients"]
+
+    # On a uniform grid the non-uniform scheme must reproduce the equidistant
+    # coefficients for the stencil it actually uses.
+    coefs_uni = (
+        calc_coefs(2, list(c_non_uni["offsets"]), analytic_inv=analytic_inv)[
+            "coefficients"
+        ]
+        / dx**2
+    )
 
     np.testing.assert_array_almost_equal(coefs_non_uni, coefs_uni)
 

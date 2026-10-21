@@ -159,12 +159,15 @@ def coefficients_non_uni(deriv, acc, coords, idx):
     _validate_acc(acc)
 
     num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
-    num_side = num_central // 2
 
     if deriv % 2 == 0:
         num_coef = num_central + 1
     else:
         num_coef = num_central
+
+    # Non-uniform central stencils get no symmetry bonus, so size them like the
+    # one-sided schemes (num_coef points) to reach the requested order `acc`.
+    num_side = num_coef // 2
 
     if idx < num_side:
         matrix = _build_matrix_non_uniform(0, num_coef - 1, coords, idx)
@@ -219,8 +222,10 @@ def calc_coefs_non_uni_batched(deriv, acc, coords):
     _validate_acc(acc)
 
     num_central = 2 * math.floor((deriv + 1) / 2) - 1 + acc
-    num_side = num_central // 2
     num_coef = num_central + 1 if deriv % 2 == 0 else num_central
+    # Non-uniform central stencils get no symmetry bonus, so size them like the
+    # one-sided schemes (num_coef points) to reach the requested order `acc`.
+    num_side = num_coef // 2
 
     N = len(coords)
 
