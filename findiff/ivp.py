@@ -401,6 +401,8 @@ class TimeDependentPDE:
         # Time-stepping loop
         nt = len(self.t)
         u = self.u0.copy()
+        dirichlet_inds, dirichlet_vals = _get_dirichlet_data(self.bcs)
+        u = _apply_dirichlet(u, dirichlet_inds, dirichlet_vals)
 
         if store_every is not None:
             stored_t = [self.t[0]]
