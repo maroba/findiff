@@ -1,7 +1,28 @@
 import numpy as np
+import pytest
 
 from findiff import Diff, BoundaryConditions, PDE, Identity
 from tests.test_diff import make_grid
+
+
+@pytest.mark.parametrize("dtype", [np.int64, np.float32, np.float64, np.complex128])
+@pytest.mark.parametrize("readonly", [False, True])
+@pytest.mark.parametrize("solver", [None, "gmres"])
+def test_rhs_preserves_boundary_values_and_input(dtype, readonly, solver):
+    x = np.linspace(0, 1, 11)
+    rhs = np.full(x.shape, 2, dtype=dtype)
+    original = rhs.copy()
+    rhs.flags.writeable = not readonly
+    bc = BoundaryConditions(x.shape)
+    bc[0] = 0.25
+    bc[-1] = 0.75
+    pde = PDE(Diff(0, x[1] - x[0]) ** 2, rhs, bc)
+    options = {} if solver is None else {"rtol": 1e-12}
+
+    actual = pde.solve(solver=solver, **options)
+
+    np.testing.assert_allclose(actual, x * (x - 1) + 0.25 + 0.5 * x, atol=1e-12)
+    np.testing.assert_array_equal(rhs, original)
 
 
 def test_1d_dirichlet_hom():
