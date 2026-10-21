@@ -83,4 +83,7 @@ def make_axis(dim, config_or_axis, periodic=False):
     if isinstance(config_or_axis, numbers.Number):
         return EquidistantAxis(dim, spacing=config_or_axis, periodic=periodic)
     elif is_array(config_or_axis):
-        return NonEquidistantAxis(dim, coords=np.asarray(config_or_axis), periodic=periodic)
+        coords = np.asarray(config_or_axis)
+        if coords.ndim == 0:
+            return EquidistantAxis(dim, spacing=float(coords), periodic=periodic)
+        return NonEquidistantAxis(dim, coords=coords, periodic=periodic) 
