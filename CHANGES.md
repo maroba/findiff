@@ -2,12 +2,19 @@
 
 ## Version 0.14.x
 
+- Time-dependent PDEs via Method of Lines (Forward Euler, RK4, Backward Euler, Crank-Nicolson)
+- GPU / JAX / CuPy backend support for operator application
 - Truncation error estimation via accuracy order comparison
 - Support for non-uniform grids in Laplacian
 - Iterative solvers for PDEs (CG, GMRES, BiCGSTAB, LGMRES, MINRES) with preconditioner support
 - Eigenvalue problem support (eigs and eigsh methods)
 - Robin (mixed) boundary conditions for PDEs
-- Fix order-of-accuracy loss for even-order derivatives on non-uniform grids (central stencil was undersized)
+- Fix order-of-accuracy loss for even-order derivatives on non-uniform grids (central stencil was undersized).
+  **Note:** results for even-order derivatives on non-uniform grids (`coords=`) change (they become more
+  accurate), stencils are one point wider, and the minimum grid size for these derivatives grows by one.
+- Fix `PDE.solve()` overwriting the caller's `rhs` and truncating boundary values for integer arrays
+- Fix `TimeDependentPDE` not applying Dirichlet values to the initial state
+- Fix crash when passing a 0-d array (e.g. JAX/NumPy scalar) as grid spacing
 
 ## Version 0.13.x
 

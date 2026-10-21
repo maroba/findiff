@@ -18,9 +18,10 @@ Features:
 - Version 0.11.*: Completely remodeled API (backward compatibility is maintained, though)
 - Version 0.12.*: Periodic boundary conditions for differential operators and PDEs
 - Version 0.13.*: Compact finite difference schemes for interior and boundary points
+- Version 0.14.*: Time-dependent PDEs, eigenvalue problems, iterative solvers, error estimation, GPU / JAX / CuPy backends
 """
 
-__version__ = "0.13.1"
+__version__ = "0.14.0"
 
 
 from .coefs import coefficients
