@@ -7,7 +7,7 @@ where L is a spatial differential operator (Expression).
 
 import numpy as np
 from scipy import sparse
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import splu
 
 
 class MOLSolution:
@@ -82,18 +82,24 @@ def _apply_dirichlet(u, dirichlet_inds, dirichlet_vals):
     return u_flat.reshape(shape)
 
 
-def _inject_bcs(A, rhs_vec, bcs):
-    """Replace rows in *A* and *rhs_vec* with boundary-condition equations.
+def _bc_rows(bcs):
+    """Row indices of all boundary-condition equations, and their RHS values."""
+    rows = np.unique(np.fromiter(bcs.row_inds(), dtype=int))
+    vals = np.asarray(bcs.rhs.tocsr()[rows].toarray()).ravel()
+    return rows, vals
 
-    Follows the same row-replacement pattern used by
-    :meth:`PDE.solve` in ``pde.py``.
+
+def _inject_bc_rows(A, bcs, rows):
+    """Replace the rows *rows* of *A* by the boundary-condition equations.
+
+    Same row-replacement pattern as :meth:`PDE.solve` in ``pde.py``, but done
+    with sparse masks instead of a (slow) conversion to LIL format.
     """
-    A_lil = sparse.lil_matrix(A)
-    rhs = rhs_vec.copy()
-    nz = list(bcs.row_inds())
-    A_lil[nz, :] = bcs.lhs[nz, :]
-    rhs[nz] = np.asarray(bcs.rhs[nz].toarray()).ravel()
-    return sparse.csr_matrix(A_lil), rhs
+    keep = np.ones(A.shape[0])
+    keep[rows] = 0
+    return sparse.csr_matrix(
+        sparse.diags(keep) @ A + sparse.diags(1 - keep) @ sparse.csr_matrix(bcs.lhs)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -157,24 +163,32 @@ class _ImplicitStepper:
     row replacement.
     """
 
+    # Time steps that differ only by round-off (e.g. from np.linspace) reuse
+    # the assembled and factorized system.
+    _DT_RTOL = 1e-10
+
     def __init__(self, operator, shape, bcs, theta, solver, solver_options):
         self.shape = shape
         self.bcs = bcs
         self.theta = theta
         self.solver = solver
         self.solver_options = dict(solver_options)
-        self._L_mat = operator.matrix(shape)
+        self._L_mat = sparse.csr_matrix(operator.matrix(shape))
+        self._bc_rows, self._bc_vals = _bc_rows(bcs)
         self._cached_dt = None
         self._A = None   # (I - theta*dt*L) with BCs
         self._B = None   # (I + (1-theta)*dt*L)
+        self._lu = None  # LU factorization of A for the direct solver
 
     def step(self, u, dt):
-        if self._cached_dt != dt:
+        if self._cached_dt is None or not np.isclose(
+            dt, self._cached_dt, rtol=self._DT_RTOL, atol=0
+        ):
             self._build_system(dt)
             self._cached_dt = dt
 
         rhs = self._B.dot(u.reshape(-1))
-        _, rhs = _inject_bcs(self._A, rhs, self.bcs)
+        rhs[self._bc_rows] = self._bc_vals
 
         x = self._solve_linear_system(self._A, rhs)
         return x.reshape(self.shape)
@@ -183,14 +197,10 @@ class _ImplicitStepper:
         N = self._L_mat.shape[0]
         I = sparse.eye(N, format='csr')
 
-        # LHS: I - theta*dt*L
+        # LHS: I - theta*dt*L, with BC rows replaced
         A = I - self.theta * dt * self._L_mat
-
-        # Inject BCs into A (row replacement)
-        A_lil = sparse.lil_matrix(A)
-        nz = list(self.bcs.row_inds())
-        A_lil[nz, :] = self.bcs.lhs[nz, :]
-        self._A = sparse.csr_matrix(A_lil)
+        self._A = _inject_bc_rows(A, self.bcs, self._bc_rows)
+        self._lu = None
 
         # RHS matrix: I + (1-theta)*dt*L
         if self.theta < 1.0:
@@ -200,7 +210,9 @@ class _ImplicitStepper:
 
     def _solve_linear_system(self, A, b):
         if self.solver is None or self.solver == 'direct':
-            return spsolve(A, b)
+            if self._lu is None:
+                self._lu = splu(sparse.csc_matrix(A))
+            return self._lu.solve(b)
 
         opts = dict(self.solver_options)
 

@@ -1,5 +1,13 @@
 # Change Log
 
+## Unreleased
+
+- `TimeDependentPDE`: implicit methods (`backward-euler`, `crank-nicolson`) are much faster
+  (~70-180x per step on 50x50 to 100x100 grids). Boundary conditions are injected once with
+  sparse masks instead of converting the system matrix to LIL format in every step, the LU
+  factorization is reused, and time steps differing only by round-off (e.g. from
+  `np.linspace`) no longer trigger a rebuild of the system.
+
 ## Version 0.15.x
 
 - Compact schemes with spectral-like resolution (Lele, 1992): `Diff(..., compact=5, acc=4,

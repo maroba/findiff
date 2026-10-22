@@ -429,3 +429,77 @@ class TestConvergenceRates:
         )
         slope = np.polyfit(np.log(dts), np.log(errors), 1)[0]
         assert slope > 0.8, f"Backward Euler slope = {slope}, expected ~1.0"
+
+
+def _heat_problem_2d(n=20):
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    X, Y = np.meshgrid(x, x, indexing="ij")
+    L = 0.01 * (Diff(0, dx) ** 2 + Diff(1, dx) ** 2)
+    bc = BoundaryConditions((n, n))
+    bc[0, :] = 0
+    bc[-1, :] = Diff(0, dx), 0.5
+    bc[:, 0] = 0
+    bc[:, -1] = 1
+    return L, np.sin(np.pi * X) * np.sin(np.pi * Y), bc
+
+
+@pytest.mark.parametrize("method", ["backward-euler", "crank-nicolson"])
+def test_implicit_system_is_built_and_factorized_once_for_linspace_times(
+    method, monkeypatch
+):
+    import findiff.ivp as ivp
+
+    builds, factorizations = [], []
+    original_build = ivp._ImplicitStepper._build_system
+    original_splu = ivp.splu
+
+    def counting_build(self, dt):
+        builds.append(dt)
+        return original_build(self, dt)
+
+    def counting_splu(A):
+        factorizations.append(A.shape)
+        return original_splu(A)
+
+    monkeypatch.setattr(ivp._ImplicitStepper, "_build_system", counting_build)
+    monkeypatch.setattr(ivp, "splu", counting_splu)
+
+    L, u0, bc = _heat_problem_2d()
+    # np.linspace yields steps that differ by round-off only
+    TimeDependentPDE(L, u0, bc, np.linspace(0, 0.1, 51)).solve(method=method)
+
+    assert len(builds) == 1
+    assert len(factorizations) == 1
+
+
+@pytest.mark.parametrize("method", ["backward-euler", "crank-nicolson"])
+def test_implicit_variable_time_step_matches_piecewise_solve(method):
+    L, u0, bc = _heat_problem_2d()
+    t1 = np.linspace(0, 0.05, 11)
+    t2 = np.linspace(0.05, 0.1, 31)
+
+    whole = TimeDependentPDE(L, u0, bc, np.concatenate([t1, t2[1:]])).solve(
+        method=method
+    )
+    first = TimeDependentPDE(L, u0, bc, t1).solve(method=method)
+    piecewise = TimeDependentPDE(L, first, bc, t2).solve(method=method)
+
+    np.testing.assert_allclose(whole, piecewise, atol=1e-12)
+
+
+@pytest.mark.parametrize("method", ["backward-euler", "crank-nicolson"])
+def test_implicit_boundary_conditions_hold_every_step(method):
+    L, u0, bc = _heat_problem_2d()
+    x = np.linspace(0, 1, u0.shape[0])
+    dx = x[1] - x[0]
+    d_dx = Diff(0, dx)
+
+    sol = TimeDependentPDE(L, u0, bc, np.linspace(0, 0.1, 21)).solve(
+        method=method, store_every=1
+    )
+
+    for u in sol.u[1:]:
+        np.testing.assert_allclose(u[0, :-1], 0, atol=1e-12)  # corner (0, -1) belongs to bc[:, -1]
+        np.testing.assert_allclose(u[1:-1, -1], 1, atol=1e-12)
+        np.testing.assert_allclose(d_dx(u)[-1, 1:-1], 0.5, atol=1e-8)
