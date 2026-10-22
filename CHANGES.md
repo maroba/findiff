@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `TimeDependentPDE`: time-dependent boundary values (`bc[0] = lambda t: np.sin(t)`, also for
+  Neumann and Robin conditions) and a source term (`source=` array or callable `s(t)`), i.e.
+  `u_t = L(u) + s(t)`. Values are evaluated at the times each method requires (including RK4
+  stages), so all methods keep their order of accuracy. `PDE.solve()` rejects time-dependent
+  boundary conditions with a clear error.
 - `TimeDependentPDE`: implicit methods (`backward-euler`, `crank-nicolson`) are much faster
   (~70-180x per step on 50x50 to 100x100 grids). Boundary conditions are injected once with
   sparse masks instead of converting the system matrix to LIL format in every step, the LU

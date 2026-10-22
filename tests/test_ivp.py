@@ -503,3 +503,103 @@ def test_implicit_boundary_conditions_hold_every_step(method):
         np.testing.assert_allclose(u[0, :-1], 0, atol=1e-12)  # corner (0, -1) belongs to bc[:, -1]
         np.testing.assert_allclose(u[1:-1, -1], 1, atol=1e-12)
         np.testing.assert_allclose(d_dx(u)[-1, 1:-1], 0.5, atol=1e-8)
+
+
+# u = sin(2t) + x^2 t solves u_t = u_xx + s with s = 2cos(2t) + x^2 - 2t;
+# the spatial discretization is exact, so only the time error remains.
+def _manufactured_error(method, nt, neumann=False):
+    n = 11
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    bc = BoundaryConditions((n,))
+    bc[0] = lambda t: np.sin(2 * t)
+    if neumann:
+        bc[-1] = Diff(0, dx), lambda t: 2 * t
+    else:
+        bc[-1] = lambda t: np.sin(2 * t) + t
+    t = np.linspace(0, 0.5, nt + 1)
+    u0 = np.sin(0) + x**2 * 0
+    source = lambda t: 2 * np.cos(2 * t) + x**2 - 2 * t  # noqa: E731
+
+    u = TimeDependentPDE(Diff(0, dx) ** 2, u0, bc, t, source=source).solve(
+        method=method
+    )
+    return np.abs(u - (np.sin(1.0) + x**2 * 0.5)).max()
+
+
+@pytest.mark.parametrize(
+    "method, nt, order",
+    [
+        ("forward-euler", 400, 1),
+        ("rk4", 200, 4),
+        ("backward-euler", 40, 1),
+        ("crank-nicolson", 40, 2),
+    ],
+)
+def test_time_dependent_dirichlet_and_source_reach_method_order(method, nt, order):
+    measured = np.log2(_manufactured_error(method, nt) / _manufactured_error(method, 2 * nt))
+    assert measured == pytest.approx(order, abs=0.4)
+
+
+@pytest.mark.parametrize("method, order", [("backward-euler", 1), ("crank-nicolson", 2)])
+def test_time_dependent_neumann_reaches_method_order(method, order):
+    e1 = _manufactured_error(method, 40, neumann=True)
+    e2 = _manufactured_error(method, 80, neumann=True)
+    assert np.log2(e1 / e2) == pytest.approx(order, abs=0.2)
+
+
+def test_time_dependent_bc_value_shapes():
+    shape = (6, 5)
+    bc = BoundaryConditions(shape)
+    bc[0, :] = lambda t: t                                  # scalar
+    bc[-1, :] = lambda t: t * np.arange(5)                  # shape of the boundary slice
+    bc[1:-1, 0] = lambda t: t * np.ones(shape)              # shape of the whole grid
+    bc[1:-1, -1] = 7.0                                      # static
+    rows = np.unique(np.fromiter(bc.row_inds(), dtype=int))
+
+    values = dict(zip(rows, bc.values_at(rows, 2.0)))
+    idx = np.arange(30).reshape(shape)
+
+    assert all(values[i] == 2.0 for i in idx[0, :])
+    assert [values[i] for i in idx[-1, :]] == [0.0, 2.0, 4.0, 6.0, 8.0]
+    assert all(values[i] == 2.0 for i in idx[1:-1, 0])
+    assert all(values[i] == 7.0 for i in idx[1:-1, -1])
+    assert bc.is_time_dependent
+
+    bc[0, :] = lambda t: np.ones(3)
+    with pytest.raises(ValueError, match="returned shape"):
+        bc.values_at(rows, 0.0)
+
+
+def test_static_assignment_overrides_time_dependent_value():
+    bc = BoundaryConditions((5,))
+    bc[0] = lambda t: t
+    bc[0] = 3.0
+
+    assert not bc.is_time_dependent
+    assert bc.values_at([0], 10.0)[0] == 3.0
+
+
+def test_constant_array_source():
+    n = 21
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    bc[-1] = 0
+    # steady state of u_t = u_xx + 2 with u(0) = u(1) = 0 is u = x (1 - x)
+    u = TimeDependentPDE(Diff(0, dx) ** 2, np.zeros(n), bc, np.linspace(0, 5, 201),
+                         source=2.0).solve(method="backward-euler")
+
+    np.testing.assert_allclose(u, x * (1 - x), atol=1e-6)
+
+
+def test_pde_rejects_time_dependent_bcs():
+    from findiff import PDE
+
+    bc = BoundaryConditions((5,))
+    bc[0] = lambda t: t
+    bc[-1] = 0
+
+    with pytest.raises(ValueError, match="only supported by TimeDependentPDE"):
+        PDE(Diff(0, 0.1) ** 2, np.zeros(5), bc).solve()

@@ -169,6 +169,47 @@ boundary conditions:
     print("Max error:", np.max(np.abs(u_final - u0)))
 
 
+Time-Dependent Boundary Conditions and Sources
+-----------------------------------------------
+
+.. versionadded:: 0.16
+
+Boundary values can be functions of time: assign a callable ``g(t)`` instead
+of a number. This works for Dirichlet, Neumann and Robin conditions. The
+callable may return a scalar, an array with the shape of the selected boundary
+points, or an array with the shape of the whole grid.
+
+A source term :math:`s` turns the problem into
+:math:`u_t = L(u) + s(t)`. Pass it as an array (constant in time) or as a
+callable ``s(t)``:
+
+.. code-block:: python
+
+    import numpy as np
+    from findiff import Diff, TimeDependentPDE, BoundaryConditions
+
+    nx = 101
+    x = np.linspace(0, 1, nx)
+    dx = x[1] - x[0]
+
+    bc = BoundaryConditions((nx,))
+    bc[0] = lambda t: np.sin(2 * np.pi * t)       # oscillating temperature
+    bc[-1] = Diff(0, dx), lambda t: 0.1 * t       # growing heat flux
+
+    heating = lambda t: np.exp(-((x - 0.5) / 0.1) ** 2) * (t < 1)
+
+    t = np.linspace(0, 2, 401)
+    u = TimeDependentPDE(0.05 * Diff(0, dx)**2, np.zeros(nx), bc, t,
+                         source=heating).solve()
+
+Boundary values and sources are evaluated at the times each method requires
+(including the intermediate stages of RK4), so all methods keep their order of
+accuracy. Explicit methods still require Dirichlet conditions only.
+
+``PDE`` (for boundary value problems) does not accept time-dependent boundary
+conditions.
+
+
 Using Iterative Solvers
 -------------------------
 

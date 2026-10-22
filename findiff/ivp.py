@@ -1,8 +1,9 @@
 """
 Method of Lines solver for time-dependent PDEs.
 
-Solves initial-boundary value problems of the form u_t = L(u)
-where L is a spatial differential operator (Expression).
+Solves initial-boundary value problems of the form u_t = L(u) + s(t)
+where L is a spatial differential operator (Expression) and s an optional
+source term.
 """
 
 import numpy as np
@@ -72,6 +73,32 @@ def _get_dirichlet_data(bcs):
     return np.array(dirichlet_inds, dtype=int), np.array(dirichlet_vals)
 
 
+class _BCValues:
+    """Boundary values for given flat row indices, evaluated at time t."""
+
+    def __init__(self, bcs, rows):
+        self.bcs = bcs
+        self.rows = np.asarray(rows, dtype=int)
+        self._static = None
+        if not getattr(bcs, "is_time_dependent", False):
+            self._static = bcs.values_at(self.rows, None)
+
+    def __call__(self, t):
+        if self._static is not None:
+            return self._static
+        return self.bcs.values_at(self.rows, t)
+
+
+def _make_source(source, shape):
+    """Normalizes the source term to None or a callable s(t) -> array of `shape`."""
+    if source is None:
+        return None
+    if callable(source):
+        return lambda t: np.broadcast_to(np.asarray(source(t), dtype=float), shape)
+    values = np.broadcast_to(np.asarray(source, dtype=float), shape)
+    return lambda t: values
+
+
 def _apply_dirichlet(u, dirichlet_inds, dirichlet_vals):
     """Overwrite Dirichlet boundary values in *u* (in-place)."""
     if len(dirichlet_inds) == 0:
@@ -83,10 +110,8 @@ def _apply_dirichlet(u, dirichlet_inds, dirichlet_vals):
 
 
 def _bc_rows(bcs):
-    """Row indices of all boundary-condition equations, and their RHS values."""
-    rows = np.unique(np.fromiter(bcs.row_inds(), dtype=int))
-    vals = np.asarray(bcs.rhs.tocsr()[rows].toarray()).ravel()
-    return rows, vals
+    """Row indices of all boundary-condition equations."""
+    return np.unique(np.fromiter(bcs.row_inds(), dtype=int))
 
 
 def _inject_bc_rows(A, bcs, rows):
@@ -109,10 +134,12 @@ def _inject_bc_rows(A, bcs, rows):
 class _ExplicitStepper:
     """Base class for explicit time-stepping methods."""
 
-    def __init__(self, operator, shape, bcs):
+    def __init__(self, operator, shape, bcs, source=None):
         self.operator = operator
         self.shape = shape
-        self.dirichlet_inds, self.dirichlet_vals = _get_dirichlet_data(bcs)
+        self.source = source
+        self.dirichlet_inds, _ = _get_dirichlet_data(bcs)
+        self._bc_values = _BCValues(bcs, self.dirichlet_inds)
 
         # Verify all BCs are Dirichlet
         all_bc_rows = np.unique(list(bcs.row_inds()))
@@ -123,32 +150,38 @@ class _ExplicitStepper:
                 "an implicit method (backward-euler, crank-nicolson)."
             )
 
-    def _enforce_bc(self, u):
-        return _apply_dirichlet(u, self.dirichlet_inds, self.dirichlet_vals)
+    def _enforce_bc(self, u, t):
+        return _apply_dirichlet(u, self.dirichlet_inds, self._bc_values(t))
 
-    def step(self, u, dt):
+    def _rate(self, u, t):
+        rate = self.operator(u)
+        if self.source is not None:
+            rate = rate + self.source(t)
+        return rate
+
+    def step(self, u, t, dt):
         raise NotImplementedError
 
 
 class _ForwardEulerStepper(_ExplicitStepper):
-    r"""Forward Euler: :math:`u^{n+1} = u^n + \Delta t\, L(u^n)`."""
+    r"""Forward Euler: :math:`u^{n+1} = u^n + \Delta t\, (L(u^n) + s(t^n))`."""
 
-    def step(self, u, dt):
-        u_new = u + dt * self.operator(u)
-        return self._enforce_bc(u_new)
+    def step(self, u, t, dt):
+        u_new = u + dt * self._rate(u, t)
+        return self._enforce_bc(u_new, t + dt)
 
 
 class _RK4Stepper(_ExplicitStepper):
     """Classic fourth-order Runge-Kutta."""
 
-    def step(self, u, dt):
-        L = self.operator
-        k1 = L(u)
-        k2 = L(self._enforce_bc(u + 0.5 * dt * k1))
-        k3 = L(self._enforce_bc(u + 0.5 * dt * k2))
-        k4 = L(self._enforce_bc(u + dt * k3))
+    def step(self, u, t, dt):
+        t_half = t + 0.5 * dt
+        k1 = self._rate(u, t)
+        k2 = self._rate(self._enforce_bc(u + 0.5 * dt * k1, t_half), t_half)
+        k3 = self._rate(self._enforce_bc(u + 0.5 * dt * k2, t_half), t_half)
+        k4 = self._rate(self._enforce_bc(u + dt * k3, t + dt), t + dt)
         u_new = u + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
-        return self._enforce_bc(u_new)
+        return self._enforce_bc(u_new, t + dt)
 
 
 # ---------------------------------------------------------------------------
@@ -167,20 +200,23 @@ class _ImplicitStepper:
     # the assembled and factorized system.
     _DT_RTOL = 1e-10
 
-    def __init__(self, operator, shape, bcs, theta, solver, solver_options):
+    def __init__(self, operator, shape, bcs, theta, solver, solver_options,
+                 source=None):
         self.shape = shape
         self.bcs = bcs
         self.theta = theta
+        self.source = source
         self.solver = solver
         self.solver_options = dict(solver_options)
         self._L_mat = sparse.csr_matrix(operator.matrix(shape))
-        self._bc_rows, self._bc_vals = _bc_rows(bcs)
+        self._bc_rows = _bc_rows(bcs)
+        self._bc_values = _BCValues(bcs, self._bc_rows)
         self._cached_dt = None
         self._A = None   # (I - theta*dt*L) with BCs
         self._B = None   # (I + (1-theta)*dt*L)
         self._lu = None  # LU factorization of A for the direct solver
 
-    def step(self, u, dt):
+    def step(self, u, t, dt):
         if self._cached_dt is None or not np.isclose(
             dt, self._cached_dt, rtol=self._DT_RTOL, atol=0
         ):
@@ -188,7 +224,14 @@ class _ImplicitStepper:
             self._cached_dt = dt
 
         rhs = self._B.dot(u.reshape(-1))
-        rhs[self._bc_rows] = self._bc_vals
+        if self.source is not None:
+            s_new = self.source(t + dt).reshape(-1)
+            if self.theta < 1.0:
+                s_old = self.source(t).reshape(-1)
+                rhs += dt * (self.theta * s_new + (1.0 - self.theta) * s_old)
+            else:
+                rhs += dt * s_new
+        rhs[self._bc_rows] = self._bc_values(t + dt)
 
         x = self._solve_linear_system(self._A, rhs)
         return x.reshape(self.shape)
@@ -269,20 +312,22 @@ class _ImplicitStepper:
 
 
 class _BackwardEulerStepper(_ImplicitStepper):
-    r"""Backward Euler: :math:`(I - \Delta t\, L)\, u^{n+1} = u^n`."""
+    r"""Backward Euler: :math:`(I - \Delta t\, L)\, u^{n+1} = u^n + \Delta t\, s^{n+1}`."""
 
-    def __init__(self, operator, shape, bcs, solver, solver_options):
+    def __init__(self, operator, shape, bcs, solver, solver_options, source=None):
         super().__init__(operator, shape, bcs, theta=1.0,
-                         solver=solver, solver_options=solver_options)
+                         solver=solver, solver_options=solver_options,
+                         source=source)
 
 
 class _CrankNicolsonStepper(_ImplicitStepper):
     r"""Crank-Nicolson: :math:`(I - \tfrac{1}{2}\Delta t\, L)\, u^{n+1}
     = (I + \tfrac{1}{2}\Delta t\, L)\, u^n`."""
 
-    def __init__(self, operator, shape, bcs, solver, solver_options):
+    def __init__(self, operator, shape, bcs, solver, solver_options, source=None):
         super().__init__(operator, shape, bcs, theta=0.5,
-                         solver=solver, solver_options=solver_options)
+                         solver=solver, solver_options=solver_options,
+                         source=source)
 
 
 # ---------------------------------------------------------------------------
@@ -296,9 +341,10 @@ class TimeDependentPDE:
 
     .. math::
 
-        \frac{\partial u}{\partial t} = L(u)
+        \frac{\partial u}{\partial t} = L(u) + s(t)
 
-    where *L* is a spatial differential operator built with *findiff*.
+    where *L* is a spatial differential operator built with *findiff* and
+    *s* an optional source term.
 
     Parameters
     ----------
@@ -307,9 +353,13 @@ class TimeDependentPDE:
     u0 : ndarray
         Initial condition array with the spatial grid shape.
     bcs : BoundaryConditions
-        Spatial boundary conditions applied at each time step.
+        Spatial boundary conditions applied at each time step. Boundary
+        values may be callables ``g(t)`` for time-dependent conditions.
     t : 1D ndarray
         Time points.  ``t[0]`` is the initial time.
+    source : ndarray, callable or None
+        Optional source term *s*: an array (constant in time, broadcastable
+        to the grid shape) or a callable ``s(t)`` returning such an array.
 
     Examples
     --------
@@ -339,11 +389,12 @@ class TimeDependentPDE:
         'crank-nicolson': _CrankNicolsonStepper,
     }
 
-    def __init__(self, lhs, u0, bcs, t):
+    def __init__(self, lhs, u0, bcs, t, source=None):
         self.lhs = lhs
         self.u0 = np.asarray(u0, dtype=float)
         self.bcs = bcs
         self.t = np.asarray(t, dtype=float)
+        self.source = _make_source(source, self.u0.shape)
 
         if self.t.ndim != 1 or len(self.t) < 2:
             raise ValueError("t must be a 1D array with at least 2 points")
@@ -404,17 +455,20 @@ class TimeDependentPDE:
                     f"solver and solver_options are not used with "
                     f"explicit method '{method}'"
                 )
-            stepper = stepper_cls(self.lhs, shape, self.bcs)
+            stepper = stepper_cls(self.lhs, shape, self.bcs, source=self.source)
         else:
             stepper = stepper_cls(
-                self.lhs, shape, self.bcs, solver, solver_options
+                self.lhs, shape, self.bcs, solver, solver_options,
+                source=self.source,
             )
 
         # Time-stepping loop
         nt = len(self.t)
         u = self.u0.copy()
-        dirichlet_inds, dirichlet_vals = _get_dirichlet_data(self.bcs)
-        u = _apply_dirichlet(u, dirichlet_inds, dirichlet_vals)
+        dirichlet_inds, _ = _get_dirichlet_data(self.bcs)
+        u = _apply_dirichlet(
+            u, dirichlet_inds, _BCValues(self.bcs, dirichlet_inds)(self.t[0])
+        )
 
         if store_every is not None:
             stored_t = [self.t[0]]
@@ -422,7 +476,7 @@ class TimeDependentPDE:
 
         for i in range(1, nt):
             dt = self.t[i] - self.t[i - 1]
-            u = stepper.step(u, dt)
+            u = stepper.step(u, self.t[i - 1], dt)
 
             if store_every is not None and i % store_every == 0:
                 stored_t.append(self.t[i])

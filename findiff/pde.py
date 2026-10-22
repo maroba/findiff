@@ -86,6 +86,11 @@ class PDE:
         """
 
         shape = self.bcs.shape
+        if getattr(self.bcs, "is_time_dependent", False):
+            raise ValueError(
+                "Time-dependent boundary conditions are only supported by "
+                "TimeDependentPDE."
+            )
         if self._L is None:
             self._L = self.lhs.matrix(shape)  # expensive operation, so cache it
 
@@ -199,6 +204,11 @@ class BoundaryConditions:
     Robin (:math:`\\alpha u + \\beta \\partial u / \\partial n = g`):
         ``bc[index] = (alpha, diff_operator, beta, value)``
 
+    For :class:`~findiff.TimeDependentPDE`, any ``value`` may also be a
+    callable ``g(t)`` returning a scalar or an array (of the shape of the
+    selected boundary points or of the whole grid), e.g.
+    ``bc[0] = lambda t: np.sin(t)``.
+
     Alternatively, Robin BCs can be specified using the operator-tuple
     form ``bc[index] = (alpha * Identity() + beta * diff_operator, value)``.
     """
@@ -223,6 +233,8 @@ class BoundaryConditions:
         self.long_indices = np.array(list(range(siz))).reshape(shape)
         self.lhs = sparse.lil_matrix((siz, siz))
         self.rhs = sparse.lil_matrix((siz, 1))
+        # time-dependent values: list of (flat row indices, callable g(t))
+        self._time_dependent = []
 
     def __setitem__(self, key, value):
         """
@@ -241,10 +253,19 @@ class BoundaryConditions:
             - **Neumann**: a 2-tuple ``(diff_op, g)`` — ``bc[idx] = (Diff(0, dx), g)``
             - **Robin**: a 4-tuple ``(alpha, diff_op, beta, g)`` representing
               :math:`\\alpha u + \\beta \\frac{\\partial u}{\\partial n} = g`.
+
+            For time-dependent problems, ``g`` may be a callable ``g(t)``.
         """
         from findiff.operators import Identity
 
         lng_inds = self.long_indices[key]
+        flat_inds = np.atleast_1d(lng_inds).reshape(-1)
+        # a new assignment overrides earlier time-dependent values on these rows
+        self._time_dependent = [
+            (rows[~np.isin(rows, flat_inds)], func)
+            for rows, func in self._time_dependent
+        ]
+        self._time_dependent = [(r, f) for r, f in self._time_dependent if len(r)]
 
         if isinstance(value, tuple) and len(value) == 4:
             # Robin BC: (alpha, diff_op, beta, rhs_value)
@@ -263,7 +284,10 @@ class BoundaryConditions:
             self.lhs[lng_inds, :] = 0
             self.lhs[lng_inds, lng_inds] = 1
 
-        if isinstance(value, np.ndarray):
+        if callable(value):
+            self._time_dependent.append((flat_inds, value))
+            self.rhs[lng_inds] = 0
+        elif isinstance(value, np.ndarray):
             value = value.reshape(-1)[lng_inds]
             for i, v in zip(lng_inds, value):
                 self.rhs[i] = v
@@ -273,3 +297,34 @@ class BoundaryConditions:
     def row_inds(self):
         nz_rows, nz_cols = self.lhs.nonzero()
         return nz_rows
+
+    @property
+    def is_time_dependent(self):
+        """True if any boundary value is a callable of time."""
+        return len(self._time_dependent) > 0
+
+    def values_at(self, rows, t):
+        """Returns the boundary values for the flat row indices `rows` at time `t`."""
+        rows = np.asarray(rows, dtype=int)
+        values = np.asarray(self.rhs.tocsr()[rows].toarray(), dtype=float).ravel()
+        if not self._time_dependent:
+            return values
+        position = {row: i for i, row in enumerate(rows)}
+        for td_rows, func in self._time_dependent:
+            g = np.asarray(func(t), dtype=float)
+            if g.size == 1:
+                g = np.full(len(td_rows), float(g))
+            elif g.size == len(td_rows):
+                g = g.reshape(-1)
+            elif g.shape == tuple(self.shape):
+                g = g.reshape(-1)[td_rows]
+            else:
+                raise ValueError(
+                    f"Time-dependent boundary value returned shape {g.shape}, "
+                    f"expected a scalar, {len(td_rows)} values or the grid shape "
+                    f"{tuple(self.shape)}."
+                )
+            for row, v in zip(td_rows, g):
+                if row in position:
+                    values[position[row]] = v
+        return values
