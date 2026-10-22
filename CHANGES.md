@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Compact schemes on non-uniform grids: `Diff(0, coords, compact=3, acc=6)` (previously
+  `NotImplementedError`). LHS alphas of the uniform scheme are kept, RHS coefficients are solved
+  per row from the actual spacings; works on arbitrary (also strongly clustered) grids.
 - Compact schemes: much faster application (LU factorization is computed once and
   reused) and `matrix()` no longer builds a dense intermediate matrix, which made
   compact schemes unusable in `PDE` / `TimeDependentPDE` on medium-sized 2D grids

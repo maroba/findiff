@@ -597,3 +597,75 @@ def test_accuracy_of_high_order_scheme_does_not_overflow():
         deriv=2, left={-1: 1 / 3, 0: 1, 1: 1 / 3}, right=list(range(-7, 8))
     )
     assert scheme.get_accuracy(2) == 14
+
+
+def _jittered_grid(n, seed):
+    rng = np.random.default_rng(seed)
+    x = np.linspace(0, 1, n)
+    x[1:-1] += rng.uniform(-0.3, 0.3, n - 2) * (x[1] - x[0])
+    return x
+
+
+@pytest.mark.parametrize("deriv", [1, 2, 3])
+@pytest.mark.parametrize("compact, acc", [(3, 4), (3, 6), (5, 8)])
+def test_nonuniform_compact_is_exact_for_polynomials(deriv, compact, acc):
+    x = _jittered_grid(30, seed=deriv + acc)
+    degree = acc + deriv - 1 + (acc + deriv + 1) % 2  # stencil width - 1
+    p = np.polynomial.Polynomial(np.random.default_rng(0).standard_normal(degree + 1))
+    expected = p.deriv(deriv)(x)
+
+    actual = (Diff(0, x, compact=compact, acc=acc) ** deriv)(p(x))
+
+    np.testing.assert_allclose(actual, expected, atol=1e-7 * np.abs(expected).max())
+
+
+@pytest.mark.parametrize("deriv, acc", [(1, 4), (1, 6), (2, 4), (2, 6)])
+def test_nonuniform_compact_convergence_on_chebyshev_grid(deriv, acc):
+    def error(n):
+        x = (1 - np.cos(np.pi * np.linspace(0, 1, n))) / 2
+        f = np.sin(3 * x)
+        exact = 3 * np.cos(3 * x) if deriv == 1 else -9 * np.sin(3 * x)
+        d = Diff(0, x, compact=3, acc=acc) ** deriv
+        return np.abs(d(f) - exact)[n // 4 : 3 * n // 4].max()
+
+    assert np.log2(error(21) / error(41)) > acc - 0.5
+
+
+@pytest.mark.parametrize("dim", [0, 1, 2])
+def test_nonuniform_compact_matrix_matches_call_3d(dim):
+    xs = [_jittered_grid(n, seed=n) for n in (12, 10, 9)]
+    X = np.meshgrid(*xs, indexing="ij")
+    f = np.sin(X[0] + 2 * X[1] + X[2])
+
+    for d in (Diff(dim, xs[dim], compact=3, acc=4), Diff(dim, xs[dim], compact=3, acc=4) ** 2):
+        expected = d(f)
+        actual = d.matrix(f.shape).dot(f.reshape(-1)).reshape(f.shape)
+        np.testing.assert_allclose(actual, expected, atol=1e-9 * np.abs(expected).max())
+
+
+def test_nonuniform_compact_on_uniform_coords_matches_spacing_accuracy():
+    x = np.linspace(0, 1, 60)
+    f, exact = np.exp(np.sin(3 * x)), 3 * np.cos(3 * x) * np.exp(np.sin(3 * x))
+
+    err_coords = np.abs(Diff(0, x, compact=3, acc=6)(f) - exact).max()
+    err_spacing = np.abs(Diff(0, x[1] - x[0], compact=3, acc=6)(f) - exact).max()
+
+    assert err_coords < 2 * err_spacing
+
+
+def test_nonuniform_compact_decreasing_coords():
+    x = np.linspace(1, 0, 40) ** 2
+    np.testing.assert_allclose(
+        Diff(0, x, compact=3, acc=6)(np.sin(x)), np.cos(x), atol=1e-6
+    )
+
+
+def test_nonuniform_compact_invalid_input():
+    with pytest.raises(ValueError, match="strictly monotonic"):
+        Diff(0, np.array([0.0, 1.0, 1.0, 2.0]), compact=3)(np.ones(4))
+
+    with pytest.raises(ValueError, match="needs 7 points"):
+        Diff(0, np.linspace(0, 1, 5), compact=3, acc=6)(np.ones(5))
+
+    with pytest.raises(ValueError, match="10 coordinates"):
+        Diff(0, np.linspace(0, 1, 10), compact=3)(np.ones(12))

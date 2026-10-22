@@ -121,6 +121,32 @@ the interior accuracy order (as far as the grid size permits).
     df = d_dx(np.sin(x))
 
 
+Non-uniform grids
+-----------------
+
+.. versionadded:: 0.15
+
+Pass the coordinates instead of the spacing, as for explicit differences:
+
+.. code:: python
+
+    x = (1 - np.cos(np.pi * np.linspace(0, 1, 100))) / 2   # clustered at both ends
+
+    d_dx = Diff(0, x, compact=3, acc=6)
+    df = d_dx(np.sin(x))
+    d2_dx2 = d_dx ** 2
+
+The left-hand side keeps the :math:`\alpha_k` of the uniform scheme, which keeps
+the banded system well-conditioned on any grid. The right-hand side coefficients
+are solved row by row from the actual grid spacings. Without the symmetry of a
+uniform grid, the right-hand side needs ``acc + deriv`` points (rounded up to an
+odd number) to reach accuracy order ``acc``, so the stencil is as wide as for
+explicit differences. The benefit of the compact scheme on non-uniform grids is
+therefore a smaller error constant rather than a narrower stencil. The scheme
+reproduces polynomials of degree up to the stencil width minus one exactly on
+any grid.
+
+
 Multi-dimensional grids
 -----------------------
 
@@ -162,8 +188,7 @@ matrix therefore has :math:`n^3` non-zero entries.
 Limitations
 -----------
 
-- Only equidistant grids are supported. Passing a non-uniform grid raises
-  ``NotImplementedError``.
+- Periodic non-uniform grids are not supported (as for explicit differences).
 - The ``stencil()`` method is not supported for compact schemes.
 - ``estimate_error()`` does not support compact schemes and raises an error.
 - Compact schemes run on NumPy / SciPy only. JAX or CuPy arrays are converted

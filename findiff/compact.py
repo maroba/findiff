@@ -2,7 +2,7 @@ import math
 import warnings
 
 import numpy as np
-from scipy.sparse import csc_matrix, csr_matrix
+from scipy.sparse import csc_matrix, csr_matrix, lil_matrix
 from scipy.sparse.linalg import splu
 
 from findiff.coefs import calc_coefs, coefficients, CoefficientCalculator, Solver
@@ -325,3 +325,90 @@ class _CompactDiffUniformNonPeriodic(_CompactDiffUniform):
 
 class _CompactDiffUniformPeriodic(_CompactDiffUniform):
     creator_function = create_cyclic_band_diagonal
+
+
+class _CompactDiffNonUniform(_CompactDiffUniform):
+    r"""Compact finite differences on a non-uniform grid.
+
+    The left-hand side keeps the alphas of the uniform compact scheme (so the
+    banded system stays well-conditioned), while the right-hand side coefficients
+    of each row are solved from the actual grid spacings. Without the symmetry of
+    a uniform grid, the right-hand side needs ``acc + order`` points (rounded up
+    to an odd number) to reach accuracy order ``acc``. Near the boundaries the
+    stencil is shifted to stay inside the grid.
+    """
+
+    def __init__(self, dim, order, coords, scheme):
+        coords = np.asarray(coords, dtype=np.float64)
+        steps = np.diff(coords)
+        if not (np.all(steps > 0) or np.all(steps < 0)):
+            raise ValueError("Coordinates must be strictly monotonic.")
+
+        acc = scheme.get_accuracy(scheme.deriv)
+        if scheme.deriv != order:
+            scheme = CompactScheme.from_accuracy(acc, order, len(scheme.left))
+
+        super().__init__(dim, order, None, scheme)
+        self.coords = coords
+        self.acc = acc
+
+    def _calculate_diff_matrix(self):
+        n = self._shape[self.dim]
+        x = self.coords
+        if len(x) != n:
+            raise ValueError(
+                f"Array has {n} points along axis {self.dim}, "
+                f"but {len(x)} coordinates were given."
+            )
+
+        width = self.acc + self.order
+        width += 1 - width % 2
+        if n < width:
+            raise ValueError(
+                f"Grid has {n} points along axis {self.dim}, but the compact scheme "
+                f"for derivative order {self.order} on a non-uniform grid needs "
+                f"{width} points. Use more points or a smaller `acc`."
+            )
+
+        half = width // 2
+        L = lil_matrix((n, n))
+        R = lil_matrix((n, n))
+        for i in range(n):
+            alphas = {k: a for k, a in self.scheme.left.items() if 0 <= i + k < n}
+            lo = min(max(i - half, 0), n - width)
+            cols = range(lo, lo + width)
+            coefs = _nonuniform_row_coefs(x, i, cols, alphas, self.order)
+            for k, a in alphas.items():
+                L[i, i + k] = a
+            for j, c in zip(cols, coefs):
+                R[i, j] = c
+
+        self._left_matrix = csr_matrix(L)
+        self._right_matrix = csr_matrix(R)
+        self._left_lu = splu(csc_matrix(L))
+
+
+def _nonuniform_row_coefs(x, i, cols, alphas, deriv):
+    r"""Solves for the RHS coefficients :math:`c_j` of row `i` such that
+
+    .. math::
+        \sum_k \alpha_k f^{(d)}(x_{i+k}) = \sum_j c_j f(x_j)
+
+    holds for polynomials of degree ``len(cols) - 1``. Distances are scaled by
+    the mean spacing of the stencil for better conditioning.
+    """
+    cols = list(cols)
+    scale = (x[cols[-1]] - x[cols[0]]) / (len(cols) - 1)
+    rhs_dist = (x[cols] - x[i]) / scale
+    lhs_dist = {k: (x[i + k] - x[i]) / scale for k in alphas}
+
+    num = len(cols)
+    A = np.empty((num, num))
+    b = np.zeros(num)
+    for m in range(num):
+        A[m] = rhs_dist**m / math.factorial(m)
+        if m >= deriv:
+            s = m - deriv
+            b[m] = sum(a * lhs_dist[k] ** s for k, a in alphas.items()) / math.factorial(s)
+
+    return np.linalg.solve(A, b) / scale**deriv
