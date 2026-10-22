@@ -210,6 +210,60 @@ accuracy. Explicit methods still require Dirichlet conditions only.
 conditions.
 
 
+Second Order in Time: the Wave Equation
+---------------------------------------
+
+.. versionadded:: 0.16
+
+Pass the initial velocity ``v0`` to solve problems of second order in time,
+:math:`u_{tt} = L(u) + s(t)`, such as the wave equation
+:math:`u_{tt} = c^2 u_{xx}`:
+
+.. code-block:: python
+
+    import numpy as np
+    from findiff import Diff, TimeDependentPDE, BoundaryConditions
+
+    nx, c = 201, 1.0
+    x = np.linspace(0, 1, nx)
+    dx = x[1] - x[0]
+
+    bc = BoundaryConditions((nx,))
+    bc[0] = 0
+    bc[-1] = 0
+
+    u0 = np.exp(-((x - 0.5) / 0.05) ** 2)    # Gaussian pulse at rest
+    t = np.arange(0, 2, 0.5 * dx / c)
+
+    sol = TimeDependentPDE(c**2 * Diff(0, dx)**2, u0, bc, t,
+                           v0=np.zeros(nx)).solve(method="verlet", store_every=10)
+    sol.u    # displacement snapshots
+    sol.v    # velocity snapshots
+
+Available methods:
+
+- ``'verlet'``: explicit Stoermer-Verlet, second order. Conserves energy over
+  long times; the method of choice for waves. Stable for
+  :math:`c\,\Delta t / \Delta x \lesssim 1` (Dirichlet conditions only).
+- ``'rk4'``: explicit, fourth order (Dirichlet conditions only).
+- ``'crank-nicolson'``: implicit, second order, unconditionally stable and
+  energy-conserving (equivalent to the Newmark method with
+  :math:`\beta = 1/4, \gamma = 1/2`). Supports Neumann and Robin conditions.
+- ``'backward-euler'``: implicit, first order, damps the solution.
+
+``'forward-euler'`` is not available, since it is unstable for undamped waves.
+Time-dependent boundary values and source terms work as for first-order
+problems.
+
+.. warning::
+
+   On non-periodic grids, use ``acc=2`` for the spatial operator of wave
+   equations. The one-sided boundary stencils of higher accuracy orders give
+   the discrete operator complex eigenvalues, which makes the solution grow
+   exponentially regardless of the time-stepping method. For first-order
+   problems such as the heat equation, the same happens from ``acc=6`` on.
+
+
 Using Iterative Solvers
 -------------------------
 

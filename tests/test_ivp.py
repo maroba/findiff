@@ -603,3 +603,101 @@ def test_pde_rejects_time_dependent_bcs():
 
     with pytest.raises(ValueError, match="only supported by TimeDependentPDE"):
         PDE(Diff(0, 0.1) ** 2, np.zeros(5), bc).solve()
+
+
+# u = x^2 cos(t) solves u_tt = u_xx + s with s = -(x^2 + 2) cos(t); the spatial
+# discretization is exact, so only the time error remains.
+def _wave_manufactured_error(method, nt, neumann=False):
+    n = 11
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    if neumann:
+        bc[-1] = Diff(0, dx), lambda t: 2 * np.cos(t)
+    else:
+        bc[-1] = lambda t: np.cos(t)
+    source = lambda t: -(x**2 + 2) * np.cos(t)  # noqa: E731
+
+    u = TimeDependentPDE(
+        Diff(0, dx) ** 2, x**2, bc, np.linspace(0, 1, nt + 1),
+        source=source, v0=np.zeros(n),
+    ).solve(method=method)
+    return np.abs(u - x**2 * np.cos(1.0)).max()
+
+
+@pytest.mark.parametrize(
+    "method, order",
+    [("verlet", 2), ("rk4", 4), ("crank-nicolson", 2), ("backward-euler", 1)],
+)
+def test_second_order_in_time_reaches_method_order(method, order):
+    e1 = _wave_manufactured_error(method, 50)
+    e2 = _wave_manufactured_error(method, 100)
+    assert np.log2(e1 / e2) == pytest.approx(order, abs=0.2)
+
+
+@pytest.mark.parametrize("method, order", [("crank-nicolson", 2), ("backward-euler", 1)])
+def test_second_order_in_time_with_time_dependent_neumann(method, order):
+    e1 = _wave_manufactured_error(method, 50, neumann=True)
+    e2 = _wave_manufactured_error(method, 100, neumann=True)
+    assert np.log2(e1 / e2) == pytest.approx(order, abs=0.2)
+
+
+def _standing_wave(method, periods=10):
+    n = 101
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    bc[-1] = 0
+    dt = 0.5 * dx
+    t = np.arange(0, 2 * periods + dt / 2, dt)
+    return x, TimeDependentPDE(
+        Diff(0, dx) ** 2, np.sin(np.pi * x), bc, t, v0=np.zeros(n)
+    ).solve(method=method, store_every=len(t) - 1)
+
+
+@pytest.mark.parametrize("method", ["verlet", "crank-nicolson"])
+def test_standing_wave_keeps_its_amplitude(method):
+    x, sol = _standing_wave(method)
+    # after 10 periods, u = sin(pi x) and u_t = 0 again (up to phase error)
+    np.testing.assert_allclose(sol.final, np.sin(np.pi * x), atol=2e-2)
+    assert np.abs(sol.final).max() == pytest.approx(1, abs=1e-3)
+
+
+def test_backward_euler_damps_waves():
+    _, sol = _standing_wave("backward-euler")
+    assert np.abs(sol.final).max() < 0.8  # about 0.61 after 10 periods
+
+
+def test_second_order_solution_stores_velocity():
+    n = 51
+    x = np.linspace(0, 1, n)
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    bc[-1] = 0
+    t = np.linspace(0, 0.5, 201)
+    sol = TimeDependentPDE(
+        Diff(0, x[1] - x[0]) ** 2, np.sin(np.pi * x), bc, t, v0=np.zeros(n)
+    ).solve(method="verlet", store_every=100)
+
+    assert sol.v.shape == sol.u.shape
+    # u = sin(pi x) cos(pi t)  ->  u_t(0.5) = -pi sin(pi x)
+    np.testing.assert_allclose(sol.v[-1], -np.pi * np.sin(np.pi * x), atol=1e-2)
+
+
+def test_second_order_invalid_input():
+    n = 11
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    bc[-1] = 0
+    L = Diff(0, 0.1) ** 2
+
+    with pytest.raises(ValueError, match="unstable"):
+        TimeDependentPDE(L, np.zeros(n), bc, [0, 1], v0=np.zeros(n)).solve(
+            method="forward-euler"
+        )
+    with pytest.raises(ValueError, match="requires a problem of second order"):
+        TimeDependentPDE(L, np.zeros(n), bc, [0, 1]).solve(method="verlet")
+    with pytest.raises(ValueError, match="v0 shape"):
+        TimeDependentPDE(L, np.zeros(n), bc, [0, 1], v0=np.zeros(n + 1))

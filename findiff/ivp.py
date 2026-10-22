@@ -1,9 +1,10 @@
 """
 Method of Lines solver for time-dependent PDEs.
 
-Solves initial-boundary value problems of the form u_t = L(u) + s(t)
-where L is a spatial differential operator (Expression) and s an optional
-source term.
+Solves initial-boundary value problems of the form u_t = L(u) + s(t), or
+u_tt = L(u) + s(t) for problems of second order in time (e.g. the wave
+equation), where L is a spatial differential operator (Expression) and s an
+optional source term.
 """
 
 import numpy as np
@@ -22,11 +23,15 @@ class MOLSolution:
         Time points at which the solution is stored.
     u : ndarray, shape (nt_stored, *spatial_shape)
         Solution snapshots.  ``u[i]`` is the solution at time ``t[i]``.
+    v : ndarray or None
+        Snapshots of the time derivative :math:`u_t` for problems of second
+        order in time, otherwise None.
     """
 
-    def __init__(self, t, u):
+    def __init__(self, t, u, v=None):
         self.t = np.asarray(t)
         self.u = np.asarray(u)
+        self.v = None if v is None else np.asarray(v)
 
     def __getitem__(self, idx):
         """Index into time steps: ``solution[i]`` returns *u* at time ``t[i]``."""
@@ -114,8 +119,8 @@ def _bc_rows(bcs):
     return np.unique(np.fromiter(bcs.row_inds(), dtype=int))
 
 
-def _inject_bc_rows(A, bcs, rows):
-    """Replace the rows *rows* of *A* by the boundary-condition equations.
+def _inject_bc_rows(A, bc_lhs, rows):
+    """Replace the rows *rows* of *A* by the same rows of *bc_lhs*.
 
     Same row-replacement pattern as :meth:`PDE.solve` in ``pde.py``, but done
     with sparse masks instead of a (slow) conversion to LIL format.
@@ -123,7 +128,7 @@ def _inject_bc_rows(A, bcs, rows):
     keep = np.ones(A.shape[0])
     keep[rows] = 0
     return sparse.csr_matrix(
-        sparse.diags(keep) @ A + sparse.diags(1 - keep) @ sparse.csr_matrix(bcs.lhs)
+        sparse.diags(keep) @ A + sparse.diags(1 - keep) @ sparse.csr_matrix(bc_lhs)
     )
 
 
@@ -242,7 +247,7 @@ class _ImplicitStepper:
 
         # LHS: I - theta*dt*L, with BC rows replaced
         A = I - self.theta * dt * self._L_mat
-        self._A = _inject_bc_rows(A, self.bcs, self._bc_rows)
+        self._A = _inject_bc_rows(A, self.bcs.lhs, self._bc_rows)
         self._lu = None
 
         # RHS matrix: I + (1-theta)*dt*L
@@ -331,6 +336,121 @@ class _CrankNicolsonStepper(_ImplicitStepper):
 
 
 # ---------------------------------------------------------------------------
+# Time steppers for problems of second order in time: u_tt = L(u) + s(t)
+# The state is the pair (u, v) with v = u_t.
+# ---------------------------------------------------------------------------
+
+class _VerletStepper(_ExplicitStepper):
+    r"""Stoermer-Verlet (velocity form), explicit, second order, symplectic.
+
+    .. math::
+        v^{n+1/2} = v^n + \tfrac{\Delta t}{2} a^n, \quad
+        u^{n+1} = u^n + \Delta t\, v^{n+1/2}, \quad
+        v^{n+1} = v^{n+1/2} + \tfrac{\Delta t}{2} a^{n+1}
+
+    with :math:`a = L(u) + s(t)`.
+    """
+
+    def __init__(self, operator, shape, bcs, source=None):
+        super().__init__(operator, shape, bcs, source)
+        self._last = None  # (t, u, a) to reuse the acceleration of the last step
+
+    def step(self, state, t, dt):
+        u, v = state
+        if self._last is not None and self._last[0] == t and self._last[1] is u:
+            a = self._last[2]
+        else:
+            a = self._rate(u, t)
+        v_half = v + 0.5 * dt * a
+        u_new = self._enforce_bc(u + dt * v_half, t + dt)
+        a_new = self._rate(u_new, t + dt)
+        v_new = v_half + 0.5 * dt * a_new
+        self._last = (t + dt, u_new, a_new)
+        return u_new, v_new
+
+
+class _SecondOrderRK4Stepper(_ExplicitStepper):
+    """Classic RK4 applied to the first-order system u_t = v, v_t = L(u) + s."""
+
+    def step(self, state, t, dt):
+        u, v = state
+        t_half = t + 0.5 * dt
+        k1u, k1v = v, self._rate(u, t)
+        u2 = self._enforce_bc(u + 0.5 * dt * k1u, t_half)
+        k2u, k2v = v + 0.5 * dt * k1v, self._rate(u2, t_half)
+        u3 = self._enforce_bc(u + 0.5 * dt * k2u, t_half)
+        k3u, k3v = v + 0.5 * dt * k2v, self._rate(u3, t_half)
+        u4 = self._enforce_bc(u + dt * k3u, t + dt)
+        k4u, k4v = v + dt * k3v, self._rate(u4, t + dt)
+        u_new = u + (dt / 6.0) * (k1u + 2 * k2u + 2 * k3u + k4u)
+        v_new = v + (dt / 6.0) * (k1v + 2 * k2v + 2 * k3v + k4v)
+        return self._enforce_bc(u_new, t + dt), v_new
+
+
+class _SecondOrderImplicitStepper(_ImplicitStepper):
+    r"""Theta method applied to the first-order system u_t = v, v_t = L(u) + s.
+
+    For :math:`\theta = 1/2` (Crank-Nicolson) this is equivalent to the
+    Newmark method with :math:`\beta = 1/4, \gamma = 1/2` (average
+    acceleration): unconditionally stable and energy-conserving.
+    Boundary conditions replace the rows of the *u* equations.
+    """
+
+    def step(self, state, t, dt):
+        if self._cached_dt is None or not np.isclose(
+            dt, self._cached_dt, rtol=self._DT_RTOL, atol=0
+        ):
+            self._build_system(dt)
+            self._cached_dt = dt
+
+        u, v = state
+        N = u.size
+        rhs = self._B.dot(np.concatenate([u.reshape(-1), v.reshape(-1)]))
+        if self.source is not None:
+            s_new = self.source(t + dt).reshape(-1)
+            if self.theta < 1.0:
+                s_old = self.source(t).reshape(-1)
+                rhs[N:] += dt * (self.theta * s_new + (1.0 - self.theta) * s_old)
+            else:
+                rhs[N:] += dt * s_new
+        rhs[self._bc_rows] = self._bc_values(t + dt)
+
+        y = self._solve_linear_system(self._A, rhs)
+        return y[:N].reshape(self.shape), y[N:].reshape(self.shape)
+
+    def _build_system(self, dt):
+        L = self._L_mat
+        N = L.shape[0]
+        I = sparse.eye(N, format='csr')
+        th = self.theta
+
+        A = sparse.bmat([[I, -th * dt * I], [-th * dt * L, I]], format='csr')
+        bc_lhs = sparse.block_diag(
+            [sparse.csr_matrix(self.bcs.lhs), sparse.csr_matrix((N, N))],
+            format='csr',
+        )
+        self._A = _inject_bc_rows(A, bc_lhs, self._bc_rows)
+        self._lu = None
+        self._B = sparse.bmat(
+            [[I, (1 - th) * dt * I], [(1 - th) * dt * L, I]], format='csr'
+        )
+
+
+class _SecondOrderBackwardEulerStepper(_SecondOrderImplicitStepper):
+    def __init__(self, operator, shape, bcs, solver, solver_options, source=None):
+        super().__init__(operator, shape, bcs, theta=1.0,
+                         solver=solver, solver_options=solver_options,
+                         source=source)
+
+
+class _SecondOrderCrankNicolsonStepper(_SecondOrderImplicitStepper):
+    def __init__(self, operator, shape, bcs, solver, solver_options, source=None):
+        super().__init__(operator, shape, bcs, theta=0.5,
+                         solver=solver, solver_options=solver_options,
+                         source=source)
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -342,6 +462,13 @@ class TimeDependentPDE:
     .. math::
 
         \frac{\partial u}{\partial t} = L(u) + s(t)
+
+    or, if the initial velocity ``v0`` is given, problems of second order in
+    time such as the wave equation,
+
+    .. math::
+
+        \frac{\partial^2 u}{\partial t^2} = L(u) + s(t)
 
     where *L* is a spatial differential operator built with *findiff* and
     *s* an optional source term.
@@ -360,6 +487,9 @@ class TimeDependentPDE:
     source : ndarray, callable or None
         Optional source term *s*: an array (constant in time, broadcastable
         to the grid shape) or a callable ``s(t)`` returning such an array.
+    v0 : ndarray or None
+        Initial velocity :math:`u_t(t_0)`. If given, the problem is of
+        second order in time.
 
     Examples
     --------
@@ -389,12 +519,24 @@ class TimeDependentPDE:
         'crank-nicolson': _CrankNicolsonStepper,
     }
 
-    def __init__(self, lhs, u0, bcs, t, source=None):
+    _second_order_methods = {
+        'verlet': _VerletStepper,
+        'rk4': _SecondOrderRK4Stepper,
+        'backward-euler': _SecondOrderBackwardEulerStepper,
+        'crank-nicolson': _SecondOrderCrankNicolsonStepper,
+    }
+
+    def __init__(self, lhs, u0, bcs, t, source=None, v0=None):
         self.lhs = lhs
         self.u0 = np.asarray(u0, dtype=float)
         self.bcs = bcs
         self.t = np.asarray(t, dtype=float)
         self.source = _make_source(source, self.u0.shape)
+        self.v0 = None if v0 is None else np.asarray(v0, dtype=float)
+        if self.v0 is not None and self.v0.shape != self.u0.shape:
+            raise ValueError(
+                f"v0 shape {self.v0.shape} does not match u0 shape {self.u0.shape}"
+            )
 
         if self.t.ndim != 1 or len(self.t) < 2:
             raise ValueError("t must be a 1D array with at least 2 points")
@@ -417,6 +559,12 @@ class TimeDependentPDE:
             - ``'rk4'``: explicit fourth-order Runge-Kutta.
             - ``'backward-euler'``: implicit first-order.
             - ``'crank-nicolson'``: implicit second-order (default).
+            - ``'verlet'``: explicit second-order Stoermer-Verlet, only for
+              problems of second order in time (``v0`` given).
+
+            For problems of second order in time, ``'forward-euler'`` is not
+            available (it is unstable for undamped waves); the other methods
+            are applied to the equivalent first-order system.
 
         solver : str, callable, or None
             Linear solver for implicit methods.  Same interface as
@@ -438,18 +586,31 @@ class TimeDependentPDE:
         ndarray
             Final solution (when ``store_every`` is ``None``).
         MOLSolution
-            Solution container (when ``store_every`` is set).
+            Solution container (when ``store_every`` is set). For problems
+            of second order in time it also holds the velocities ``v``.
         """
-        if method not in self._methods:
+        second_order = self.v0 is not None
+        methods = self._second_order_methods if second_order else self._methods
+        if method not in methods:
+            if second_order and method == 'forward-euler':
+                raise ValueError(
+                    "'forward-euler' is unstable for problems of second order "
+                    "in time; use 'verlet', 'rk4' or 'crank-nicolson'."
+                )
+            if not second_order and method == 'verlet':
+                raise ValueError(
+                    "'verlet' requires a problem of second order in time "
+                    "(pass the initial velocity v0)."
+                )
             raise ValueError(
                 f"Unknown method '{method}'. "
-                f"Supported: {sorted(self._methods.keys())}"
+                f"Supported: {sorted(methods.keys())}"
             )
 
         shape = self.bcs.shape
-        stepper_cls = self._methods[method]
+        stepper_cls = methods[method]
 
-        if method in ('forward-euler', 'rk4'):
+        if method in ('forward-euler', 'rk4', 'verlet'):
             if solver is not None or solver_options:
                 raise ValueError(
                     f"solver and solver_options are not used with "
@@ -470,17 +631,31 @@ class TimeDependentPDE:
             u, dirichlet_inds, _BCValues(self.bcs, dirichlet_inds)(self.t[0])
         )
 
+        v = self.v0.copy() if second_order else None
+
         if store_every is not None:
             stored_t = [self.t[0]]
             stored_u = [u.copy()]
+            stored_v = [v.copy()] if second_order else None
+
+        def store(t_i):
+            stored_t.append(t_i)
+            stored_u.append(u.copy())
+            if second_order:
+                stored_v.append(v.copy())
+
+        def solution():
+            return MOLSolution(stored_t, stored_u, stored_v)
 
         for i in range(1, nt):
             dt = self.t[i] - self.t[i - 1]
-            u = stepper.step(u, self.t[i - 1], dt)
+            if second_order:
+                u, v = stepper.step((u, v), self.t[i - 1], dt)
+            else:
+                u = stepper.step(u, self.t[i - 1], dt)
 
             if store_every is not None and i % store_every == 0:
-                stored_t.append(self.t[i])
-                stored_u.append(u.copy())
+                store(self.t[i])
 
             if callback is not None:
                 result = callback(i, self.t[i], u)
@@ -488,16 +663,14 @@ class TimeDependentPDE:
                     if store_every is not None:
                         # Ensure the last computed step is stored
                         if stored_t[-1] != self.t[i]:
-                            stored_t.append(self.t[i])
-                            stored_u.append(u.copy())
-                        return MOLSolution(stored_t, stored_u)
+                            store(self.t[i])
+                        return solution()
                     return u.copy()
 
         if store_every is not None:
             # Ensure the final step is always stored
             if stored_t[-1] != self.t[-1]:
-                stored_t.append(self.t[-1])
-                stored_u.append(u.copy())
-            return MOLSolution(stored_t, stored_u)
+                store(self.t[-1])
+            return solution()
 
         return u.copy()

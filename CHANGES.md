@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `TimeDependentPDE`: problems of second order in time such as the wave equation,
+  `u_tt = L(u) + s(t)`, by passing the initial velocity `v0`. New explicit method `verlet`
+  (Stoermer-Verlet); `rk4`, `crank-nicolson` and `backward-euler` work via the equivalent
+  first-order system. `MOLSolution.v` holds the velocities.
+- Known issue: on non-periodic grids, the one-sided boundary stencils for second derivatives
+  make time-dependent problems unstable from `acc=4` (wave equation) or `acc=6` (heat
+  equation) on. Use `acc=2` (waves) or `acc<=4` (diffusion) for now.
 - `TimeDependentPDE`: time-dependent boundary values (`bc[0] = lambda t: np.sin(t)`, also for
   Neumann and Robin conditions) and a source term (`source=` array or callable `s(t)`), i.e.
   `u_t = L(u) + s(t)`. Values are evaluated at the times each method requires (including RK4
