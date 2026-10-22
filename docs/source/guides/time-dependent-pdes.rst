@@ -6,8 +6,11 @@ Time-Dependent PDEs
 
 .. math::
 
-   \frac{\partial u}{\partial t} = L(u)
+   \frac{\partial u}{\partial t} = L(u) + s(t)
+   \qquad \text{or} \qquad
+   \frac{\partial^2 u}{\partial t^2} = L(u) + s(t)
 
+(e.g. diffusion or wave equations, with an optional source term :math:`s`)
 using the Method of Lines (MOL). The spatial operator :math:`L` is
 discretised with *findiff*'s finite difference operators, and the
 resulting system of ODEs is advanced in time with one of several
@@ -83,6 +86,11 @@ Four methods are available, selected via the ``method`` parameter of
      - Implicit
      - Unconditionally stable; good balance of accuracy and
        stability (default).
+   * - ``'verlet'``
+     - 2
+     - Explicit
+     - Only for problems of second order in time (wave equations);
+       conserves energy over long times.
 
 **Explicit methods** evaluate the spatial operator directly at each
 step and are fast per step, but the time step is limited by stability

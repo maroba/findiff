@@ -60,3 +60,16 @@ Instead, use a non-uniform grid with higher density where curvature is high:
 
 The error is much smaller with the same number of points (20), because
 the grid density matches the function's curvature.
+
+
+Points near the boundary
+------------------------
+
+.. versionchanged:: 0.16
+
+Points too close to the boundary for a centered stencil use the stencil points
+closest to the boundary, including the boundary point itself. Besides being
+accurate, this keeps the discrete second derivative stable in time-dependent
+problems (diffusion and wave equations) for ``acc=2`` and ``acc=4``, also on
+grids that are strongly clustered at the boundary, such as Chebyshev grids.
+See :doc:`time-dependent-pdes` for stability with higher accuracy orders.

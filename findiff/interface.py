@@ -21,6 +21,33 @@ class Diff(_Diff):
         For higher derivatives, exponentiate. For mixed partial derivatives, multiply. See
         examples below.
 
+        Parameters
+        ----------
+        axis : int
+            The 0-based index of the axis along which to differentiate.
+        grid : float, array or GridAxis, optional
+            The grid along `axis`: a number is the (constant) grid spacing, a 1D
+            array the coordinates of a non-uniform grid. Can also be set later
+            with :meth:`set_grid`.
+        periodic : bool
+            Whether the grid is periodic along `axis`.
+        acc : int
+            The (minimum) accuracy order, a positive even number. Default 2.
+        scheme : CompactScheme, optional
+            Use this compact (implicit) finite difference scheme.
+        compact : int, optional
+            Use a compact scheme with this (odd) number of left-hand side points,
+            determined from `acc` (see the guide on compact finite differences).
+        spectral : bool
+            With `compact`, use a scheme with spectral-like resolution instead of
+            maximal accuracy order.
+        boundary : str
+            How points near a non-periodic boundary are treated on equidistant
+            grids: ``"one-sided"`` (default) uses one-sided stencils of order
+            `acc`; ``"centered"`` uses the widest centered stencil that fits.
+            The latter is less accurate near the boundary but keeps
+            time-dependent problems stable for high `acc`.
+
         Examples
         --------
         Set up grid (equidistant here):

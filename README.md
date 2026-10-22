@@ -27,12 +27,13 @@ any number of dimensions.
 * Generate differential operators for arbitrary stencils
 * Symbolic representation of finite difference schemes
 * Estimate truncation error by comparing accuracy orders
-* Solve time-dependent PDEs via Method of Lines (Forward Euler, RK4, Backward Euler, Crank-Nicolson)
+* Solve time-dependent PDEs via Method of Lines (Forward Euler, RK4, Backward Euler, Crank-Nicolson), including wave equations (Stoermer-Verlet), time-dependent boundary values and source terms
 * **New in version 0.11**: More comfortable API (keeping the old API available)
 * **New in version 0.12**: Periodic boundary conditions for differential operators and PDEs.
 * **New in version 0.13**: Compact (implicit) finite differences with spectral-like resolution.
 * **New in version 0.14**: Time-dependent PDE solving via Method of Lines. GPU / JAX / CuPy backend support for operator application. Eigenvalue problems, iterative solvers and Robin boundary conditions for PDEs. Error estimation via accuracy order comparison.
 * **New in version 0.15**: Compact finite differences on non-uniform grids, optimal (Lele) and spectral-like compact schemes, much faster compact schemes.
+* **New in version 0.16**: Wave equations (second order in time), time-dependent boundary values and source terms for time-dependent PDEs, stable boundary treatment for high-order operators (`boundary="centered"`), much faster implicit time stepping.
 
 ## Installation
 
@@ -236,7 +237,7 @@ Non-periodic grids are handled automatically — findiff uses one-sided compact 
 boundaries. Non-uniform grids work as well: pass the coordinates instead of the spacing, e.g.
 `Diff(0, x, compact=3, acc=6)`. For multi-scale problems, `spectral=True` gives Lele's
 spectral-like schemes, which resolve short waves much better. The `matrix()` method is also supported. For more details, see the
-[compact finite differences documentation](https://maroba.github.io/findiff/compact.html).
+[compact finite differences documentation](https://maroba.github.io/findiff/guides/compact-fd.html).
 
 ## Finite Difference Coefficients
 
