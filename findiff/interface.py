@@ -14,6 +14,7 @@ class Diff(_Diff):
         scheme=None,
         compact=None,
         spectral=False,
+        boundary="one-sided",
     ):
         """Represents a partial derivative (along one axis).
 
@@ -66,4 +67,4 @@ class Diff(_Diff):
                 scheme = CompactScheme.from_accuracy(acc, 1, compact)
 
         grid_axis = make_axis(axis, grid, periodic)
-        super().__init__(axis, grid_axis, acc, scheme)
+        super().__init__(axis, grid_axis, acc, scheme, boundary=boundary)

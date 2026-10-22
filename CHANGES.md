@@ -6,9 +6,18 @@
   `u_tt = L(u) + s(t)`, by passing the initial velocity `v0`. New explicit method `verlet`
   (Stoermer-Verlet); `rk4`, `crank-nicolson` and `backward-euler` work via the equivalent
   first-order system. `MOLSolution.v` holds the velocities.
-- Known issue: on non-periodic grids, the one-sided boundary stencils for second derivatives
-  make time-dependent problems unstable from `acc=4` (wave equation) or `acc=6` (heat
-  equation) on. Use `acc=2` (waves) or `acc<=4` (diffusion) for now.
+- New option `Diff(..., boundary="centered")` for equidistant non-periodic grids: points near the
+  boundary use the widest centered stencil that fits instead of one-sided stencils. This keeps
+  time-dependent problems stable for any `acc` (the default one-sided stencils make the wave
+  equation unstable from `acc=4` and diffusion problems from `acc=6` on).
+- `TimeDependentPDE` checks the spectrum of each second derivative and warns
+  (`RuntimeWarning`) if the problem would be unstable.
+- Fix instability of time-dependent problems on non-uniform grids: since 0.14, points next to
+  the boundary used one-sided stencils starting at the point itself, which gave the second
+  derivative eigenvalues with positive real part (e.g. on Chebyshev grids even with `acc=2`).
+  These points now use the stencil points closest to the boundary, including the boundary point.
+  Second derivatives with `acc=2` and `acc=4` are now stable for diffusion and waves on
+  non-uniform grids. **Note:** results at these points change (they become more accurate).
 - `TimeDependentPDE`: time-dependent boundary values (`bc[0] = lambda t: np.sin(t)`, also for
   Neumann and Robin conditions) and a source term (`source=` array or callable `s(t)`), i.e.
   `u_t = L(u) + s(t)`. Values are evaluated at the times each method requires (including RK4

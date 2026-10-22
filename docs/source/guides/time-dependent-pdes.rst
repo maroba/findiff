@@ -255,13 +255,32 @@ Available methods:
 Time-dependent boundary values and source terms work as for first-order
 problems.
 
-.. warning::
+Stability of high-order operators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   On non-periodic grids, use ``acc=2`` for the spatial operator of wave
-   equations. The one-sided boundary stencils of higher accuracy orders give
-   the discrete operator complex eigenvalues, which makes the solution grow
-   exponentially regardless of the time-stepping method. For first-order
-   problems such as the heat equation, the same happens from ``acc=6`` on.
+On non-periodic equidistant grids, the one-sided boundary stencils of high
+accuracy orders give the discrete second derivative eigenvalues that make the
+solution grow exponentially, regardless of the time-stepping method: complex
+eigenvalues (fatal for wave equations) from ``acc=4`` on, and eigenvalues with
+positive real part (fatal for any time-dependent problem) from ``acc=6`` on.
+
+Use ``boundary="centered"`` in that case. Points near the boundary then use
+the widest centered stencil that fits into the grid, which keeps the spectrum
+real and negative for any ``acc``:
+
+.. code-block:: python
+
+    L = c**2 * Diff(0, dx, acc=6, boundary="centered")**2
+
+The accuracy drops towards the boundary (to second order next to it), but the
+global error of time-dependent problems typically still converges with
+fourth to fifth order, much better than with ``acc=2``.
+
+On non-uniform grids, second derivatives with ``acc=2`` and ``acc=4`` are
+stable for both diffusion and waves.
+
+``TimeDependentPDE`` checks the spectrum of each second derivative in the
+operator and emits a ``RuntimeWarning`` if the problem would be unstable.
 
 
 Using Iterative Solvers

@@ -7,6 +7,8 @@ equation), where L is a spatial differential operator (Expression) and s an
 optional source term.
 """
 
+import warnings
+
 import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import splu
@@ -451,6 +453,74 @@ class _SecondOrderCrankNicolsonStepper(_SecondOrderImplicitStepper):
 
 
 # ---------------------------------------------------------------------------
+# Stability check of the spatial operator
+# ---------------------------------------------------------------------------
+
+def _iter_diffs(expr):
+    from findiff.operators import Diff
+
+    if isinstance(expr, Diff):
+        yield expr
+    for child in getattr(expr, "children", []):
+        yield from _iter_diffs(child)
+    for part in getattr(expr, "_parts", []):  # e.g. Laplacian
+        yield from _iter_diffs(part)
+
+
+def _warn_if_unstable(operator, second_order, shape):
+    """Warns if a second derivative in *operator* makes the problem unstable.
+
+    One-sided high-order boundary stencils can give the discrete second
+    derivative eigenvalues with positive real part (unstable for any
+    time-dependent problem) or complex eigenvalues (unstable for problems of
+    second order in time). This is checked on the 1D operator along each
+    axis with Dirichlet conditions, on at most `_CHECK_POINTS` grid points.
+    """
+    from findiff.grids import EquidistantAxis, NonEquidistantAxis
+    from findiff.operators import Diff
+
+    for d in _iter_diffs(operator):
+        axis = d.axis
+        if d.order != 2 or axis is None or axis.periodic or d.dim >= len(shape):
+            continue
+        n = min(shape[d.dim], _CHECK_POINTS)
+        if isinstance(axis, EquidistantAxis):
+            axis_1d = EquidistantAxis(0, axis.spacing)
+        elif isinstance(axis, NonEquidistantAxis) and len(axis.coords) <= _CHECK_POINTS:
+            axis_1d, n = NonEquidistantAxis(0, axis.coords), len(axis.coords)
+        else:
+            continue
+        if n < 5:
+            continue
+
+        d_1d = Diff(0, axis_1d, acc=d.acc, scheme=d.scheme,
+                    boundary=getattr(d, "boundary", "one-sided"))
+        d_1d._order = 2
+        try:
+            ev = np.linalg.eigvals(d_1d.matrix((n,)).toarray()[1:-1, 1:-1])
+        except Exception:  # the check must never break a solve
+            continue
+        scale = np.abs(ev).max()
+        growing = ev.real.max() > 1e-6 * scale
+        oscillating = second_order and np.abs(ev.imag).max() > 1e-6 * scale
+        if growing or oscillating:
+            reason = ("eigenvalues with positive real part" if growing
+                      else "complex eigenvalues")
+            warnings.warn(
+                f"The discrete second derivative along axis {d.dim} (acc={d.acc}"
+                f"{', compact scheme' if d.scheme is not None else ''}) has {reason} "
+                f"due to its boundary stencils, which makes this problem unstable. "
+                f"Use Diff(..., boundary='centered') or a lower acc.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return
+
+
+_CHECK_POINTS = 201
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -537,6 +607,7 @@ class TimeDependentPDE:
             raise ValueError(
                 f"v0 shape {self.v0.shape} does not match u0 shape {self.u0.shape}"
             )
+        _warn_if_unstable(lhs, self.v0 is not None, self.u0.shape)
 
         if self.t.ndim != 1 or len(self.t) < 2:
             raise ValueError("t must be a 1D array with at least 2 points")

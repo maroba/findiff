@@ -438,7 +438,8 @@ class Diff(Expression):
 
     DEFAULT_ACC = 2
 
-    def __init__(self, dim, axis: GridAxis = None, acc=DEFAULT_ACC, scheme=None):
+    def __init__(self, dim, axis: GridAxis = None, acc=DEFAULT_ACC, scheme=None,
+                 boundary="one-sided"):
         """Initializes a Diff instance.
 
         Parameters
@@ -452,6 +453,12 @@ class Diff(Expression):
         scheme: CompactScheme or None
             Allows to activate the compact (implicit) finite difference scheme (see documentation
             for CompactScheme). If None, standard explicit finite differences will be used.
+        boundary: str
+            How points near a non-periodic boundary are treated: ``"one-sided"``
+            (default) uses one-sided stencils of accuracy order `acc`;
+            ``"centered"`` uses the widest centered stencil that fits, which is
+            less accurate near the boundary but keeps time-dependent problems
+            stable for high `acc`.
         """
         super().__init__()
 
@@ -461,6 +468,7 @@ class Diff(Expression):
         self._order = 1
         self._differentiator = None
         self.scheme = scheme
+        self.boundary = boundary
 
     def set_grid(self, grid):
         super().set_grid(grid)
@@ -515,7 +523,7 @@ class Diff(Expression):
     def differentiator(self):
         if self._differentiator is None:
             self._differentiator = build_differentiator(
-                self.order, self.axis, self.acc, self.scheme
+                self.order, self.axis, self.acc, self.scheme, self.boundary
             )
         return self._differentiator
 
@@ -530,13 +538,15 @@ class Diff(Expression):
             new_scheme = self.scheme.for_deriv(new_order)
         else:
             new_scheme = None
-        new_diff = Diff(self.dim, self.axis, acc=self.acc, scheme=new_scheme)
+        new_diff = Diff(self.dim, self.axis, acc=self.acc, scheme=new_scheme,
+                        boundary=self.boundary)
         new_diff._order = new_order
         return new_diff
 
     def __mul__(self, other):
         if isinstance(other, Diff) and self.dim == other.dim:
-            new_diff = Diff(self.dim, self.axis, acc=self.acc, scheme=self.scheme)
+            new_diff = Diff(self.dim, self.axis, acc=self.acc, scheme=self.scheme,
+                            boundary=self.boundary)
             new_diff._order += other.order
             return new_diff
         return super().__mul__(other)
