@@ -13,7 +13,7 @@ discretised with *findiff*'s finite difference operators, and the
 resulting system of ODEs is advanced in time with one of several
 built-in time-stepping methods.
 
-.. versionadded:: 0.15
+.. versionadded:: 0.14
 
 .. contents:: Contents
    :local:

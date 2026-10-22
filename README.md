@@ -32,6 +32,7 @@ any number of dimensions.
 * **New in version 0.12**: Periodic boundary conditions for differential operators and PDEs.
 * **New in version 0.13**: Compact (implicit) finite differences with spectral-like resolution.
 * **New in version 0.14**: Time-dependent PDE solving via Method of Lines. GPU / JAX / CuPy backend support for operator application. Eigenvalue problems, iterative solvers and Robin boundary conditions for PDEs. Error estimation via accuracy order comparison.
+* **New in version 0.15**: Compact finite differences on non-uniform grids, optimal (Lele) and spectral-like compact schemes, much faster compact schemes.
 
 ## Installation
 

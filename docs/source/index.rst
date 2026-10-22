@@ -41,13 +41,13 @@ Features
    Compact (implicit) finite differences with spectral-like resolution
 
 .. versionadded:: 0.14
-   Error estimation via accuracy order comparison
+   Time-dependent PDE solving via Method of Lines, GPU / JAX / CuPy backend
+   support for operator application, eigenvalue problems, iterative solvers,
+   Robin boundary conditions and error estimation via accuracy order comparison
 
 .. versionadded:: 0.15
-   Time-dependent PDE solving via Method of Lines
-
-.. versionadded:: 0.16
-   GPU / JAX / CuPy backend support for operator application
+   Compact finite differences on non-uniform grids, optimal and spectral-like
+   compact schemes
 
 
 Content

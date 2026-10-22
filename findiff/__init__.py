@@ -19,9 +19,10 @@ Features:
 - Version 0.12.*: Periodic boundary conditions for differential operators and PDEs
 - Version 0.13.*: Compact finite difference schemes for interior and boundary points
 - Version 0.14.*: Time-dependent PDEs, eigenvalue problems, iterative solvers, error estimation, GPU / JAX / CuPy backends
+- Version 0.15.*: Compact schemes on non-uniform grids, optimal and spectral-like compact schemes
 """
 
-__version__ = "0.14.0"
+__version__ = "0.15.0"
 
 
 from .coefs import coefficients

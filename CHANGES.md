@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## Version 0.15.x
 
 - Compact schemes with spectral-like resolution (Lele, 1992): `Diff(..., compact=5, acc=4,
   spectral=True)` or `CompactScheme.spectral(deriv, num_left, num_right, acc)`. Only order `acc`
