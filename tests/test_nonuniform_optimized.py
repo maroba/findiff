@@ -33,11 +33,11 @@ class TestBatchedCoefficients:
             expected = coefficients_non_uni(deriv=1, acc=2, coords=x, idx=i)
             if i < result["num_bndry"]:
                 actual_coefs = result["forward"]["coefficients"][i]
-                actual_offsets = result["forward"]["offsets"]
+                actual_offsets = result["forward"]["offsets"][i]
             elif i >= len(x) - result["num_bndry"]:
                 j = i - (len(x) - result["num_bndry"])
                 actual_coefs = result["backward"]["coefficients"][j]
-                actual_offsets = result["backward"]["offsets"]
+                actual_offsets = result["backward"]["offsets"][j]
             else:
                 j = i - result["num_bndry"]
                 actual_coefs = result["center"]["coefficients"][j]
@@ -314,8 +314,9 @@ class TestStoredCoefficients:
 
         # Stencil sizes
         assert len(diff.center["offsets"]) == diff.center["coefficients"].shape[1]
-        assert len(diff.forward["offsets"]) == diff.forward["coefficients"].shape[1]
-        assert len(diff.backward["offsets"]) == diff.backward["coefficients"].shape[1]
+        # points near the boundary have one row of offsets each
+        assert diff.forward["offsets"].shape == diff.forward["coefficients"].shape
+        assert diff.backward["offsets"].shape == diff.backward["coefficients"].shape
 
 
 class TestApplyNonuniWeightsEdgeCases:

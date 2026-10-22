@@ -132,6 +132,23 @@ and pass it as a Neumann-style 2-tuple:
     bc[-1] = robin_op, g
 
 
+Time-Dependent Boundary Values
+------------------------------
+
+.. versionadded:: 0.16
+
+For :class:`~findiff.TimeDependentPDE`, the value ``g`` of any boundary
+condition may be a callable of time, returning a scalar or an array:
+
+.. code:: python
+
+    bc[0] = lambda t: np.sin(2 * np.pi * t)        # Dirichlet
+    bc[-1] = Diff(0, dx), lambda t: 0.1 * t        # Neumann
+
+See :doc:`time-dependent-pdes` for details. ``PDE`` (boundary value problems)
+does not accept time-dependent values.
+
+
 Summary of Syntax
 -----------------
 

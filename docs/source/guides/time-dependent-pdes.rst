@@ -6,8 +6,11 @@ Time-Dependent PDEs
 
 .. math::
 
-   \frac{\partial u}{\partial t} = L(u)
+   \frac{\partial u}{\partial t} = L(u) + s(t)
+   \qquad \text{or} \qquad
+   \frac{\partial^2 u}{\partial t^2} = L(u) + s(t)
 
+(e.g. diffusion or wave equations, with an optional source term :math:`s`)
 using the Method of Lines (MOL). The spatial operator :math:`L` is
 discretised with *findiff*'s finite difference operators, and the
 resulting system of ODEs is advanced in time with one of several
@@ -83,6 +86,11 @@ Four methods are available, selected via the ``method`` parameter of
      - Implicit
      - Unconditionally stable; good balance of accuracy and
        stability (default).
+   * - ``'verlet'``
+     - 2
+     - Explicit
+     - Only for problems of second order in time (wave equations);
+       conserves energy over long times.
 
 **Explicit methods** evaluate the spatial operator directly at each
 step and are fast per step, but the time step is limited by stability
@@ -167,6 +175,120 @@ boundary conditions:
 
     # After one full period the wave should return to start
     print("Max error:", np.max(np.abs(u_final - u0)))
+
+
+Time-Dependent Boundary Conditions and Sources
+-----------------------------------------------
+
+.. versionadded:: 0.16
+
+Boundary values can be functions of time: assign a callable ``g(t)`` instead
+of a number. This works for Dirichlet, Neumann and Robin conditions. The
+callable may return a scalar, an array with the shape of the selected boundary
+points, or an array with the shape of the whole grid.
+
+A source term :math:`s` turns the problem into
+:math:`u_t = L(u) + s(t)`. Pass it as an array (constant in time) or as a
+callable ``s(t)``:
+
+.. code-block:: python
+
+    import numpy as np
+    from findiff import Diff, TimeDependentPDE, BoundaryConditions
+
+    nx = 101
+    x = np.linspace(0, 1, nx)
+    dx = x[1] - x[0]
+
+    bc = BoundaryConditions((nx,))
+    bc[0] = lambda t: np.sin(2 * np.pi * t)       # oscillating temperature
+    bc[-1] = Diff(0, dx), lambda t: 0.1 * t       # growing heat flux
+
+    heating = lambda t: np.exp(-((x - 0.5) / 0.1) ** 2) * (t < 1)
+
+    t = np.linspace(0, 2, 401)
+    u = TimeDependentPDE(0.05 * Diff(0, dx)**2, np.zeros(nx), bc, t,
+                         source=heating).solve()
+
+Boundary values and sources are evaluated at the times each method requires
+(including the intermediate stages of RK4), so all methods keep their order of
+accuracy. Explicit methods still require Dirichlet conditions only.
+
+``PDE`` (for boundary value problems) does not accept time-dependent boundary
+conditions.
+
+
+Second Order in Time: the Wave Equation
+---------------------------------------
+
+.. versionadded:: 0.16
+
+Pass the initial velocity ``v0`` to solve problems of second order in time,
+:math:`u_{tt} = L(u) + s(t)`, such as the wave equation
+:math:`u_{tt} = c^2 u_{xx}`:
+
+.. code-block:: python
+
+    import numpy as np
+    from findiff import Diff, TimeDependentPDE, BoundaryConditions
+
+    nx, c = 201, 1.0
+    x = np.linspace(0, 1, nx)
+    dx = x[1] - x[0]
+
+    bc = BoundaryConditions((nx,))
+    bc[0] = 0
+    bc[-1] = 0
+
+    u0 = np.exp(-((x - 0.5) / 0.05) ** 2)    # Gaussian pulse at rest
+    t = np.arange(0, 2, 0.5 * dx / c)
+
+    sol = TimeDependentPDE(c**2 * Diff(0, dx)**2, u0, bc, t,
+                           v0=np.zeros(nx)).solve(method="verlet", store_every=10)
+    sol.u    # displacement snapshots
+    sol.v    # velocity snapshots
+
+Available methods:
+
+- ``'verlet'``: explicit Stoermer-Verlet, second order. Conserves energy over
+  long times; the method of choice for waves. Stable for
+  :math:`c\,\Delta t / \Delta x \lesssim 1` (Dirichlet conditions only).
+- ``'rk4'``: explicit, fourth order (Dirichlet conditions only).
+- ``'crank-nicolson'``: implicit, second order, unconditionally stable and
+  energy-conserving (equivalent to the Newmark method with
+  :math:`\beta = 1/4, \gamma = 1/2`). Supports Neumann and Robin conditions.
+- ``'backward-euler'``: implicit, first order, damps the solution.
+
+``'forward-euler'`` is not available, since it is unstable for undamped waves.
+Time-dependent boundary values and source terms work as for first-order
+problems.
+
+Stability of high-order operators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On non-periodic equidistant grids, the one-sided boundary stencils of high
+accuracy orders give the discrete second derivative eigenvalues that make the
+solution grow exponentially, regardless of the time-stepping method: complex
+eigenvalues (fatal for wave equations) from ``acc=4`` on, and eigenvalues with
+positive real part (fatal for any time-dependent problem) from ``acc=6`` on.
+
+Use ``boundary="centered"`` in that case. Points near the boundary then use
+the widest centered stencil that fits into the grid, which keeps the spectrum
+real and negative for any ``acc``:
+
+.. code-block:: python
+
+    L = c**2 * Diff(0, dx, acc=6, boundary="centered")**2
+
+The accuracy drops towards the boundary (to second order next to it), but the
+global error of time-dependent problems typically still converges with
+fourth to fifth order, much better than with ``acc=2``.
+
+On non-uniform grids, second derivatives with ``acc=2`` and ``acc=4`` are
+stable for both diffusion and waves.
+
+``TimeDependentPDE`` checks the spectrum of each second derivative in the
+operator and emits a ``RuntimeWarning`` if the problem would be unstable.
 
 
 Using Iterative Solvers

@@ -429,3 +429,275 @@ class TestConvergenceRates:
         )
         slope = np.polyfit(np.log(dts), np.log(errors), 1)[0]
         assert slope > 0.8, f"Backward Euler slope = {slope}, expected ~1.0"
+
+
+def _heat_problem_2d(n=20):
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    X, Y = np.meshgrid(x, x, indexing="ij")
+    L = 0.01 * (Diff(0, dx) ** 2 + Diff(1, dx) ** 2)
+    bc = BoundaryConditions((n, n))
+    bc[0, :] = 0
+    bc[-1, :] = Diff(0, dx), 0.5
+    bc[:, 0] = 0
+    bc[:, -1] = 1
+    return L, np.sin(np.pi * X) * np.sin(np.pi * Y), bc
+
+
+@pytest.mark.parametrize("method", ["backward-euler", "crank-nicolson"])
+def test_implicit_system_is_built_and_factorized_once_for_linspace_times(
+    method, monkeypatch
+):
+    import findiff.ivp as ivp
+
+    builds, factorizations = [], []
+    original_build = ivp._ImplicitStepper._build_system
+    original_splu = ivp.splu
+
+    def counting_build(self, dt):
+        builds.append(dt)
+        return original_build(self, dt)
+
+    def counting_splu(A):
+        factorizations.append(A.shape)
+        return original_splu(A)
+
+    monkeypatch.setattr(ivp._ImplicitStepper, "_build_system", counting_build)
+    monkeypatch.setattr(ivp, "splu", counting_splu)
+
+    L, u0, bc = _heat_problem_2d()
+    # np.linspace yields steps that differ by round-off only
+    TimeDependentPDE(L, u0, bc, np.linspace(0, 0.1, 51)).solve(method=method)
+
+    assert len(builds) == 1
+    assert len(factorizations) == 1
+
+
+@pytest.mark.parametrize("method", ["backward-euler", "crank-nicolson"])
+def test_implicit_variable_time_step_matches_piecewise_solve(method):
+    L, u0, bc = _heat_problem_2d()
+    t1 = np.linspace(0, 0.05, 11)
+    t2 = np.linspace(0.05, 0.1, 31)
+
+    whole = TimeDependentPDE(L, u0, bc, np.concatenate([t1, t2[1:]])).solve(
+        method=method
+    )
+    first = TimeDependentPDE(L, u0, bc, t1).solve(method=method)
+    piecewise = TimeDependentPDE(L, first, bc, t2).solve(method=method)
+
+    np.testing.assert_allclose(whole, piecewise, atol=1e-12)
+
+
+@pytest.mark.parametrize("method", ["backward-euler", "crank-nicolson"])
+def test_implicit_boundary_conditions_hold_every_step(method):
+    L, u0, bc = _heat_problem_2d()
+    x = np.linspace(0, 1, u0.shape[0])
+    dx = x[1] - x[0]
+    d_dx = Diff(0, dx)
+
+    sol = TimeDependentPDE(L, u0, bc, np.linspace(0, 0.1, 21)).solve(
+        method=method, store_every=1
+    )
+
+    for u in sol.u[1:]:
+        np.testing.assert_allclose(u[0, :-1], 0, atol=1e-12)  # corner (0, -1) belongs to bc[:, -1]
+        np.testing.assert_allclose(u[1:-1, -1], 1, atol=1e-12)
+        np.testing.assert_allclose(d_dx(u)[-1, 1:-1], 0.5, atol=1e-8)
+
+
+# u = sin(2t) + x^2 t solves u_t = u_xx + s with s = 2cos(2t) + x^2 - 2t;
+# the spatial discretization is exact, so only the time error remains.
+def _manufactured_error(method, nt, neumann=False):
+    n = 11
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    bc = BoundaryConditions((n,))
+    bc[0] = lambda t: np.sin(2 * t)
+    if neumann:
+        bc[-1] = Diff(0, dx), lambda t: 2 * t
+    else:
+        bc[-1] = lambda t: np.sin(2 * t) + t
+    t = np.linspace(0, 0.5, nt + 1)
+    u0 = np.sin(0) + x**2 * 0
+    source = lambda t: 2 * np.cos(2 * t) + x**2 - 2 * t  # noqa: E731
+
+    u = TimeDependentPDE(Diff(0, dx) ** 2, u0, bc, t, source=source).solve(
+        method=method
+    )
+    return np.abs(u - (np.sin(1.0) + x**2 * 0.5)).max()
+
+
+@pytest.mark.parametrize(
+    "method, nt, order",
+    [
+        ("forward-euler", 400, 1),
+        ("rk4", 200, 4),
+        ("backward-euler", 40, 1),
+        ("crank-nicolson", 40, 2),
+    ],
+)
+def test_time_dependent_dirichlet_and_source_reach_method_order(method, nt, order):
+    measured = np.log2(_manufactured_error(method, nt) / _manufactured_error(method, 2 * nt))
+    assert measured == pytest.approx(order, abs=0.4)
+
+
+@pytest.mark.parametrize("method, order", [("backward-euler", 1), ("crank-nicolson", 2)])
+def test_time_dependent_neumann_reaches_method_order(method, order):
+    e1 = _manufactured_error(method, 40, neumann=True)
+    e2 = _manufactured_error(method, 80, neumann=True)
+    assert np.log2(e1 / e2) == pytest.approx(order, abs=0.2)
+
+
+def test_time_dependent_bc_value_shapes():
+    shape = (6, 5)
+    bc = BoundaryConditions(shape)
+    bc[0, :] = lambda t: t                                  # scalar
+    bc[-1, :] = lambda t: t * np.arange(5)                  # shape of the boundary slice
+    bc[1:-1, 0] = lambda t: t * np.ones(shape)              # shape of the whole grid
+    bc[1:-1, -1] = 7.0                                      # static
+    rows = np.unique(np.fromiter(bc.row_inds(), dtype=int))
+
+    values = dict(zip(rows, bc.values_at(rows, 2.0)))
+    idx = np.arange(30).reshape(shape)
+
+    assert all(values[i] == 2.0 for i in idx[0, :])
+    assert [values[i] for i in idx[-1, :]] == [0.0, 2.0, 4.0, 6.0, 8.0]
+    assert all(values[i] == 2.0 for i in idx[1:-1, 0])
+    assert all(values[i] == 7.0 for i in idx[1:-1, -1])
+    assert bc.is_time_dependent
+
+    bc[0, :] = lambda t: np.ones(3)
+    with pytest.raises(ValueError, match="returned shape"):
+        bc.values_at(rows, 0.0)
+
+
+def test_static_assignment_overrides_time_dependent_value():
+    bc = BoundaryConditions((5,))
+    bc[0] = lambda t: t
+    bc[0] = 3.0
+
+    assert not bc.is_time_dependent
+    assert bc.values_at([0], 10.0)[0] == 3.0
+
+
+def test_constant_array_source():
+    n = 21
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    bc[-1] = 0
+    # steady state of u_t = u_xx + 2 with u(0) = u(1) = 0 is u = x (1 - x)
+    u = TimeDependentPDE(Diff(0, dx) ** 2, np.zeros(n), bc, np.linspace(0, 5, 201),
+                         source=2.0).solve(method="backward-euler")
+
+    np.testing.assert_allclose(u, x * (1 - x), atol=1e-6)
+
+
+def test_pde_rejects_time_dependent_bcs():
+    from findiff import PDE
+
+    bc = BoundaryConditions((5,))
+    bc[0] = lambda t: t
+    bc[-1] = 0
+
+    with pytest.raises(ValueError, match="only supported by TimeDependentPDE"):
+        PDE(Diff(0, 0.1) ** 2, np.zeros(5), bc).solve()
+
+
+# u = x^2 cos(t) solves u_tt = u_xx + s with s = -(x^2 + 2) cos(t); the spatial
+# discretization is exact, so only the time error remains.
+def _wave_manufactured_error(method, nt, neumann=False):
+    n = 11
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    if neumann:
+        bc[-1] = Diff(0, dx), lambda t: 2 * np.cos(t)
+    else:
+        bc[-1] = lambda t: np.cos(t)
+    source = lambda t: -(x**2 + 2) * np.cos(t)  # noqa: E731
+
+    u = TimeDependentPDE(
+        Diff(0, dx) ** 2, x**2, bc, np.linspace(0, 1, nt + 1),
+        source=source, v0=np.zeros(n),
+    ).solve(method=method)
+    return np.abs(u - x**2 * np.cos(1.0)).max()
+
+
+@pytest.mark.parametrize(
+    "method, order",
+    [("verlet", 2), ("rk4", 4), ("crank-nicolson", 2), ("backward-euler", 1)],
+)
+def test_second_order_in_time_reaches_method_order(method, order):
+    e1 = _wave_manufactured_error(method, 50)
+    e2 = _wave_manufactured_error(method, 100)
+    assert np.log2(e1 / e2) == pytest.approx(order, abs=0.2)
+
+
+@pytest.mark.parametrize("method, order", [("crank-nicolson", 2), ("backward-euler", 1)])
+def test_second_order_in_time_with_time_dependent_neumann(method, order):
+    e1 = _wave_manufactured_error(method, 50, neumann=True)
+    e2 = _wave_manufactured_error(method, 100, neumann=True)
+    assert np.log2(e1 / e2) == pytest.approx(order, abs=0.2)
+
+
+def _standing_wave(method, periods=10):
+    n = 101
+    x = np.linspace(0, 1, n)
+    dx = x[1] - x[0]
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    bc[-1] = 0
+    dt = 0.5 * dx
+    t = np.arange(0, 2 * periods + dt / 2, dt)
+    return x, TimeDependentPDE(
+        Diff(0, dx) ** 2, np.sin(np.pi * x), bc, t, v0=np.zeros(n)
+    ).solve(method=method, store_every=len(t) - 1)
+
+
+@pytest.mark.parametrize("method", ["verlet", "crank-nicolson"])
+def test_standing_wave_keeps_its_amplitude(method):
+    x, sol = _standing_wave(method)
+    # after 10 periods, u = sin(pi x) and u_t = 0 again (up to phase error)
+    np.testing.assert_allclose(sol.final, np.sin(np.pi * x), atol=2e-2)
+    assert np.abs(sol.final).max() == pytest.approx(1, abs=1e-3)
+
+
+def test_backward_euler_damps_waves():
+    _, sol = _standing_wave("backward-euler")
+    assert np.abs(sol.final).max() < 0.8  # about 0.61 after 10 periods
+
+
+def test_second_order_solution_stores_velocity():
+    n = 51
+    x = np.linspace(0, 1, n)
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    bc[-1] = 0
+    t = np.linspace(0, 0.5, 201)
+    sol = TimeDependentPDE(
+        Diff(0, x[1] - x[0]) ** 2, np.sin(np.pi * x), bc, t, v0=np.zeros(n)
+    ).solve(method="verlet", store_every=100)
+
+    assert sol.v.shape == sol.u.shape
+    # u = sin(pi x) cos(pi t)  ->  u_t(0.5) = -pi sin(pi x)
+    np.testing.assert_allclose(sol.v[-1], -np.pi * np.sin(np.pi * x), atol=1e-2)
+
+
+def test_second_order_invalid_input():
+    n = 11
+    bc = BoundaryConditions((n,))
+    bc[0] = 0
+    bc[-1] = 0
+    L = Diff(0, 0.1) ** 2
+
+    with pytest.raises(ValueError, match="unstable"):
+        TimeDependentPDE(L, np.zeros(n), bc, [0, 1], v0=np.zeros(n)).solve(
+            method="forward-euler"
+        )
+    with pytest.raises(ValueError, match="requires a problem of second order"):
+        TimeDependentPDE(L, np.zeros(n), bc, [0, 1]).solve(method="verlet")
+    with pytest.raises(ValueError, match="v0 shape"):
+        TimeDependentPDE(L, np.zeros(n), bc, [0, 1], v0=np.zeros(n + 1))
