@@ -101,6 +101,53 @@ This automatically constructs a new compact scheme for the second derivative
 with matching accuracy.
 
 
+Spectral-like resolution
+------------------------
+
+.. versionadded:: 0.15
+
+The schemes above spend all free parameters on the accuracy order. Lele's
+*spectral-like* schemes impose only a moderate order and use the remaining
+parameters to resolve short waves better. This pays off for multi-scale problems
+(turbulence, shocks, the Burgers equation), where the solution contains
+wavelengths of only a few grid points.
+
+.. code:: python
+
+    d_dx = Diff(0, dx, compact=5, acc=4, spectral=True, periodic=True)
+    d2_dx2 = d_dx ** 2          # also spectrally optimized
+
+With ``spectral=True`` the right-hand side has ``compact + 2`` points. For full
+control, construct the scheme directly:
+
+.. code:: python
+
+    scheme = CompactScheme.spectral(deriv=1, num_left=5, num_right=9, acc=6)
+    d_dx = Diff(0, dx, scheme=scheme, periodic=True)
+
+The accuracy order ``acc`` is imposed exactly; the remaining coefficients minimize
+the error of the *modified wavenumber* in the least-squares sense on
+:math:`[0, w_{max}]`. By default, :math:`w_{max}` is chosen to maximize the
+*resolving efficiency*: the fraction of :math:`[0, \pi]` in which the relative
+error of the modified wavenumber stays below ``tol`` (default ``1e-3``). Pass
+``max_wavenumber`` to fix the range instead. Both quantities are available for
+any scheme:
+
+.. code:: python
+
+    scheme.modified_wavenumber(w)      # w' for scaled wavenumbers w = k h
+    scheme.resolving_efficiency(1e-3)  # e.g. 0.56 -> 0.70 for compact=5, 7 points
+
+.. image:: ../images/compact_modified_wavenumber.png
+   :width: 480
+   :alt: Modified wavenumber of explicit, maximal-order compact and spectral schemes
+
+The trade-off: for well-resolved, smooth functions a scheme of maximal order is
+more accurate, while the spectral scheme wins for short waves. On non-periodic
+grids, the boundary closures (which have maximal order) dominate the error for
+short waves within the first few grid points.
+
+
 Non-periodic boundaries
 -----------------------
 

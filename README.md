@@ -233,7 +233,8 @@ d2_dx2 = d_dx ** 2
 
 Non-periodic grids are handled automatically — findiff uses one-sided compact stencils near the
 boundaries. Non-uniform grids work as well: pass the coordinates instead of the spacing, e.g.
-`Diff(0, x, compact=3, acc=6)`. The `matrix()` method is also supported. For more details, see the
+`Diff(0, x, compact=3, acc=6)`. For multi-scale problems, `spectral=True` gives Lele's
+spectral-like schemes, which resolve short waves much better. The `matrix()` method is also supported. For more details, see the
 [compact finite differences documentation](https://maroba.github.io/findiff/compact.html).
 
 ## Finite Difference Coefficients

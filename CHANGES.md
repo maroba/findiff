@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Compact schemes with spectral-like resolution (Lele, 1992): `Diff(..., compact=5, acc=4,
+  spectral=True)` or `CompactScheme.spectral(deriv, num_left, num_right, acc)`. Only order `acc`
+  is imposed; the remaining coefficients minimize the modified wavenumber error. New helpers
+  `CompactScheme.modified_wavenumber()` and `resolving_efficiency()`; `CompactScheme` accepts
+  explicit RHS `coefficients`.
 - Compact schemes on non-uniform grids: `Diff(0, coords, compact=3, acc=6)` (previously
   `NotImplementedError`). LHS alphas of the uniform scheme are kept, RHS coefficients are solved
   per row from the actual spacings; works on arbitrary (also strongly clustered) grids.

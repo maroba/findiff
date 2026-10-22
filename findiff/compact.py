@@ -35,7 +35,7 @@ class CompactScheme:
     fewer neighboring points than in the explicit schemes.
     """
 
-    def __init__(self, deriv, left: dict, right: list):
+    def __init__(self, deriv, left: dict, right: list, coefficients=None):
         r"""
         Initializes a CompactScheme instance.
 
@@ -51,15 +51,63 @@ class CompactScheme:
                 Defines the alphas in the formula above. Keys: k, Values: alpha_k
             right: list|tuple
                 Which neighboring points to use (the k's in the formula above)
+            coefficients: list|tuple|None
+                The c_k for the offsets in `right`. If None (default), they are
+                determined from the alphas by maximizing the accuracy order.
         """
         self.deriv = deriv
         self.left = left
         self.right = right
+        self.coefficients = None if coefficients is None else list(coefficients)
+        self._spectral_options = None
+
+    def rhs_coefficients(self, deriv=None):
+        """Returns the RHS coefficients c_k (for unit grid spacing) for `deriv`."""
+        deriv = self.deriv if deriv is None else deriv
+        if self.coefficients is not None and deriv == self.deriv:
+            return list(self.coefficients)
+        return list(calc_coefs(deriv, self.right, alphas=self.left)["coefficients"])
 
     def get_accuracy(self, deriv):
+        if self.coefficients is not None and deriv == self.deriv:
+            return Solver().calc_accuracy(deriv, self.right, self.coefficients, self.left)
         calculator = CoefficientCalculator(deriv, self.right, self.left, Solver())
         calculator.solve()
         return calculator.acc
+
+    def for_deriv(self, deriv):
+        """Returns a scheme of the same kind (and LHS width) for another derivative."""
+        if deriv == self.deriv:
+            return self
+        if self._spectral_options is not None:
+            return CompactScheme.spectral(deriv, **self._spectral_options)
+        return CompactScheme.from_accuracy(
+            self.get_accuracy(self.deriv), deriv, len(self.left)
+        )
+
+    def modified_wavenumber(self, w):
+        r"""Returns the modified wavenumber of the scheme for (scaled) wavenumbers
+        `w` in :math:`[0, \pi]`.
+
+        Applying the scheme to :math:`e^{i w x / h}` yields :math:`(i w')^n` times
+        the function (n = derivative order); this method returns the real part of
+        :math:`(w')^n`, which equals :math:`w^n` for an exact derivative.
+        """
+        w = np.asarray(w, dtype=np.float64)
+        num = sum(
+            c * np.exp(1j * off * w)
+            for off, c in zip(self.right, self.rhs_coefficients())
+        )
+        den = sum(a * np.exp(1j * k * w) for k, a in self.left.items())
+        return (num / den / 1j**self.deriv).real
+
+    def resolving_efficiency(self, tol=1e-3):
+        r"""Returns the fraction of :math:`[0, \pi]` in which the modified
+        wavenumber has a relative error below `tol` (Lele, 1992)."""
+        w = np.linspace(1e-3, np.pi, 20001)
+        exact = w**self.deriv
+        bad = np.nonzero(np.abs(self.modified_wavenumber(w) - exact) > tol * exact)[0]
+        return float((w[bad[0]] if len(bad) else np.pi) / np.pi)
 
     @classmethod
     def from_accuracy(cls, acc, deriv, num_left):
@@ -91,29 +139,147 @@ class CompactScheme:
         rhs_offsets = list(range(-q, q + 1))
         num_unknowns = len(rhs_offsets) + len(lhs_offsets)
 
-        # Taylor condition for f^(m) h^(m - deriv):
-        #   sum_j c_j j^m / m! - sum_{k != 0} alpha_k k^(m-deriv) / (m-deriv)!
-        #       = alpha_0 * [m == deriv]
-        A = np.zeros((num_unknowns, num_unknowns))
-        b = np.zeros(num_unknowns)
-        for m in range(num_unknowns):
-            for j, off in enumerate(rhs_offsets):
-                A[m, j] = off**m / math.factorial(m)
-            if m >= deriv:
-                s = m - deriv
-                for j, off in enumerate(lhs_offsets):
-                    A[m, len(rhs_offsets) + j] = -(off**s) / math.factorial(s)
-                b[m] = 1.0 if s == 0 else 0.0
-
+        A, b = _taylor_conditions(deriv, rhs_offsets, lhs_offsets, num_unknowns)
         sol = np.linalg.solve(A, b)
-        solved = dict(zip(lhs_offsets, sol[len(rhs_offsets) :]))
-        # symmetrize to remove round-off asymmetry:
-        alphas = {0: 1}
-        for k in range(1, p + 1):
-            alphas[k] = alphas[-k] = (solved[k] + solved[-k]) / 2
-        alphas = dict(sorted(alphas.items()))
+        alphas = _symmetric_alphas(lhs_offsets, sol[len(rhs_offsets) :], p)
 
         return CompactScheme(deriv, alphas, rhs_offsets)
+
+    @classmethod
+    def spectral(cls, deriv, num_left, num_right, acc=4, tol=1e-3, max_wavenumber=None):
+        r"""Creates a compact scheme with spectral-like resolution (Lele, 1992).
+
+        Instead of spending all free parameters on the accuracy order, only order
+        `acc` is imposed. The remaining parameters minimize the error of the
+        modified wavenumber in the least-squares sense on
+        :math:`[0, w_{max}]`, which resolves short waves much better than the
+        scheme of maximal order with the same stencil widths.
+
+        Args:
+            deriv: int
+                The order of the derivative.
+            num_left: int
+                Number of LHS points (odd).
+            num_right: int
+                Number of RHS points (odd).
+            acc: int
+                Minimum accuracy order.
+            tol: float
+                Relative error of the modified wavenumber that defines the
+                resolving efficiency maximized when `max_wavenumber` is None.
+            max_wavenumber: float or None
+                Upper end :math:`w_{max} \in (0, \pi)` of the optimization range.
+                If None, it is chosen to maximize the resolving efficiency for
+                `tol` while keeping the LHS system well-conditioned.
+        """
+        if num_left % 2 == 0 or num_right % 2 == 0:
+            raise ValueError("`num_left` and `num_right` must be odd integers.")
+        p, q = num_left // 2, num_right // 2
+        options = dict(
+            num_left=num_left, num_right=num_right, acc=acc, tol=tol,
+            max_wavenumber=max_wavenumber,
+        )
+
+        if max_wavenumber is not None:
+            scheme = cls._solve_spectral(deriv, p, q, acc, max_wavenumber)
+        else:
+            scheme, best = None, -1
+            for w_max in np.linspace(0.3, 0.98, 35) * np.pi:
+                candidate = cls._solve_spectral(deriv, p, q, acc, w_max)
+                if _lhs_symbol_min(candidate.left) < _MIN_LHS_SYMBOL:
+                    continue
+                efficiency = candidate.resolving_efficiency(tol)
+                if efficiency > best:
+                    scheme, best = candidate, efficiency
+            if scheme is None:
+                raise ValueError(
+                    "No well-conditioned spectral scheme found; "
+                    "try other stencil widths or `max_wavenumber`."
+                )
+
+        scheme._spectral_options = options
+        return scheme
+
+    @classmethod
+    def _solve_spectral(cls, deriv, p, q, acc, w_max, num_samples=400):
+        lhs_offsets = [k for k in range(-p, p + 1) if k != 0]
+        rhs_offsets = list(range(-q, q + 1))
+        num_unknowns = len(rhs_offsets) + len(lhs_offsets)
+        if acc + deriv >= num_unknowns:
+            raise ValueError(
+                f"Stencil widths ({2 * p + 1}, {2 * q + 1}) leave no free parameters "
+                f"for spectral optimization at acc={acc}; use a wider stencil."
+            )
+
+        # equality constraints: Taylor conditions up to order `acc`
+        C, d = _taylor_conditions(deriv, rhs_offsets, lhs_offsets, acc + deriv)
+
+        # least squares: sum_j c_j e^{ijw} - (iw)^n sum_k alpha_k e^{ikw} = 0
+        w = np.linspace(0, w_max, num_samples)
+        target = (1j * w) ** deriv
+        rows = np.hstack(
+            [
+                np.exp(1j * np.outer(w, rhs_offsets)),
+                -target[:, None] * np.exp(1j * np.outer(w, lhs_offsets)),
+            ]
+        )
+        A = np.vstack([rows.real, rows.imag])
+        b = np.concatenate([target.real, target.imag])
+
+        # solve the equality-constrained least squares problem via KKT system
+        K = np.block([[2 * A.T @ A, C.T], [C, np.zeros((len(C), len(C)))]])
+        rhs = np.concatenate([2 * A.T @ b, d])
+        sol = np.linalg.lstsq(K, rhs, rcond=None)[0][:num_unknowns]
+        if not np.allclose(C @ sol, d, atol=1e-8):
+            raise ValueError(f"Unable to impose accuracy order {acc}.")
+
+        alphas = _symmetric_alphas(lhs_offsets, sol[len(rhs_offsets) :], p)
+        coefs = sol[: len(rhs_offsets)]
+        sign = -1 if deriv % 2 else 1
+        coefs = (coefs + sign * coefs[::-1]) / 2  # (anti-)symmetrize
+        return CompactScheme(deriv, alphas, rhs_offsets, coefficients=coefs)
+
+
+# Lower bound for min_theta sum_k alpha_k cos(k theta), which keeps the LHS
+# matrix of spectral schemes well-conditioned.
+_MIN_LHS_SYMBOL = 0.05
+
+
+def _lhs_symbol_min(alphas):
+    theta = np.linspace(0, np.pi, 1001)
+    return float(
+        min(sum(a * np.cos(k * t) for k, a in alphas.items()) for t in theta)
+    )
+
+
+def _taylor_conditions(deriv, rhs_offsets, lhs_offsets, num_rows):
+    """Taylor conditions for the unknowns (c_j for rhs_offsets, alpha_k for
+    lhs_offsets, alpha_0 = 1):
+
+        sum_j c_j j^m / m! - sum_{k != 0} alpha_k k^(m-deriv) / (m-deriv)!
+            = [m == deriv],   m = 0, ..., num_rows - 1
+    """
+    num_unknowns = len(rhs_offsets) + len(lhs_offsets)
+    A = np.zeros((num_rows, num_unknowns))
+    b = np.zeros(num_rows)
+    for m in range(num_rows):
+        for j, off in enumerate(rhs_offsets):
+            A[m, j] = off**m / math.factorial(m)
+        if m >= deriv:
+            s = m - deriv
+            for j, off in enumerate(lhs_offsets):
+                A[m, len(rhs_offsets) + j] = -(off**s) / math.factorial(s)
+            b[m] = 1.0 if s == 0 else 0.0
+    return A, b
+
+
+def _symmetric_alphas(lhs_offsets, values, p):
+    """Builds a symmetric alpha dict (alpha_0 = 1), removing round-off asymmetry."""
+    solved = dict(zip(lhs_offsets, values))
+    alphas = {0: 1}
+    for k in range(1, p + 1):
+        alphas[k] = alphas[-k] = (solved[k] + solved[-k]) / 2
+    return dict(sorted(alphas.items()))
 
 
 class _CompactDiffUniform:
@@ -188,7 +354,11 @@ class _CompactDiffUniform:
         L = type(self).creator_function(n, offsets, values, "lil")
 
         h = self.spacing ** (-self.order)
-        coefs = calc_coefs(self.order, self.scheme.right, alphas=self.scheme.left)
+        coefs = {
+            "offsets": list(self.scheme.right),
+            "coefficients": self.scheme.rhs_coefficients(self.order),
+            "accuracy": self.scheme.get_accuracy(self.order),
+        }
         values = [value * h for value in coefs["coefficients"]]
         R = type(self).creator_function(
             self._shape[self.dim], coefs["offsets"], values, mtype="lil"
@@ -344,9 +514,8 @@ class _CompactDiffNonUniform(_CompactDiffUniform):
         if not (np.all(steps > 0) or np.all(steps < 0)):
             raise ValueError("Coordinates must be strictly monotonic.")
 
-        acc = scheme.get_accuracy(scheme.deriv)
-        if scheme.deriv != order:
-            scheme = CompactScheme.from_accuracy(acc, order, len(scheme.left))
+        scheme = scheme.for_deriv(order)
+        acc = scheme.get_accuracy(order)
 
         super().__init__(dim, order, None, scheme)
         self.coords = coords

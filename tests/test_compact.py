@@ -669,3 +669,76 @@ def test_nonuniform_compact_invalid_input():
 
     with pytest.raises(ValueError, match="10 coordinates"):
         Diff(0, np.linspace(0, 1, 10), compact=3)(np.ones(12))
+
+
+@pytest.mark.parametrize("deriv", [1, 2])
+@pytest.mark.parametrize("compact, acc", [(3, 4), (5, 4), (5, 6)])
+def test_spectral_scheme_resolves_better_than_max_order(deriv, compact, acc):
+    spectral = CompactScheme.spectral(deriv, compact, compact + 2, acc=acc)
+    max_order = CompactScheme._solve_jointly(deriv, compact // 2, (compact + 2) // 2)
+
+    assert spectral.get_accuracy(deriv) >= acc
+    assert spectral.resolving_efficiency() > max_order.resolving_efficiency() + 0.1
+    theta = np.linspace(0, np.pi, 201)
+    symbol = sum(a * np.cos(k * theta) for k, a in spectral.left.items())
+    assert symbol.min() >= 0.05  # LHS stays well-conditioned
+
+
+def test_modified_wavenumber_matches_application_to_waves():
+    scheme = CompactScheme.spectral(1, 5, 7, acc=4)
+    n = 64
+    x = np.arange(n) * 2 * np.pi / n
+    h = x[1] - x[0]
+    d_dx = Diff(0, h, scheme=scheme, periodic=True)
+
+    for k in (3, 10, 20):
+        w = k * h
+        actual = d_dx(np.sin(k * x))
+        expected = scheme.modified_wavenumber(w) / h * np.cos(k * x)
+        np.testing.assert_allclose(actual, expected, atol=1e-10 * k)
+
+
+def test_spectral_parameter_and_higher_derivatives():
+    n = 64
+    x = np.arange(n) * 2 * np.pi / n
+    h = x[1] - x[0]
+    k = 19  # about 0.6 pi / h
+    f = np.sin(k * x)
+
+    for power, exact in ((1, k * np.cos(k * x)), (2, -(k**2) * np.sin(k * x))):
+        spectral = Diff(0, h, compact=5, acc=4, spectral=True, periodic=True) ** power
+        max_order = Diff(0, h, compact=5, acc=4, periodic=True)
+        max_order.set_scheme(CompactScheme._solve_jointly(1, 2, 3))
+        max_order = max_order**power
+
+        assert spectral.scheme.deriv == power
+        err_spectral = np.abs(spectral(f) - exact).max()
+        err_max_order = np.abs(max_order(f) - exact).max()
+        assert err_spectral < err_max_order / 5
+
+
+def test_spectral_with_fixed_max_wavenumber():
+    scheme = CompactScheme.spectral(1, 5, 7, acc=4, max_wavenumber=0.6 * np.pi)
+    w = np.linspace(0.01, 0.6 * np.pi, 50)
+    assert np.abs(scheme.modified_wavenumber(w) - w).max() < 1e-2
+
+
+def test_explicit_rhs_coefficients_are_used():
+    alphas = {-1: 1 / 3, 0: 1, 1: 1 / 3}
+    offsets = [-2, -1, 0, 1, 2]
+    coefs = calc_coefs(1, offsets, alphas=alphas)["coefficients"]
+    perturbed = CompactScheme(1, alphas, offsets, coefficients=[2 * c for c in coefs])
+
+    x = np.linspace(0, 2 * np.pi, 50, endpoint=False)
+    d_dx = Diff(0, x[1] - x[0], scheme=perturbed, periodic=True)
+
+    np.testing.assert_allclose(d_dx(np.sin(x)), 2 * np.cos(x), atol=1e-5)
+
+
+def test_spectral_invalid_input():
+    with pytest.raises(ValueError, match="requires `compact`"):
+        Diff(0, 0.1, spectral=True)
+    with pytest.raises(ValueError, match="no free parameters"):
+        CompactScheme.spectral(1, 3, 5, acc=6)
+    with pytest.raises(ValueError, match="odd"):
+        CompactScheme.spectral(1, 3, 6)
