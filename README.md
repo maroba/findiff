@@ -222,15 +222,19 @@ Or let findiff pick a scheme for you:
 d_dx = Diff(0, dx, compact=3, acc=6, periodic=True)
 ```
 
-Here `compact=3` sets the LHS bandwidth (must be odd), and findiff widens the RHS stencil until
-the requested accuracy is reached. Higher derivatives work the same as usual:
+Here `compact=3` sets the LHS bandwidth (must be odd). findiff determines the LHS and RHS
+coefficients jointly (as in Lele, 1992) and picks the narrowest RHS stencil that reaches the
+requested accuracy — e.g. `compact=3, acc=6` gives Lele's classic tridiagonal scheme and
+`compact=5, acc=10` his pentadiagonal 10th-order scheme. Higher derivatives work the same as usual:
 
 ```python
 d2_dx2 = d_dx ** 2
 ```
 
 Non-periodic grids are handled automatically — findiff uses one-sided compact stencils near the
-boundaries. The `matrix()` method is also supported. For more details, see the
+boundaries. Non-uniform grids work as well: pass the coordinates instead of the spacing, e.g.
+`Diff(0, x, compact=3, acc=6)`. For multi-scale problems, `spectral=True` gives Lele's
+spectral-like schemes, which resolve short waves much better. The `matrix()` method is also supported. For more details, see the
 [compact finite differences documentation](https://maroba.github.io/findiff/compact.html).
 
 ## Finite Difference Coefficients

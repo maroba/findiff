@@ -69,8 +69,23 @@ matching :math:`c_k`:
     d_dx = Diff(0, dx, compact=3, acc=6, periodic=True)
 
 The ``compact`` parameter sets the number of left-hand side points (must be an
-odd integer). *findiff* will widen the right-hand side stencil until the
-requested accuracy is reached.
+odd integer). *findiff* determines the left-hand side :math:`\alpha_k` and the
+right-hand side :math:`c_k` jointly, so that the accuracy order is maximal for
+the given stencil widths (Lele, 1992), and uses the narrowest right-hand side
+stencil that reaches the requested accuracy. This yields the classical schemes,
+for example:
+
+=====================  ========================================  ===============
+Parameters             Left-hand side                            Right-hand side
+=====================  ========================================  ===============
+``compact=3, acc=4``   :math:`\alpha_1 = 1/4` (Padé)             3 points
+``compact=3, acc=6``   :math:`\alpha_1 = 1/3`                    5 points
+``compact=5, acc=8``   :math:`\alpha_1 = 4/9,\ \alpha_2 = 1/36`  5 points
+``compact=5, acc=10``  :math:`\alpha_1 = 1/2,\ \alpha_2 = 1/20`  7 points
+=====================  ========================================  ===============
+
+As with explicit finite differences, ``acc`` is the minimum accuracy order;
+the scheme may be more accurate if no narrower stencil exists.
 
 
 Higher derivatives
@@ -86,6 +101,53 @@ This automatically constructs a new compact scheme for the second derivative
 with matching accuracy.
 
 
+Spectral-like resolution
+------------------------
+
+.. versionadded:: 0.15
+
+The schemes above spend all free parameters on the accuracy order. Lele's
+*spectral-like* schemes impose only a moderate order and use the remaining
+parameters to resolve short waves better. This pays off for multi-scale problems
+(turbulence, shocks, the Burgers equation), where the solution contains
+wavelengths of only a few grid points.
+
+.. code:: python
+
+    d_dx = Diff(0, dx, compact=5, acc=4, spectral=True, periodic=True)
+    d2_dx2 = d_dx ** 2          # also spectrally optimized
+
+With ``spectral=True`` the right-hand side has ``compact + 2`` points. For full
+control, construct the scheme directly:
+
+.. code:: python
+
+    scheme = CompactScheme.spectral(deriv=1, num_left=5, num_right=9, acc=6)
+    d_dx = Diff(0, dx, scheme=scheme, periodic=True)
+
+The accuracy order ``acc`` is imposed exactly; the remaining coefficients minimize
+the error of the *modified wavenumber* in the least-squares sense on
+:math:`[0, w_{max}]`. By default, :math:`w_{max}` is chosen to maximize the
+*resolving efficiency*: the fraction of :math:`[0, \pi]` in which the relative
+error of the modified wavenumber stays below ``tol`` (default ``1e-3``). Pass
+``max_wavenumber`` to fix the range instead. Both quantities are available for
+any scheme:
+
+.. code:: python
+
+    scheme.modified_wavenumber(w)      # w' for scaled wavenumbers w = k h
+    scheme.resolving_efficiency(1e-3)  # e.g. 0.56 -> 0.70 for compact=5, 7 points
+
+.. image:: ../images/compact_modified_wavenumber.png
+   :width: 480
+   :alt: Modified wavenumber of explicit, maximal-order compact and spectral schemes
+
+The trade-off: for well-resolved, smooth functions a scheme of maximal order is
+more accurate, while the spectral scheme wins for short waves. On non-periodic
+grids, the boundary closures (which have maximal order) dominate the error for
+short waves within the first few grid points.
+
+
 Non-periodic boundaries
 -----------------------
 
@@ -93,7 +155,9 @@ For non-periodic grids the interior stencil extends past the boundary at the
 first and last few grid points. *findiff* handles this with one-sided compact
 stencils (Visbal & Gaitonde, 2002): the left-hand side alphas and right-hand
 side offsets are restricted to points that exist, and the system is re-solved for
-the boundary rows.
+the boundary rows. Since one-sided stencils lack the symmetry of the interior
+scheme, the right-hand side stencil is widened at the boundary until it reaches
+the interior accuracy order (as far as the grid size permits).
 
 .. code:: python
 
@@ -102,6 +166,32 @@ the boundary rows.
 
     d_dx = Diff(0, dx, scheme=scheme, periodic=False)
     df = d_dx(np.sin(x))
+
+
+Non-uniform grids
+-----------------
+
+.. versionadded:: 0.15
+
+Pass the coordinates instead of the spacing, as for explicit differences:
+
+.. code:: python
+
+    x = (1 - np.cos(np.pi * np.linspace(0, 1, 100))) / 2   # clustered at both ends
+
+    d_dx = Diff(0, x, compact=3, acc=6)
+    df = d_dx(np.sin(x))
+    d2_dx2 = d_dx ** 2
+
+The left-hand side keeps the :math:`\alpha_k` of the uniform scheme, which keeps
+the banded system well-conditioned on any grid. The right-hand side coefficients
+are solved row by row from the actual grid spacings. Without the symmetry of a
+uniform grid, the right-hand side needs ``acc + deriv`` points (rounded up to an
+odd number) to reach accuracy order ``acc``, so the stencil is as wide as for
+explicit differences. The benefit of the compact scheme on non-uniform grids is
+therefore a smaller error constant rather than a narrower stencil. The scheme
+reproduces polynomials of degree up to the stencil width minus one exactly on
+any grid.
 
 
 Multi-dimensional grids
@@ -137,15 +227,22 @@ the usual ``matrix()`` call:
     df = M.dot(f)
 
 Note that inverting the banded :math:`L` introduces fill-in, so the matrix is
-denser than for explicit finite differences.
+denser than for explicit finite differences: each row couples all points on its
+grid line along the differentiation axis. On an :math:`n \times n` grid the
+matrix therefore has :math:`n^3` non-zero entries.
 
 
 Limitations
 -----------
 
-- Only equidistant grids are supported. Passing a non-uniform grid raises
-  ``NotImplementedError``.
+- Periodic non-uniform grids are not supported (as for explicit differences).
 - The ``stencil()`` method is not supported for compact schemes.
+- ``estimate_error()`` does not support compact schemes and raises an error.
+- Compact schemes run on NumPy / SciPy only. JAX or CuPy arrays are converted
+  to NumPy arrays (see :doc:`gpu-backends`).
+- The grid must have at least as many points along the differentiation axis as
+  the stencil reaches away from a point; otherwise a ``ValueError`` explains
+  the required size.
 
 
 References

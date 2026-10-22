@@ -13,6 +13,7 @@ class Diff(_Diff):
         acc=_Diff.DEFAULT_ACC,
         scheme=None,
         compact=None,
+        spectral=False,
     ):
         """Represents a partial derivative (along one axis).
 
@@ -54,10 +55,15 @@ class Diff(_Diff):
         """
         if compact and scheme:
             raise ValueError("Cannot specify both `compact` and `scheme`")
+        if spectral and not compact:
+            raise ValueError("`spectral=True` requires `compact`")
         if compact:
             if compact % 2 == 0:
                 raise ValueError("`compact` must be odd integer")
-            scheme = CompactScheme.from_accuracy(acc, 1, compact)
+            if spectral:
+                scheme = CompactScheme.spectral(1, compact, compact + 2, acc=acc)
+            else:
+                scheme = CompactScheme.from_accuracy(acc, 1, compact)
 
         grid_axis = make_axis(axis, grid, periodic)
         super().__init__(axis, grid_axis, acc, scheme)

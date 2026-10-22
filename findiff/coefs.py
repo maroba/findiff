@@ -463,20 +463,27 @@ class Solver:
     def calc_accuracy(self, deriv, offsets, coefs, alphas):
         n_plus_s = deriv + 1
         max_n = 999
-        break_condition = lambda b: abs(b) > self.atol  # noqa: E731
 
         while True:
+            # b is the Taylor coefficient of the truncation error at this order;
+            # compare it relative to the size of the terms that cancel in it, since
+            # high-order schemes have genuinely small but non-zero error terms.
             b = 0
+            scale = 0
             fac = 1 / math.factorial(n_plus_s)
             for o, coef in zip(offsets, coefs):
-                b += coef * o**n_plus_s * fac
+                term = coef * o**n_plus_s * fac
+                b += term
+                scale += abs(term)
 
             s = n_plus_s - deriv
             fac = 1 / math.factorial(s)
             for o, alpha in alphas.items():
-                b -= alpha * fac * o**s
+                term = alpha * fac * o**s
+                b -= term
+                scale += abs(term)
 
-            if break_condition(b):
+            if abs(b) > self.atol * scale:
                 break
 
             n_plus_s += 1

@@ -1,5 +1,37 @@
 # Change Log
 
+## Unreleased
+
+- Compact schemes with spectral-like resolution (Lele, 1992): `Diff(..., compact=5, acc=4,
+  spectral=True)` or `CompactScheme.spectral(deriv, num_left, num_right, acc)`. Only order `acc`
+  is imposed; the remaining coefficients minimize the modified wavenumber error. New helpers
+  `CompactScheme.modified_wavenumber()` and `resolving_efficiency()`; `CompactScheme` accepts
+  explicit RHS `coefficients`.
+- Compact schemes on non-uniform grids: `Diff(0, coords, compact=3, acc=6)` (previously
+  `NotImplementedError`). LHS alphas of the uniform scheme are kept, RHS coefficients are solved
+  per row from the actual spacings; works on arbitrary (also strongly clustered) grids.
+- Compact schemes: much faster application (LU factorization is computed once and
+  reused) and `matrix()` no longer builds a dense intermediate matrix, which made
+  compact schemes unusable in `PDE` / `TimeDependentPDE` on medium-sized 2D grids
+- Compact schemes: one-sided boundary stencils on non-periodic grids now reach the
+  interior accuracy order (previously one to two orders lower).
+  **Note:** results at the boundary points of non-periodic compact schemes change
+  (they become more accurate).
+- Compact schemes: boundary fallback to explicit differences now only catches
+  `LinAlgError` and emits a `RuntimeWarning` instead of silently swallowing all errors
+- Compact schemes: clear error message if the grid is too small for the stencil
+- Compact schemes: `compact=..., acc=...` now determines the LHS alphas and RHS coefficients
+  jointly (as in Lele, 1992) instead of using fixed heuristic alphas, and picks the narrowest
+  RHS stencil reaching `acc`. This yields the classical schemes (Padé, Lele's tridiagonal and
+  pentadiagonal schemes); `compact=5` and `compact=7` now actually pay off (e.g. `compact=5,
+  acc=10` needs 7 instead of 11 RHS points and is ~85x more accurate).
+  **Note:** results change for all `compact=` settings except `compact=3, acc=6`.
+  `acc` is now the minimum order, as for explicit differences: `compact=3, acc=4` gives the
+  4th-order Padé scheme (previously 6th order by accident), while the default `acc=2` now
+  gives 4th instead of 2nd order.
+- Fix accuracy order detection for high-order schemes (truncation error was compared with an
+  absolute tolerance, causing an `OverflowError` from about order 12 on)
+
 ## Version 0.14.x
 
 - Time-dependent PDEs via Method of Lines (Forward Euler, RK4, Backward Euler, Crank-Nicolson)

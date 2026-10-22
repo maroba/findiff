@@ -527,9 +527,7 @@ class Diff(Expression):
         new_order = self.order * power
 
         if self.scheme:
-            new_scheme = CompactScheme.from_accuracy(
-                self.scheme.get_accuracy(self.order), new_order, len(self.scheme.left)
-            )
+            new_scheme = self.scheme.for_deriv(new_order)
         else:
             new_scheme = None
         new_diff = Diff(self.dim, self.axis, acc=self.acc, scheme=new_scheme)
