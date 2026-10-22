@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## Version 0.16.x
 
 - `TimeDependentPDE`: problems of second order in time such as the wave equation,
   `u_tt = L(u) + s(t)`, by passing the initial velocity `v0`. New explicit method `verlet`
@@ -28,6 +28,8 @@
   sparse masks instead of converting the system matrix to LIL format in every step, the LU
   factorization is reused, and time steps differing only by round-off (e.g. from
   `np.linspace`) no longer trigger a rebuild of the system.
+- Documentation: all parameters of `Diff` are now documented in the API reference; guides
+  updated for the new features.
 
 ## Version 0.15.x
 
