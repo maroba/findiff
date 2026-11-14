@@ -329,6 +329,32 @@ def test_rsub_operator():
     assert val.shape == f.shape
 
 
+def test_rsub_scalar_minus_operator():
+    x = np.arange(5.0)
+    d_dx = Diff(0, 1.0)
+
+    assert_array_almost_equal((3 - d_dx)(x), 3 * x - 1)
+    assert_array_almost_equal((d_dx - 3)(x), 1 - 3 * x)
+
+
+def test_rsub_array_minus_operator():
+    x = np.linspace(0, 1, 30)
+    dx = x[1] - x[0]
+    d_dx = Diff(0, dx)
+    g = np.cos(x)
+    f = x**2
+
+    assert_array_almost_equal((g - d_dx)(f), g * f - 2 * x)
+
+
+def test_rsub_matrix():
+    shape = (10,)
+    d_dx = Diff(0, 0.1)
+    expected = 3 * np.eye(10) - d_dx.matrix(shape).toarray()
+
+    assert_array_almost_equal((3 - d_dx).matrix(shape).toarray(), expected)
+
+
 def test_scalar_operator_invalid_type_raises():
     with pytest.raises(ValueError):
         ScalarOperator("not a number")

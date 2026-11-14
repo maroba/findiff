@@ -65,7 +65,7 @@ class Expression(ABC):
 
     def __rsub__(self, other):
         """Allows to subtract differential operator expressions."""
-        return Add(ScalarOperator(-1) * other, self)
+        return Add(other, ScalarOperator(-1) * self)
 
     def __mul__(self, other):
         """Allows to multiply differential operator expressions."""
