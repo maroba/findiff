@@ -30,6 +30,10 @@
   `np.linspace`) no longer trigger a rebuild of the system.
 - Documentation: all parameters of `Diff` are now documented in the API reference; guides
   updated for the new features.
+- 0.16.1: Fix `Diff.set_accuracy` having no effect on an operator that had already been
+  applied (also affected expressions, `matrix()` and operators after `estimate_error`) (#119).
+- 0.16.1: Fix wrong sign of `scalar - operator` expressions, e.g. `3 - Diff(0)` (#120).
+- 0.16.1: Faster application of derivatives to small NumPy arrays (#117, #118).
 
 ## Version 0.15.x
 

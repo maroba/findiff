@@ -23,7 +23,7 @@ Features:
 - Version 0.16.*: Wave equations, time-dependent boundary values and sources, stable high-order operators
 """
 
-__version__ = "0.16.0"
+__version__ = "0.16.1"
 
 
 from .coefs import coefficients
