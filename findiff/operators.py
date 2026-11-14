@@ -490,6 +490,18 @@ class Diff(Expression):
             return labels[self.dim]
         return f"x{self.dim}"
 
+    def set_accuracy(self, acc):
+        """Sets the requested accuracy order.
+
+        Parameters
+        ----------
+        acc: int
+            The accuracy order. Must be a positive, even number.
+        """
+        if acc != self.acc:
+            self._differentiator = None
+        super().set_accuracy(acc)
+
     def set_scheme(self, scheme: CompactScheme = None):
         """Allows to activate using compact (implicit) finite differences."""
         self.scheme = scheme
@@ -509,10 +521,7 @@ class Diff(Expression):
 
         if "acc" in kwargs:
             # allow to pass down new accuracy deep in expression tree
-            new_acc = kwargs["acc"]
-            if new_acc != self.acc:
-                self._differentiator = None
-                self.set_accuracy(new_acc)
+            self.set_accuracy(kwargs["acc"])
 
         if isinstance(f, Expression):
             f = f(*args, **kwargs)

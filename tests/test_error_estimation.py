@@ -168,6 +168,28 @@ class TestEstimateErrorOperatorState:
 
         assert op.acc == 2
 
+    def test_derivative_unchanged_after_estimate(self):
+        x = np.linspace(0, 2 * np.pi, 100)
+        dx = x[1] - x[0]
+        f = np.sin(x)
+
+        d_dx = Diff(0, dx, acc=2)
+        before = d_dx(f)
+        d_dx.estimate_error(f)
+
+        np.testing.assert_array_almost_equal(d_dx(f), before)
+
+    def test_derivative_unchanged_after_estimate_composite(self):
+        x = np.linspace(0, 2 * np.pi, 100)
+        dx = x[1] - x[0]
+        f = np.sin(x)
+
+        op = Diff(0, dx, acc=2) ** 2
+        before = op(f)
+        op.estimate_error(f)
+
+        np.testing.assert_array_almost_equal(op(f), before)
+
 
 class TestEstimateErrorUnpacking:
 
