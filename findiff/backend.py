@@ -45,6 +45,11 @@ def add_at(arr, idx, val):
 
     Always returns the (possibly new) array.
     """
+    if type(arr) is np.ndarray:
+        selected = arr[idx]
+        selected += val
+        arr[idx] = selected
+        return arr
     module = type(arr).__module__.split(".")[0]
     if module in ("jax", "jaxlib"):
         return arr.at[idx].add(val)
