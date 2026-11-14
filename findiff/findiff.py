@@ -92,43 +92,21 @@ class _FinDiffBase:
 
         ndims = len(y.shape)
 
-        if (
-            ndims == 1
-            and type(yd) is np.ndarray
-            and type(y) is np.ndarray
-            and type(ref_slice) is slice
-            and type(dim) is int
-            and -1 <= dim <= 0
-        ):
-            target = None
-            for w, s in zip(weights, off_slices):
-                if abs(1 - w) < 1.0e-14:
-                    value = y[(s,)]
-                else:
-                    value = w * y[(s,)]
-                if target is None:
-                    target = yd[ref_slice]
-                target += value
-            return yd
-
         all = slice(None, None, 1)
 
         ref_multi_slice = [all] * ndims
         ref_multi_slice[dim] = ref_slice
 
-        if type(yd) is np.ndarray and type(y) is np.ndarray and type(ref_slice) is slice:
-            ref_index = tuple(ref_multi_slice)
+        if type(yd) is np.ndarray and type(ref_slice) is slice:
+            # Basic slicing yields a view, so we can accumulate in place.
+            target = yd[tuple(ref_multi_slice)]
             off_multi_slice = [all] * ndims
-            target = None
             for w, s in zip(weights, off_slices):
                 off_multi_slice[dim] = s
                 if abs(1 - w) < 1.0e-14:
-                    value = y[tuple(off_multi_slice)]
+                    target += y[tuple(off_multi_slice)]
                 else:
-                    value = w * y[tuple(off_multi_slice)]
-                if target is None:
-                    target = yd[ref_index]
-                target += value
+                    target += w * y[tuple(off_multi_slice)]
             return yd
 
         for w, s in zip(weights, off_slices):
@@ -141,13 +119,11 @@ class _FinDiffBase:
         return yd
 
     def shift_slice(self, sl, off, max_index):
-        start = sl.start + off
-        if start < 0:
+
+        if sl.start + off < 0 or sl.stop + off > max_index:
             raise IndexError("Shift slice out of bounds")
-        stop = sl.stop + off
-        if stop > max_index:
-            raise IndexError("Shift slice out of bounds")
-        return slice(start, stop, sl.step)
+
+        return slice(sl.start + off, sl.stop + off, sl.step)
 
     def matrix(self, shape):
         siz = np.prod(shape)
