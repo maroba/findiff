@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=77", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,7 +12,8 @@ maintainers = [
 ]
 description = "A Python package for finite difference derivatives in any number of dimensions."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "numpy",
     "scipy",
@@ -31,7 +32,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering :: Mathematics",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 
