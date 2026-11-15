@@ -2,6 +2,7 @@ import math
 from itertools import product
 
 import numpy as np
+from scipy.linalg import svd
 
 from .utils import to_index_tuple, to_long_index
 
@@ -287,13 +288,19 @@ class Stencil:
 
     def _system_matrix(self):
         rows = []
+        rank_matrix = None
         used_taylor_terms = []
         for order in range(self.max_order):
             taylor_terms = self._multinomial_powers(order)
             for term in taylor_terms:
                 rows.append(self._system_matrix_row(term))
                 used_taylor_terms.append(term)
-                if not self._rows_are_linearly_independent(rows):
+                if rank_matrix is None:
+                    rank_matrix = np.empty((len(self.offsets), len(self.offsets)), dtype=float)
+                if len(self.offsets):
+                    rank_matrix[len(rows) - 1] = np.asarray(rows[-1]).astype(float, copy=False)
+                rank_rows = rank_matrix[:len(rows)] if len(self.offsets) else rows
+                if not self._rows_are_linearly_independent(rank_rows):
                     rows.pop()
                     used_taylor_terms.pop()
                 if len(rows) == len(self.offsets):
@@ -311,10 +318,36 @@ class Stencil:
 
     def _multinomial_powers(self, the_sum):
         """Returns all tuples of a given dimension that add up to the_sum."""
-        all_combs = list(product(range(the_sum + 1), repeat=self.ndims))
-        return list(filter(lambda tpl: sum(tpl) == the_sum, all_combs))
+        values = range(the_sum + 1)
+        # Keep the input validation of itertools.product.
+        product((), repeat=self.ndims)
+
+        def compositions(total, dimensions):
+            if dimensions == 0:
+                if total == 0:
+                    yield ()
+            elif dimensions == 1:
+                if total in values:
+                    yield (total,)
+            else:
+                for first in range(total + 1):
+                    for rest in compositions(total - first, dimensions - 1):
+                        yield (first,) + rest
+
+        return list(compositions(the_sum, self.ndims))
 
     def _rows_are_linearly_independent(self, matrix):
         """Checks the linear independence of the rows of a matrix."""
-        matrix = np.array(matrix).astype(float)
+        matrix = np.asarray(matrix).astype(float, copy=False)
+        # Values near the rank threshold use NumPy's original decision.
+        if matrix.ndim == 2 and np.isfinite(matrix).all():
+            # The transpose is a Fortran-contiguous view for the row buffer and
+            # lets LAPACK reduce a tall matrix instead of a wide one.
+            singular_values = svd(matrix.T, compute_uv=False, check_finite=False,
+                                  lapack_driver="gesvd")
+            if singular_values.size:
+                tolerance = singular_values[0] * max(matrix.shape) * np.finfo(float).eps
+                smallest = singular_values[-1]
+                if not tolerance / 32 <= smallest <= tolerance * 32:
+                    return len(matrix) <= matrix.shape[1] and smallest > tolerance
         return np.linalg.matrix_rank(matrix) == len(matrix)
