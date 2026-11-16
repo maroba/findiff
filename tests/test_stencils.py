@@ -324,3 +324,71 @@ class TestStencilSliceBugs:
         canonical = stencil._canonic_slice(slice(1, -1), length)
         assert canonical.start == 1
         assert canonical.stop == length - 1
+
+
+def _rank_based_taylor_terms(stencil):
+    """Reference selection of Taylor terms via repeated rank computations."""
+    rows, terms = [], []
+    for order in range(stencil.max_order):
+        for term in stencil._multinomial_powers(order):
+            candidate = rows + [stencil._system_matrix_row(term)]
+            if np.linalg.matrix_rank(np.array(candidate, dtype=float)) == len(candidate):
+                rows, terms = candidate, terms + [term]
+            if len(rows) == len(stencil.offsets):
+                return terms
+
+
+class TestStencilSystemMatrix:
+
+    @pytest.mark.parametrize(
+        "offsets",
+        [
+            [(-1,), (0,), (1,)],
+            [(0,), (1,), (2,), (3,), (4,)],
+            [(-1, 0), (0, 0), (1, 0), (0, 1), (0, -1)],
+            [(i, j) for i in range(-1, 2) for j in range(-1, 2)],
+            [(0, 0), (1, 0), (0, 1), (1, 1), (2, 0), (2, 2), (-1, 1)],
+            [(i, j, k) for i in range(-1, 2) for j in range(-1, 2) for k in range(-1, 2)],
+            [(-2, 0, 0), (-1, 0, 0), (0, 0, 0), (1, 0, 0), (2, 0, 0), (0, 1, 0),
+             (0, -1, 0), (0, 0, 1), (0, 0, -1)],
+        ],
+    )
+    def test_taylor_terms_match_rank_based_selection(self, offsets):
+        partials = {tuple(1 if j == 0 else 0 for j in range(len(offsets[0]))): 1}
+        stencil = Stencil(offsets, partials)
+
+        _, terms = stencil._system_matrix()
+
+        assert terms == _rank_based_taylor_terms(stencil)
+
+    def test_dependent_taylor_terms_are_skipped(self):
+        # All points lie on the x-axis, so every term with a y-power vanishes.
+        stencil = Stencil([(-1, 0), (0, 0), (1, 0)], {(2, 0): 1})
+
+        _, terms = stencil._system_matrix()
+
+        assert terms == [(0, 0), (1, 0), (2, 0)]
+        assert stencil.values == pytest.approx({(-1, 0): 1, (0, 0): -2, (1, 0): 1})
+
+    def test_large_3d_stencil_is_exact_for_polynomials(self):
+        offsets = [
+            (i, j, k)
+            for i in range(-2, 3)
+            for j in range(-2, 3)
+            for k in range(-2, 3)
+        ]
+        spacings = (0.5, 1.0, 2.0)
+        stencil = Stencil(offsets, {(2, 0, 0): 1, (0, 2, 0): 1, (0, 0, 2): 1}, spacings)
+
+        x, y, z = [np.arange(-2, 3) * h for h in spacings]
+        X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
+        f = X**4 + X**2 * Y**2 + Y**3 * Z + Z**4
+
+        # Laplacian at the origin: 12x^2 + 2y^2 + 2x^2 + 6yz + 12z^2 = 0
+        assert stencil(f, at=(2, 2, 2)) == pytest.approx(0, abs=1e-8)
+        g = X**2 + 3 * Y**2 - Z**2
+        assert stencil(g, at=(2, 2, 2)) == pytest.approx(2 + 6 - 2)
+
+    def test_duplicate_offsets_raise(self):
+        with pytest.raises(Exception, match="Not enough terms"):
+            Stencil([(0,), (0,), (1,)], {(1,): 1})

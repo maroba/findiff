@@ -288,14 +288,25 @@ class Stencil:
     def _system_matrix(self):
         rows = []
         used_taylor_terms = []
+        # Orthonormal basis of the accepted rows. A new row is linearly
+        # independent if it has a significant component orthogonal to it.
+        basis = np.empty((len(self.offsets), len(self.offsets)))
+        tol = len(self.offsets) * np.finfo(float).eps * 10
         for order in range(self.max_order):
             taylor_terms = self._multinomial_powers(order)
             for term in taylor_terms:
-                rows.append(self._system_matrix_row(term))
-                used_taylor_terms.append(term)
-                if not self._rows_are_linearly_independent(rows):
-                    rows.pop()
-                    used_taylor_terms.pop()
+                row = self._system_matrix_row(term)
+                v = np.array(row, dtype=float)
+                norm = np.linalg.norm(v)
+                accepted = basis[: len(rows)]
+                # Orthogonalize twice for numerical stability.
+                for _ in range(2):
+                    v -= accepted.T @ (accepted @ v)
+                residual = np.linalg.norm(v)
+                if residual > tol * norm:
+                    basis[len(rows)] = v / residual
+                    rows.append(row)
+                    used_taylor_terms.append(term)
                 if len(rows) == len(self.offsets):
                     return np.array(rows), used_taylor_terms
         raise Exception('Not enough terms. Try to increase max_order.')
@@ -313,8 +324,3 @@ class Stencil:
         """Returns all tuples of a given dimension that add up to the_sum."""
         all_combs = list(product(range(the_sum + 1), repeat=self.ndims))
         return list(filter(lambda tpl: sum(tpl) == the_sum, all_combs))
-
-    def _rows_are_linearly_independent(self, matrix):
-        """Checks the linear independence of the rows of a matrix."""
-        matrix = np.array(matrix).astype(float)
-        return np.linalg.matrix_rank(matrix) == len(matrix)
